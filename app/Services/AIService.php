@@ -49,18 +49,21 @@ class AIService
                 $piece = $board[$rank][$file] ?? null;
                 
                 if ($piece && $piece['color'] === $color) {
-                    // この駒の移動可能先を取得
-                    $movableCells = $this->getMovableCells($board, $rank, $file, $piece['type'], $color);
-                    
-                    foreach ($movableCells as $cell) {
-                        $moves[] = [
-                            'from_rank' => $rank,
-                            'from_file' => $file,
-                            'to_rank' => $cell['rank'],
-                            'to_file' => $cell['file'],
-                            'piece_type' => $piece['type'],
-                            'capture' => $cell['capture'] ?? false,
-                        ];
+                    // 合法な移動先を総当たりで確認
+                    for ($toRank = 1; $toRank <= 9; $toRank++) {
+                        for ($toFile = 1; $toFile <= 9; $toFile++) {
+                            if ($this->shogiService->isValidMove($boardState, $rank, $file, $toRank, $toFile, $color)) {
+                                $target = $board[$toRank][$toFile] ?? null;
+                                $moves[] = [
+                                    'from_rank' => $rank,
+                                    'from_file' => $file,
+                                    'to_rank' => $toRank,
+                                    'to_file' => $toFile,
+                                    'piece_type' => $piece['type'],
+                                    'capture' => $target !== null,
+                                ];
+                            }
+                        }
                     }
                 }
             }
@@ -191,18 +194,17 @@ class AIService
         
         foreach ($hand as $pieceType => $count) {
             if ($count <= 0) continue;
-            
+
             // 盤面上の空きマスに打ち込める
             for ($rank = 9; $rank >= 1; $rank--) {
                 for ($file = 9; $file >= 1; $file--) {
-                    if ($board[$rank][$file] === null) {
+                    if ($this->shogiService->isLegalDrop($boardState, $pieceType, $rank, $file, $color)) {
                         $moves[] = [
                             'from_rank' => null,
                             'from_file' => null,
                             'to_rank' => $rank,
                             'to_file' => $file,
                             'piece_type' => $pieceType,
-                            'capture' => false,
                             'is_drop' => true,
                         ];
                     }

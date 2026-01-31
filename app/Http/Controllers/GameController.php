@@ -203,6 +203,13 @@ class GameController extends Controller
                     ], 400);
                 }
 
+                if (!$this->shogiService->isLegalDrop($boardState, $pieceType, $toRank, $toFile, $currentTurn)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'その場所には打てません',
+                    ], 400);
+                }
+
                 $boardState['board'][$toRank][$toFile] = [
                     'type' => $pieceType,
                     'color' => $currentTurn,

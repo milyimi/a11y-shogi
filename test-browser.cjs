@@ -78,7 +78,7 @@ const getState = async (page) => {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': token,
         },
-        body: JSON.stringify({ color: 'sente', piece_type: 'fu', count: 1 })
+        body: JSON.stringify({ color: 'sente', piece_type: 'gin', count: 1 })
       });
       const data = await res.json();
       return { ok: res.ok, data };

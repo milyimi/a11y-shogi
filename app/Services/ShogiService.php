@@ -200,6 +200,9 @@ class ShogiService
 
             case 'kin': // 金
             case 'tokin': // と
+            case 'nkyosha': // 成香
+            case 'nkeima': // 成桂
+            case 'ngin': // 成銀
                 $direction = $color === 'sente' ? 1 : -1;
                 if (abs($rankDiff) > 1 || abs($fileDiff) > 1) return false;
                 if ($rankDiff === 0 && $fileDiff === 0) return false;
@@ -216,6 +219,18 @@ class ShogiService
                 if ($rankDiff !== 0 && $fileDiff !== 0) return false;
                 return $this->isPathClear($board, $fromRank, $fromFile, $toRank, $toFile);
 
+            case 'uma': // 馬（角＋王の直交1マス）
+                if (abs($rankDiff) === abs($fileDiff)) {
+                    return $this->isPathClear($board, $fromRank, $fromFile, $toRank, $toFile);
+                }
+                return abs($rankDiff) <= 1 && abs($fileDiff) <= 1 && ($rankDiff !== 0 || $fileDiff !== 0);
+
+            case 'ryu': // 龍（飛＋王の斜め1マス）
+                if ($rankDiff === 0 || $fileDiff === 0) {
+                    return $this->isPathClear($board, $fromRank, $fromFile, $toRank, $toFile);
+                }
+                return abs($rankDiff) === 1 && abs($fileDiff) === 1;
+
             case 'gyoku':
             case 'ou': // 玉
                 return abs($rankDiff) <= 1 && abs($fileDiff) <= 1 && ($rankDiff !== 0 || $fileDiff !== 0);
@@ -223,6 +238,64 @@ class ShogiService
             default:
                 return false;
         }
+    }
+
+    /**
+     * 打ちの合法性を確認
+     */
+    public function isLegalDrop(array $boardState, string $pieceType, int $toRank, int $toFile, string $color, bool $skipUchifuzumeCheck = false): bool
+    {
+        $board = $boardState['board'];
+
+        // 空きマスのみ
+        if (($board[$toRank][$toFile] ?? null) !== null) {
+            return false;
+        }
+
+        // 手駒がない場合は不可
+        $handCount = $boardState['hand'][$color][$pieceType] ?? 0;
+        if ($handCount < 1) {
+            return false;
+        }
+
+        // 行き所のない駒の打ちは不可
+        if ($pieceType === 'fu' || $pieceType === 'kyosha') {
+            if (($color === 'sente' && $toRank === 9) || ($color === 'gote' && $toRank === 1)) {
+                return false;
+            }
+        }
+
+        if ($pieceType === 'keima') {
+            if (($color === 'sente' && $toRank >= 8) || ($color === 'gote' && $toRank <= 2)) {
+                return false;
+            }
+        }
+
+        // 二歩の禁止
+        if ($pieceType === 'fu') {
+            for ($rank = 1; $rank <= 9; $rank++) {
+                $piece = $board[$rank][$toFile] ?? null;
+                if ($piece && $piece['color'] === $color && $piece['type'] === 'fu') {
+                    return false;
+                }
+            }
+        }
+
+        // 打ち歩詰めの禁止
+        if ($pieceType === 'fu' && !$skipUchifuzumeCheck) {
+            $testBoard = $board;
+            $testBoard[$toRank][$toFile] = ['type' => 'fu', 'color' => $color];
+            $testBoardState = [
+                'board' => $testBoard,
+                'hand' => $boardState['hand'],
+            ];
+            $opponent = $color === 'sente' ? 'gote' : 'sente';
+            if ($this->isCheckmate($testBoardState, $opponent)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -363,6 +436,10 @@ class ShogiService
                     if (!$targetPiece) {
                         foreach ($hand[$color] as $handPieceType => $count) {
                             if ($count > 0) {
+                                if (!$this->isLegalDrop($boardState, $handPieceType, $rank, $file, $color, true)) {
+                                    continue;
+                                }
+
                                 // 手札の駒を打つことでcheck状態を解除できるか
                                 $testBoard = $board;
                                 $testBoard[$rank][$file] = ['type' => $handPieceType, 'color' => $color];
