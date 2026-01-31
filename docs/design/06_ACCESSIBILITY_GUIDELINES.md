@@ -252,28 +252,51 @@ function handleKeyDown(e) {
 #### 2.1.4 文字キーショートカット（レベルA）
 
 **要件**
-- 文字キー単独でのショートカットを控える
-- 使う場合は Shift/Ctrl との組み合わせ推奨
+- 文字キー単独でのショートカットは、フォーカス位置で制御
+- 入力フォーム内では無効化
+- ユーザーがオフにできる設定を提供
 
 **実装**
 ```javascript
-// 良い例：Ctrl + S
+// フォーカス位置に基づく制御（WCAG 2.1.4 準拠）
+function isShortcutEnabled() {
+  const activeElement = document.activeElement;
+  const isInputElement = ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeElement.tagName);
+  const isContentEditable = activeElement.isContentEditable;
+  
+  // 入力フォーム内ではショートカット無効
+  return !isInputElement && !isContentEditable;
+}
+
 document.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && e.key === 's') {
-    saveGame();
+  // ショートカット有効時のみ実行
+  if (!isShortcutEnabled()) return;
+  
+  switch (e.key.toLowerCase()) {
+    case 'b':
+      e.preventDefault();
+      readEntireBoard();
+      break;
+    case 's':
+      e.preventDefault();
+      showGameStatus();
+      break;
+    case 'h':
+      e.preventDefault();
+      showHelpModal();
+      break;
+    // ... その他のショートカット
   }
 });
 
-// 避けるべき例：単なる 'S'
-// ユーザーがテキストを入力している際に干渉
+// ユーザー設定でショートカットをオフにする機能
+const settings = {
+  keyboardShortcutsEnabled: true // localStorage で永続化
+};
 
-// 本実装：'S' を使うが、注釈を付ける
-document.addEventListener('keydown', (e) => {
-  // ボード操作時のみ有効
-  if (isBoardFocused && e.key === 's') {
-    showGameStatus();
-  }
-});
+if (settings.keyboardShortcutsEnabled && isShortcutEnabled()) {
+  // ショートカット実行
+}
 ```
 
 ---
@@ -453,15 +476,18 @@ input.addEventListener('focus', () => {
 **要件**
 - エラーが何かを明確に示す
 - エラーのある項目を特定できる
+- **エラー発生時に自動的にフォーカス移動**
+- **視覚的・音声的に明示**
 
 **実装**
 ```html
-<div role="alert" aria-live="assertive" aria-atomic="true">
+<div id="error-container" role="alert" aria-live="assertive" aria-atomic="true" tabindex="-1">
   <strong>エラー:</strong> 指し手が不正です。
   <details>
     <summary>詳細</summary>
     <p>7列目のそこには駒がありません。別の駒を選択してください。</p>
   </details>
+  <button id="error-ok-btn">了解</button>
 </div>
 
 <style>
@@ -471,8 +497,44 @@ input.addEventListener('focus', () => {
     padding: 12px;
     border-radius: 4px;
     color: #CC0000;
+    margin-bottom: 16px;
+  }
+  
+  /* エラー時のアニメーション */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+  
+  [role="alert"].show {
+    animation: shake 0.3s;
   }
 </style>
+
+<script>
+function showError(message, details) {
+  const errorContainer = document.getElementById('error-container');
+  
+  // エラーメッセージを設定
+  errorContainer.querySelector('p').textContent = details;
+  errorContainer.classList.add('show');
+  
+  // エラー要素にフォーカス移動（自動読み上げ）
+  errorContainer.focus();
+  
+  // オプション: 音声フィードバック
+  const audio = new Audio('/sounds/error.mp3');
+  audio.play();
+  
+  // 「了解」ボタンで元の位置に戻る
+  document.getElementById('error-ok-btn').onclick = () => {
+    errorContainer.classList.remove('show');
+    // 前のフォーカス位置に戻る
+    previousFocusElement.focus();
+  };
+}
+</script>
 ```
 
 #### 3.3.3 エラー修正提案（レベルAA）

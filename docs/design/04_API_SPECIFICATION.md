@@ -21,6 +21,8 @@
 | POST | `/ranking/register` | ランキング登録 |
 | GET | `/ranking` | ランキング一覧表示 |
 | GET | `/ranking/{difficulty}` | 難易度別ランキング |
+| GET | `/session/status` | セッション状態確認 |
+| POST | `/session/extend` | セッション延長 |
 | GET | `/help` | ヘルプページ |
 
 ---
@@ -361,7 +363,75 @@ AI応答がある場合:
 
 ---
 
-### 8. GET `/help` - ヘルプページ
+### 8. GET `/session/status` - セッション状態確認
+
+**説明**: セッションの残り時間を取得（タイムアウト警告用）
+
+**レスポンス (200 OK)**
+```json
+{
+  "success": true,
+  "data": {
+    "sessionId": "abc123",
+    "expiresAt": "2026-01-31T14:30:00Z",
+    "remainingMinutes": 15,
+    "warningThreshold": 5,
+    "shouldWarn": false
+  }
+}
+```
+
+**警告が必要な場合 (200 OK)**
+```json
+{
+  "success": true,
+  "data": {
+    "sessionId": "abc123",
+    "expiresAt": "2026-01-31T14:25:00Z",
+    "remainingMinutes": 3,
+    "warningThreshold": 5,
+    "shouldWarn": true,
+    "message": "セッションがあと3分で期限切れになります。延長しますか？"
+  }
+}
+```
+
+---
+
+### 9. POST `/session/extend` - セッション延長
+
+**説明**: セッションタイムアウトを120分延長（WCAG 2.2.1 対応）
+
+**リクエストボディ**
+```json
+{}
+```
+
+**レスポンス (200 OK)**
+```json
+{
+  "success": true,
+  "data": {
+    "sessionId": "abc123",
+    "expiresAt": "2026-01-31T16:25:00Z",
+    "extendedMinutes": 120,
+    "message": "セッションを延長しました。"
+  }
+}
+```
+
+**エラーレスポンス (410 Gone)**
+```json
+{
+  "success": false,
+  "error": "session_expired",
+  "message": "セッションが既に期限切れです。新しい対局を始めてください。"
+}
+```
+
+---
+
+### 10. GET `/help` - ヘルプページ
 
 **説明**: キーボード操作方法とアクセシビリティ情報を表示
 
@@ -492,7 +562,7 @@ AI応答がある場合:
 
 ---
 
-### 11. GET `/ranking/{difficulty}` - 難易度別ランキング
+### 12. GET `/ranking/{difficulty}` - 難易度別ランキング
 
 **説明**: 特定の難易度のランキングを表示
 
@@ -504,8 +574,9 @@ AI応答がある場合:
 **クエリパラメータ**
 | 名前 | 型 | 説明 | デフォルト |
 |------|-----|------|----------|
-| limit | int | 表示件数 | 100 |
+| limit | int | 表示件数（推奨: 20件） | 20 |
 | offset | int | オフセット | 0 |
+| myRank | boolean | 自分の順位を含める | false |
 
 **レスポンス (200 OK)**
 ```json
@@ -520,7 +591,8 @@ AI応答がある場合:
         "totalMoves": 42,
         "elapsedSeconds": 932,
         "score": 8500,
-        "createdAt": "2026-01-28T10:30:00Z"
+        "createdAt": "2026-01-28T10:30:00Z",
+        "isCurrentUser": false
       },
       {
         "rank": 2,
@@ -528,13 +600,24 @@ AI応答がある場合:
         "totalMoves": 45,
         "elapsedSeconds": 1020,
         "score": 8200,
-        "createdAt": "2026-01-27T15:20:00Z"
+        "createdAt": "2026-01-27T15:20:00Z",
+        "isCurrentUser": false
       },
       ...
     ],
     "total": 523,
-    "limit": 100,
-    "offset": 0
+    "limit": 20,
+    "offset": 0,
+    "currentPage": 1,
+    "totalPages": 27,
+    "myRanking": {
+      "rank": 45,
+      "nickname": "駒の達人",
+      "totalMoves": 52,
+      "elapsedSeconds": 1245,
+      "score": 7800,
+      "page": 3
+    }
   }
 }
 ```
@@ -559,6 +642,7 @@ AI応答がある場合:
 | game_already_ended | 400 | ゲームが終了している |
 | session_not_found | 404 | セッションが見つからない |
 | session_expired | 410 | セッションが期限切れ |
+| session_extension_failed | 400 | セッション延長失敗 |
 | cannot_undo | 400 | 棋譜を戻せない状態 |
 | invalid_difficulty | 400 | 難易度が不正 |
 | invalid_nickname | 400 | ニックネームが不正（長さ制限など） |
