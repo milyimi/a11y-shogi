@@ -47,11 +47,18 @@ class GameService
      */
     public function getGameState(GameSession $game): array
     {
+        $currentPlayer = $this->getCurrentPlayer($game);
+        \Log::info('[GameService::getGameState]', [
+            'total_moves' => $game->total_moves,
+            'human_color' => $game->human_color,
+            'currentPlayer' => $currentPlayer,
+        ]);
+        
         return [
             'sessionId' => $game->session_id,
             'status' => $game->status,
             'difficulty' => $game->difficulty,
-            'currentPlayer' => $this->getCurrentPlayer($game),
+            'currentPlayer' => $currentPlayer,
             'boardState' => $game->getBoardPosition(),
             'moveHistory' => $game->move_history,
             'moveCount' => $game->total_moves,

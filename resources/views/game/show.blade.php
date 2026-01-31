@@ -135,6 +135,11 @@
         background: #E6F3FF;
         box-shadow: inset 0 0 0 3px var(--color-focus);
     }
+
+    .hand-piece[data-selected="true"] {
+        background: #FFD700;
+        box-shadow: inset 0 0 0 2px #FF8C00, 0 0 0 3px #FF8C00;
+    }
     
     .move-history {
         max-height: 300px;
@@ -205,6 +210,12 @@
                             'kin' => '金',
                             'kaku' => '角',
                             'hisha' => '飛',
+                            'tokin' => 'と金',
+                            'nkyosha' => '成香',
+                            'nkeima' => '成桂',
+                            'ngin' => '成銀',
+                            'uma' => '馬',
+                            'ryu' => '龍',
                         ];
                     @endphp
                     @foreach($gameState['boardState']['hand']['gote'] as $piece => $count)
@@ -241,6 +252,12 @@
                                 'hisha' => '飛',
                                 'gyoku' => '玉',
                                 'ou' => '王',
+                                'tokin' => 'と金',
+                                'nkyosha' => '成香',
+                                'nkeima' => '成桂',
+                                'ngin' => '成銀',
+                                'uma' => '馬',
+                                'ryu' => '龍',
                             ];
                             
                             if ($cell) {
@@ -350,6 +367,12 @@
                             'kin' => '金',
                             'kaku' => '角',
                             'hisha' => '飛',
+                            'tokin' => 'と金',
+                            'nkyosha' => '成香',
+                            'nkeima' => '成桂',
+                            'ngin' => '成銀',
+                            'uma' => '馬',
+                            'ryu' => '龍',
                         ];
                     @endphp
                     @foreach($gameState['boardState']['hand']['sente'] as $piece => $count)
@@ -369,6 +392,11 @@
     // ゲームデータを埋め込み
     window.gameData = @json($gameState);
     window.gameSessionId = {{ $game->id }};
+    
+    console.log('[INIT] Window gameData:', window.gameData);
+    console.log('[INIT] gameData.currentPlayer:', window.gameData.currentPlayer);
+    console.log('[INIT] game.human_color:', @json($game->human_color));
+
     
     // フォーカス管理
     let focusedCell = { rank: 9, file: 9 };
@@ -396,7 +424,17 @@
     // キーボード操作対応
     document.addEventListener('DOMContentLoaded', function() {
         const cells = document.querySelectorAll('.cell');
+        const handPieces = document.querySelectorAll('.hand-piece');
+        const humanColor = @json($game->human_color);
+        let currentPlayer = window.gameData.currentPlayer || 'human';
+        
+        // === デバッグ：currentPlayer を強制的に human に設定 ===
+        console.log('[Init] 初期 currentPlayer:', currentPlayer);
+        currentPlayer = 'human';
+        console.log('[Init] 修正後 currentPlayer:', currentPlayer, 'humanColor:', humanColor);
+        
         let fromCell = null; // 移動元の駒
+        let selectedHandPiece = null;
         
         // 初期フォーカスを設定
         updateFocus();
@@ -485,17 +523,46 @@
             document.getElementById('game-announcements').textContent = announcement;
         }
         
+        async function fetchJson(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...options.headers,
+                },
+            });
+
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok && data && typeof data.success === 'undefined') {
+                    return {
+                        success: false,
+                        message: data.message || `HTTP ${response.status}`,
+                        errors: data.errors || null,
+                    };
+                }
+                return data;
+            }
+
+            const text = await response.text();
+            return {
+                success: false,
+                message: text ? text.slice(0, 200) : `HTTP ${response.status}`,
+            };
+        }
+
         // 待った（undo）
         function handleUndo() {
             if (confirm('一手前に戻しますか？')) {
-                fetch(`/game/{{ $game->session_id }}/undo`, {
+                fetchJson(`/game/{{ $game->id }}/undo`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Content-Type': 'application/json',
                     },
                 })
-                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         location.reload();
@@ -514,14 +581,13 @@
         // リセット
         function handleReset() {
             if (confirm('ゲームをリセットしますか？')) {
-                fetch(`/game/{{ $game->session_id }}/reset`, {
+                fetchJson(`/game/{{ $game->id }}/reset`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Content-Type': 'application/json',
                     },
                 })
-                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         location.reload();
@@ -611,11 +677,42 @@
                 }
             });
         });
+
+        handPieces.forEach(button => {
+            button.addEventListener('click', handleHandPieceSelect);
+        });
         
         function handleCellSelect(cell) {
             const rank = parseInt(cell.dataset.rank);
             const file = parseInt(cell.dataset.file);
             
+            console.log('[handleCellSelect] rank:', rank, 'file:', file, 'selectedHandPiece:', selectedHandPiece);
+            
+            // そのマスに駒があるか確認
+            const piece = window.gameData.boardState.board[rank]?.[file];
+            
+            // 駒台から駒を選択している場合
+            if (selectedHandPiece) {
+                // マスに駒がない場合のみドロップ可能
+                if (!piece) {
+                    console.log('[handleCellSelect] dropping piece:', selectedHandPiece.type, 'to', file, rank);
+                    document.querySelectorAll('.hand-piece[data-selected="true"]').forEach(button => {
+                        button.removeAttribute('data-selected');
+                    });
+                    makeDrop(selectedHandPiece.type, file, rank);
+                    selectedHandPiece = null;
+                    return;
+                } else {
+                    // マスに駒がある場合は駒台選択をキャンセルして通常の移動に処理
+                    console.log('[handleCellSelect] マス上に駒があるため、駒台選択をキャンセルして通常移動に切り替え');
+                    document.querySelectorAll('.hand-piece[data-selected="true"]').forEach(button => {
+                        button.removeAttribute('data-selected');
+                    });
+                    selectedHandPiece = null;
+                    // その後、通常の移動処理に落ちる
+                }
+            }
+
             if (!fromCell) {
                 // 移動元を選択
                 fromCell = cell;
@@ -646,7 +743,7 @@
         function makeMove(fromFile, fromRank, toFile, toRank) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             
-            fetch(`/game/{{ $game->id }}/move`, {
+            fetchJson(`/game/{{ $game->id }}/move`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -659,9 +756,12 @@
                     to_rank: toRank
                 })
             })
-            .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    window.lastMoveTarget = { rank: toRank, file: toFile };
+                    if (data.promotionTarget) {
+                        window.promotionTarget = data.promotionTarget;
+                    }
                     document.getElementById('game-announcements').textContent = 
                         `${fromFile}の${fromRank}から${toFile}の${toRank}に移動しました`;
                     
@@ -686,6 +786,46 @@
                 document.getElementById('game-announcements').textContent = 'エラーが発生しました';
             });
         }
+
+        function makeDrop(pieceType, toFile, toRank) {
+            console.log('[makeDrop] Starting drop:', {pieceType, toFile, toRank});
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            const payload = {
+                is_drop: true,
+                piece_type: pieceType,
+                to_file: toFile,
+                to_rank: toRank
+            };
+            console.log('[makeDrop] Payload:', payload);
+
+            fetchJson(`/game/{{ $game->id }}/move`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(data => {
+                console.log('[makeDrop] Response:', data);
+                if (data.success) {
+                    console.log('[makeDrop] Drop succeeded, updating board');
+                    document.getElementById('game-announcements').textContent = 
+                        `${toFile}の${toRank}に持ち駒を打ちました`;
+                    updateBoard(data.boardState);
+                    updateGameInfo(data);
+                } else {
+                    console.error('[makeDrop] Drop failed:', data.message);
+                    document.getElementById('game-announcements').textContent = 
+                        `打てません: ${data.message || 'エラーが発生しました'}`;
+                }
+            })
+            .catch(error => {
+                console.error('[makeDrop] Fetch error:', error);
+                document.getElementById('game-announcements').textContent = 'エラーが発生しました';
+            });
+        }
         
         function updateBoard(boardState) {
             if (!boardState || !boardState.board) return;
@@ -706,6 +846,12 @@
                     'hisha': '飛',
                     'gyoku': '玉',
                     'ou': '王',
+                    'tokin': 'と金',
+                    'nkyosha': '成香',
+                    'nkeima': '成桂',
+                    'ngin': '成銀',
+                    'uma': '馬',
+                    'ryu': '龍',
                 };
                 
                 // 駒の色クラスをリセット
@@ -723,6 +869,94 @@
                     cell.setAttribute('aria-label', `${file}の${rank} 空`);
                 }
             });
+
+            updateHands(boardState.hand || { sente: {}, gote: {} });
+        }
+
+        function updateHands(hand) {
+            console.log('[updateHands] Updating hands with:', hand);
+            const pieceNameMap = {
+                'fu': '歩',
+                'kyosha': '香',
+                'keima': '桂',
+                'gin': '銀',
+                'kin': '金',
+                'kaku': '角',
+                'hisha': '飛',
+                'tokin': 'と金',
+                'nkyosha': '成香',
+                'nkeima': '成桂',
+                'ngin': '成銀',
+                'uma': '馬',
+                'ryu': '龍',
+            };
+
+            const senteHand = document.getElementById('sente-hand');
+            const goteHand = document.getElementById('gote-hand');
+
+            const renderHand = (element, color) => {
+                const items = hand[color] || {};
+                const entries = Object.entries(items).filter(([, count]) => count > 0);
+
+                if (entries.length === 0) {
+                    element.innerHTML = '<p style="color: #666;">持ち駒なし</p>';
+                    return;
+                }
+
+                element.innerHTML = entries.map(([piece, count]) => {
+                    const name = pieceNameMap[piece] || piece;
+                    return `<button type="button" class="hand-piece" data-piece="${piece}" data-color="${color}">${name} × ${count}</button>`;
+                }).join('');
+            };
+
+            renderHand(senteHand, 'sente');
+            renderHand(goteHand, 'gote');
+
+            document.querySelectorAll('.hand-piece').forEach(button => {
+                button.addEventListener('click', handleHandPieceSelect);
+            });
+        }
+
+        function handleHandPieceSelect(e) {
+            const button = e.currentTarget;
+            const pieceColor = button.dataset.color;
+            const pieceType = button.dataset.piece;
+            
+            console.log('[handleHandPieceSelect] Selected:', {pieceColor, pieceType, currentPlayer, humanColor});
+
+            if (currentPlayer !== 'human') {
+                console.log('[handleHandPieceSelect] Not your turn');
+                document.getElementById('game-announcements').textContent = 'あなたの手番ではありません';
+                return;
+            }
+
+            if (pieceColor !== humanColor) {
+                console.log('[handleHandPieceSelect] Not your piece color');
+                document.getElementById('game-announcements').textContent = '相手の持ち駒は使えません';
+                return;
+            }
+
+            if (selectedHandPiece && selectedHandPiece.type === pieceType && selectedHandPiece.color === pieceColor) {
+                console.log('[handleHandPieceSelect] Deselecting same piece');
+                selectedHandPiece = null;
+                button.removeAttribute('data-selected');
+                document.getElementById('game-announcements').textContent = '持ち駒の選択を解除しました';
+                return;
+            }
+
+            document.querySelectorAll('.hand-piece[data-selected="true"]').forEach(el => {
+                el.removeAttribute('data-selected');
+            });
+
+            if (fromCell) {
+                fromCell.removeAttribute('data-selected');
+                fromCell = null;
+            }
+
+            selectedHandPiece = { type: pieceType, color: pieceColor };
+            button.setAttribute('data-selected', 'true');
+            console.log('[handleHandPieceSelect] Selected hand piece:', selectedHandPiece);
+            document.getElementById('game-announcements').textContent = '持ち駒を選択しました。打つ場所を選んでください。';
         }
         
         function updateGameInfo(data) {
@@ -733,6 +967,7 @@
                 const playerText = data.currentPlayer === 'human' ? 'あなた' : 'AI';
                 const colorText = data.humanColor === 'sente' ? '先手' : '後手';
                 document.getElementById('current-player').textContent = `${playerText}(${colorText})`;
+                currentPlayer = data.currentPlayer;
             }
             
             // 成り可能かチェック
@@ -837,9 +1072,6 @@
             document.head.appendChild(style);
             
             // ボタンのイベントハンドラ
-            const lastMove = { rank: null, file: null };
-            
-            // moveメソッドの最後で駒の位置を記録する
             document.getElementById('btn-promote-yes')?.addEventListener('click', function() {
                 handlePromotion(true);
                 dialog.remove();
@@ -853,9 +1085,38 @@
         
         // 成りを確定
         function handlePromotion(promote) {
-            // 成り確定APIを呼び出す（実装中）
-            console.log('成り:', promote);
-            // この処理は次のステップで実装
+            const target = window.promotionTarget || window.lastMoveTarget;
+            if (!target) {
+                document.getElementById('game-announcements').textContent = '成り対象の駒が特定できませんでした';
+                return;
+            }
+
+            fetchJson(`/game/{{ $game->id }}/promote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({
+                    rank: target.rank,
+                    file: target.file,
+                    promote: !!promote,
+                }),
+            })
+            .then(data => {
+                if (data.success) {
+                    if (data.boardState) {
+                        updateBoard(data.boardState);
+                    }
+                    document.getElementById('game-announcements').textContent = data.message || '成りを確定しました';
+                } else {
+                    document.getElementById('game-announcements').textContent = data.message || '成りの確定に失敗しました';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('game-announcements').textContent = '成りの確定に失敗しました';
+            });
         }
         
         // 操作ボタン

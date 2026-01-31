@@ -177,22 +177,22 @@ class ShogiService
 
         switch ($type) {
             case 'fu': // 歩
-                $direction = $color === 'sente' ? -1 : 1;
+                $direction = $color === 'sente' ? 1 : -1;
                 return $rankDiff === $direction && $fileDiff === 0;
 
             case 'kyosha': // 香
-                $direction = $color === 'sente' ? -1 : 1;
+                $direction = $color === 'sente' ? 1 : -1;
                 if ($fileDiff !== 0) return false;
                 if ($direction === -1 && $rankDiff >= 0) return false;
                 if ($direction === 1 && $rankDiff <= 0) return false;
                 return $this->isPathClear($board, $fromRank, $fromFile, $toRank, $toFile);
 
             case 'keima': // 桂
-                $direction = $color === 'sente' ? -1 : 1;
+                $direction = $color === 'sente' ? 1 : -1;
                 return (abs($fileDiff) === 1 && $rankDiff === 2 * $direction);
 
             case 'gin': // 銀
-                $direction = $color === 'sente' ? -1 : 1;
+                $direction = $color === 'sente' ? 1 : -1;
                 if (abs($fileDiff) > 1) return false;
                 if ($rankDiff === $direction) return abs($fileDiff) <= 1;
                 if ($rankDiff === -$direction) return abs($fileDiff) === 1;
@@ -200,7 +200,7 @@ class ShogiService
 
             case 'kin': // 金
             case 'tokin': // と
-                $direction = $color === 'sente' ? -1 : 1;
+                $direction = $color === 'sente' ? 1 : -1;
                 if (abs($rankDiff) > 1 || abs($fileDiff) > 1) return false;
                 if ($rankDiff === 0 && $fileDiff === 0) return false;
                 if ($rankDiff === $direction && abs($fileDiff) <= 1) return true;

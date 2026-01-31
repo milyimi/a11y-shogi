@@ -78,11 +78,24 @@
             </div>
             
             <div style="margin-top: 32px;">
-                <button type="submit" class="btn btn-primary" style="font-size: 1.125rem;">
+                <button type="submit" class="btn btn-primary" style="font-size: 1.125rem;" id="btn-start-game">
                     ゲームを開始する
                 </button>
             </div>
         </form>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.querySelector('form[action="{{ route("game.start") }}"]');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        const btn = document.getElementById('btn-start-game');
+                        btn.disabled = true;
+                        btn.textContent = '開始中...';
+                    });
+                }
+            });
+        </script>
     </section>
     
     <section style="margin-top: 48px;" aria-labelledby="about-heading">

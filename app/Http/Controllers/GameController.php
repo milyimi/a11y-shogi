@@ -139,16 +139,144 @@ class GameController extends Controller
      */
     public function move(Request $request, GameSession $session): JsonResponse
     {
-        $validated = $request->validate([
-            'from_file' => 'required|integer|between:1,9',
-            'from_rank' => 'required|integer|between:1,9',
-            'to_file' => 'required|integer|between:1,9',
-            'to_rank' => 'required|integer|between:1,9',
+        $isDrop = $request->boolean('is_drop');
+        \Log::info('[GameController::move] Request received', [
+            'is_drop' => $isDrop,
+            'all_data' => $request->all(),
         ]);
+
+        if ($isDrop) {
+            $validated = $request->validate([
+                'to_file' => 'required|integer|between:1,9',
+                'to_rank' => 'required|integer|between:1,9',
+                'piece_type' => 'required|string',
+            ]);
+            $validated['is_drop'] = true;
+        } else {
+            $validated = $request->validate([
+                'from_file' => 'required|integer|between:1,9',
+                'from_rank' => 'required|integer|between:1,9',
+                'to_file' => 'required|integer|between:1,9',
+                'to_rank' => 'required|integer|between:1,9',
+            ]);
+            $validated['is_drop'] = false;
+        }
 
         try {
             // 現在のボード状態を取得
             $boardState = $session->getBoardPosition();
+
+            if (!empty($validated['is_drop'])) {
+                $pieceType = $validated['piece_type'];
+                $toRank = $validated['to_rank'];
+                $toFile = $validated['to_file'];
+                $currentTurn = $boardState['turn'];
+                
+                \Log::info('[GameController::move] Processing drop', [
+                    'piece_type' => $pieceType,
+                    'to_file' => $toFile,
+                    'to_rank' => $toRank,
+                    'current_turn' => $currentTurn,
+                    'hand' => $boardState['hand'],
+                ]);
+
+                if ($currentTurn !== $session->human_color) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'あなたの手番ではありません',
+                    ], 400);
+                }
+
+                $targetPiece = $boardState['board'][$toRank][$toFile] ?? null;
+                if ($targetPiece) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'そのマスには駒があります',
+                    ], 400);
+                }
+
+                $handCount = $boardState['hand'][$currentTurn][$pieceType] ?? 0;
+                if ($handCount < 1) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'その持ち駒がありません',
+                    ], 400);
+                }
+
+                $boardState['board'][$toRank][$toFile] = [
+                    'type' => $pieceType,
+                    'color' => $currentTurn,
+                ];
+                $boardState['hand'][$currentTurn][$pieceType]--;
+
+                $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
+
+                $session->updateBoardPosition($boardState);
+                $session->increment('total_moves');
+
+                $opponentColor = $boardState['turn'];
+                if ($this->shogiService->isCheckmate($boardState, $opponentColor)) {
+                    $session->status = 'finished';
+                    $session->result = $currentTurn === 'sente' ? 'sente_win' : 'gote_win';
+                }
+
+                $session->save();
+
+                $gameState = $this->gameService->getGameState($session);
+
+                $response = [
+                    'success' => true,
+                    'message' => '駒を打ちました',
+                    'boardState' => $boardState,
+                    'moveCount' => $gameState['moveCount'],
+                    'currentPlayer' => $gameState['currentPlayer'],
+                    'humanColor' => $session->human_color,
+                    'canPromote' => false,
+                    'piece' => [
+                        'type' => $pieceType,
+                        'color' => $currentTurn,
+                    ],
+                ];
+
+                $isAITurn = $this->isAITurn($session, $boardState);
+
+                if ($isAITurn) {
+                    $aiMove = $this->aiService->generateMove(
+                        $boardState,
+                        $session->difficulty,
+                        $boardState['turn']
+                    );
+
+                    if ($aiMove) {
+                        $aiBoard = $this->executeMove($boardState, $aiMove);
+                        $aiBoard['turn'] = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+
+                        $session->updateBoardPosition($aiBoard);
+                        $session->increment('total_moves');
+
+                        if ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
+                            $session->status = 'finished';
+                            $session->result = $boardState['turn'] === 'sente' ? 'sente_win' : 'gote_win';
+                        }
+
+                        $session->save();
+
+                        $response['aiMove'] = $aiMove;
+                        $response['boardState'] = $aiBoard;
+                        $response['moveCount'] = $session->total_moves;
+                        $response['currentPlayer'] = 'human';
+                        $response['aiMoveDescription'] = sprintf(
+                            '%dの%dから%dの%dに移動',
+                            $aiMove['from_file'],
+                            $aiMove['from_rank'],
+                            $aiMove['to_file'],
+                            $aiMove['to_rank']
+                        );
+                    }
+                }
+
+                return response()->json($response);
+            }
             
             // 移動元の駒を確認
             $piece = $boardState['board'][$validated['from_rank']][$validated['from_file']] ?? null;
@@ -170,6 +298,9 @@ class GameController extends Controller
             
             // 移動先にある駒を取得（取られる駒）
             $capturedPiece = $boardState['board'][$validated['to_rank']][$validated['to_file']] ?? null;
+            
+            // 成り可能か確認（移動前にチェック）
+            $canPromote = $this->shogiService->shouldPromote($boardState, $validated['from_rank'], $validated['from_file'], $validated['to_rank'], $validated['to_file']);
             
             // ボード状態を更新
             $boardState['board'][$validated['to_rank']][$validated['to_file']] = $piece;
@@ -205,9 +336,6 @@ class GameController extends Controller
             // 新しいゲーム状態を返す
             $gameState = $this->gameService->getGameState($session);
             
-            // 成り可能か確認
-            $canPromote = $this->shogiService->shouldPromote($boardState, $validated['from_rank'], $validated['from_file'], $validated['to_rank'], $validated['to_file']);
-            
             $response = [
                 'success' => true,
                 'message' => '駒を移動しました',
@@ -217,12 +345,16 @@ class GameController extends Controller
                 'humanColor' => $session->human_color,
                 'canPromote' => $canPromote,
                 'piece' => $piece,
+                'promotionTarget' => [
+                    'rank' => $validated['to_rank'],
+                    'file' => $validated['to_file'],
+                ],
             ];
 
             // AIの手番かチェック
             $isAITurn = $this->isAITurn($session, $boardState);
             
-            if ($isAITurn) {
+            if ($isAITurn && !$canPromote) {
                 // AIの指し手を自動生成
                 $aiMove = $this->aiService->generateMove(
                     $boardState,
