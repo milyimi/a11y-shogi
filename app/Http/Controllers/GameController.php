@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\GameSession;
+use App\Models\GameMove;
+use App\Models\BoardState;
 use App\Services\GameService;
 use App\Services\AIService;
+use App\Services\ShogiService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +16,8 @@ class GameController extends Controller
 {
     public function __construct(
         private GameService $gameService,
-        private AIService $aiService
+        private AIService $aiService,
+        private ShogiService $shogiService
     ) {}
 
     /**
@@ -156,12 +160,11 @@ class GameController extends Controller
                 ], 400);
             }
             
-            // 移動先が同じマスでないか確認
-            if ($validated['from_file'] === $validated['to_file'] && 
-                $validated['from_rank'] === $validated['to_rank']) {
+            // 指し手が合法か確認（新規追加）
+            if (!$this->shogiService->isValidMove($boardState, $validated['from_rank'], $validated['from_file'], $validated['to_rank'], $validated['to_file'], $piece['color'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => '同じマスには移動できません',
+                    'message' => 'その指し手は合法ではありません',
                 ], 400);
             }
             
@@ -189,10 +192,21 @@ class GameController extends Controller
             // ゲームセッションを更新
             $session->updateBoardPosition($boardState);
             $session->increment('total_moves');
+            
+            // 人間の指し手後、相手が詰みか確認
+            $opponentColor = $boardState['turn'];
+            if ($this->shogiService->isCheckmate($boardState, $opponentColor)) {
+                $session->status = 'finished';
+                $session->result = $piece['color'] === 'sente' ? 'sente_win' : 'gote_win';
+            }
+            
             $session->save();
             
             // 新しいゲーム状態を返す
             $gameState = $this->gameService->getGameState($session);
+            
+            // 成り可能か確認
+            $canPromote = $this->shogiService->shouldPromote($boardState, $validated['from_rank'], $validated['from_file'], $validated['to_rank'], $validated['to_file']);
             
             $response = [
                 'success' => true,
@@ -201,6 +215,8 @@ class GameController extends Controller
                 'moveCount' => $gameState['moveCount'],
                 'currentPlayer' => $gameState['currentPlayer'],
                 'humanColor' => $session->human_color,
+                'canPromote' => $canPromote,
+                'piece' => $piece,
             ];
 
             // AIの手番かチェック
@@ -222,6 +238,13 @@ class GameController extends Controller
                     // ゲームセッションを更新
                     $session->updateBoardPosition($aiBoard);
                     $session->increment('total_moves');
+                    
+                    // AI の指し手後、人間が詰みか確認
+                    if ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
+                        $session->status = 'finished';
+                        $session->result = $boardState['turn'] === 'sente' ? 'sente_win' : 'gote_win';
+                    }
+                    
                     $session->save();
                     
                     // AI の指し手を記録
@@ -298,15 +321,62 @@ class GameController extends Controller
     }
 
     /**
-     * 棋譜を戻す（後で実装）
+     * 棋譜を戻す（一手前に戻す）
      */
     public function undo(GameSession $session): JsonResponse
     {
-        return response()->json([
-            'success' => false,
-            'error' => 'not_implemented',
-            'message' => '戻す機能は実装中です。',
-        ], 501);
+        try {
+            // 最後の指し手を取得
+            $lastMove = GameMove::where('game_session_id', $session->id)
+                ->orderBy('move_number', 'desc')
+                ->first();
+
+            if (!$lastMove) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '戻す指し手がありません',
+                ], 400);
+            }
+
+            // 一つ前のボード状態を取得
+            $previousBoardState = BoardState::where('game_session_id', $session->id)
+                ->where('move_index', '<', $lastMove->move_number - 1)
+                ->orderBy('move_index', 'desc')
+                ->first();
+
+            if (!$previousBoardState) {
+                // 初期状態に戻す
+                $boardState = $this->shogiService->getInitialBoard();
+                $boardState['turn'] = 'sente';
+                $boardState['hand'] = ['sente' => [], 'gote' => []];
+            } else {
+                $boardState = json_decode($previousBoardState->position_json, true);
+            }
+
+            // ゲームセッションを更新
+            $session->updateBoardPosition($boardState);
+            $session->total_moves = max(0, $session->total_moves - 1);
+            $session->save();
+
+            // 最後の指し手を削除
+            $lastMove->delete();
+
+            // ボード状態の履歴を削除
+            BoardState::where('game_session_id', $session->id)
+                ->where('move_index', '>=', $lastMove->move_number)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => '一手前に戻しました',
+                'boardState' => $boardState,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'エラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -322,14 +392,95 @@ class GameController extends Controller
     }
 
     /**
-     * 局面をリセット（後で実装）
+     * ゲームをリセット（最初の状態に戻す）
      */
     public function reset(GameSession $session): JsonResponse
     {
-        return response()->json([
-            'success' => false,
-            'error' => 'not_implemented',
-            'message' => 'リセット機能は実装中です。',
-        ], 501);
+        try {
+            // 初期盤面を取得
+            $boardState = $this->shogiService->getInitialBoard();
+            $boardState['turn'] = 'sente';
+            $boardState['hand'] = ['sente' => [], 'gote' => []];
+
+            // ゲームセッションをリセット
+            $session->updateBoardPosition($boardState);
+            $session->total_moves = 0;
+            $session->status = 'playing';
+            $session->save();
+
+            // 指し手の履歴を削除
+            GameMove::where('game_session_id', $session->id)->delete();
+
+            // ボード状態の履歴を削除
+            BoardState::where('game_session_id', $session->id)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'ゲームをリセットしました',
+                'boardState' => $boardState,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'エラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * 駒を成る（成り確定）
+     */
+    public function promote(Request $request, GameSession $session): JsonResponse
+    {
+        $validated = $request->validate([
+            'rank' => 'required|integer|between:1,9',
+            'file' => 'required|integer|between:1,9',
+            'promote' => 'required|boolean',
+        ]);
+
+        try {
+            $boardState = $session->getBoardPosition();
+            $piece = $boardState['board'][$validated['rank']][$validated['file']] ?? null;
+
+            if (!$piece) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '指定位置に駒がありません',
+                ], 400);
+            }
+
+            // 成り可能か確認
+            if (!$this->shogiService->canPromote($piece['type'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'この駒は成ることができません',
+                ], 400);
+            }
+
+            // 成りを確定
+            if ($validated['promote']) {
+                $promotedType = $this->shogiService->promotePiece($piece['type']);
+                $boardState['board'][$validated['rank']][$validated['file']]['type'] = $promotedType;
+                $message = $this->shogiService->getPieceName($piece['type']) . 'が' . $this->shogiService->getPromotedPieceName($promotedType) . 'に成りました';
+            } else {
+                $message = '成らないことを選択しました';
+            }
+
+            // ボード状態を更新
+            $session->updateBoardPosition($boardState);
+            $session->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'boardState' => $boardState,
+                'piece' => $piece,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'エラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

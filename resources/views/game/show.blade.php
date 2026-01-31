@@ -401,6 +401,156 @@
         // 初期フォーカスを設定
         updateFocus();
         
+        // グローバルキーボードショートカット
+        document.addEventListener('keydown', function(e) {
+            // 成りダイアログが開いている場合はショートカット無効
+            if (document.getElementById('promotion-dialog')) {
+                return;
+            }
+            
+            // 入力フォームにフォーカスがある場合はショートカット無効
+            if (document.activeElement.tagName === 'INPUT' || 
+                document.activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            switch(e.key.toUpperCase()) {
+                case 'B':
+                    // 盤面全体を読み上げ
+                    e.preventDefault();
+                    announceBoardState();
+                    break;
+                case 'S':
+                    // ゲーム状態を読み上げ
+                    e.preventDefault();
+                    announceGameStatus();
+                    break;
+                case 'H':
+                    // ヘルプページに移動
+                    if (e.shiftKey === false) {
+                        e.preventDefault();
+                        window.location.href = '/help';
+                    }
+                    break;
+                case 'U':
+                    // 待った（undo）
+                    e.preventDefault();
+                    handleUndo();
+                    break;
+                case 'R':
+                    // リセット
+                    e.preventDefault();
+                    handleReset();
+                    break;
+                case 'T':
+                    // Shift+T: 先手駒台の表示/非表示
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        toggleHandPieces('sente');
+                    }
+                    break;
+                case 'G':
+                    // Shift+G: 後手駒台の表示/非表示
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        toggleHandPieces('gote');
+                    }
+                    break;
+            }
+        });
+        
+        // 盤面全体を読み上げ
+        function announceBoardState() {
+            let announcement = '盤面: ';
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const rank = cell.dataset.rank;
+                const file = cell.dataset.file;
+                const piece = cell.textContent.trim();
+                if (piece) {
+                    announcement += `${file}の${rank}に${piece}。`;
+                } else {
+                    announcement += `${file}の${rank}は空。`;
+                }
+            });
+            document.getElementById('game-announcements').textContent = announcement;
+        }
+        
+        // ゲーム状態を読み上げ
+        function announceGameStatus() {
+            const difficulty = document.querySelector('.info-panel').textContent;
+            const currentPlayer = document.getElementById('current-player').textContent;
+            const moveCount = document.getElementById('move-count').textContent;
+            const announcement = `難易度: ${difficulty}。 現在の手番: ${currentPlayer}。 手数: ${moveCount}。`;
+            document.getElementById('game-announcements').textContent = announcement;
+        }
+        
+        // 待った（undo）
+        function handleUndo() {
+            if (confirm('一手前に戻しますか？')) {
+                fetch(`/game/{{ $game->session_id }}/undo`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                        document.getElementById('game-announcements').textContent = '一手前に戻しました';
+                    } else {
+                        alert(data.message || '待った処理に失敗しました');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('エラーが発生しました');
+                });
+            }
+        }
+        
+        // リセット
+        function handleReset() {
+            if (confirm('ゲームをリセットしますか？')) {
+                fetch(`/game/{{ $game->session_id }}/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                        document.getElementById('game-announcements').textContent = 'ゲームをリセットしました';
+                    } else {
+                        alert(data.message || 'リセット処理に失敗しました');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('エラーが発生しました');
+                });
+            }
+        }
+        
+        // 駒台の表示/非表示を切り替え
+        function toggleHandPieces(color) {
+            const komadaiElements = document.querySelectorAll('.komadai');
+            komadaiElements.forEach(el => {
+                const heading = el.querySelector('h3');
+                if (heading && heading.textContent.includes(color === 'sente' ? '先手' : '後手')) {
+                    const isVisible = el.style.display !== 'none';
+                    el.style.display = isVisible ? 'none' : 'flex';
+                    const announcement = `${color === 'sente' ? '先手' : '後手'}駒台を${isVisible ? '非表示' : '表示'}にしました`;
+                    document.getElementById('game-announcements').textContent = announcement;
+                }
+            });
+        }
+        
         cells.forEach(cell => {
             cell.addEventListener('click', function() {
                 handleCellSelect(this);
@@ -577,13 +727,135 @@
         
         function updateGameInfo(data) {
             if (data.moveCount !== undefined) {
-                document.getElementById('move-count').textContent = data.moveCount + '手';
+        document.getElementById('move-count').textContent = data.moveCount + '手';
             }
             if (data.currentPlayer !== undefined) {
                 const playerText = data.currentPlayer === 'human' ? 'あなた' : 'AI';
                 const colorText = data.humanColor === 'sente' ? '先手' : '後手';
                 document.getElementById('current-player').textContent = `${playerText}(${colorText})`;
             }
+            
+            // 成り可能かチェック
+            if (data.canPromote) {
+                showPromotionDialog(data.piece, data.boardState);
+            }
+        }
+        
+        // 成りダイアログを表示
+        function showPromotionDialog(piece, boardState) {
+            const pieceName = {
+                'fu': '歩', 'kyosha': '香', 'keima': '桂', 'gin': '銀',
+                'kaku': '角', 'hisha': '飛'
+            }[piece.type] || piece.type;
+            
+            const promotedName = {
+                'fu': 'と金', 'kyosha': '成香', 'keima': '成桂', 'gin': '成銀',
+                'kaku': '馬', 'hisha': '龍'
+            }[piece.type] || piece.type;
+            
+            const dialog = document.createElement('div');
+            dialog.id = 'promotion-dialog';
+            dialog.innerHTML = `
+                <div class="promotion-modal">
+                    <div class="promotion-content">
+                        <h3>${pieceName}が敵陣に到達しました</h3>
+                        <p>成りますか？</p>
+                        <div class="promotion-options">
+                            <button id="btn-promote-yes" class="btn-promote">
+                                成る (${promotedName})
+                            </button>
+                            <button id="btn-promote-no" class="btn-promote">
+                                成らない
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            
+            // スタイルを追加
+            const style = document.createElement('style');
+            style.textContent = `
+                #promotion-dialog {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                }
+                
+                .promotion-modal {
+                    background: #FFF;
+                    border: 4px solid #333;
+                    border-radius: 8px;
+                    padding: 24px;
+                    min-width: 300px;
+                    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+                }
+                
+                .promotion-content h3 {
+                    margin: 0 0 12px 0;
+                    font-size: 18px;
+                    color: #1A1A1A;
+                }
+                
+                .promotion-content p {
+                    margin: 0 0 20px 0;
+                    color: #666;
+                }
+                
+                .promotion-options {
+                    display: flex;
+                    gap: 12px;
+                }
+                
+                .btn-promote {
+                    flex: 1;
+                    padding: 12px 16px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    border: 2px solid #333;
+                    background: #E6F3FF;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background-color 0.2s, box-shadow 0.2s;
+                    color: #1A1A1A;
+                }
+                
+                .btn-promote:hover, .btn-promote:focus {
+                    background: #D0E8FF;
+                    outline: 4px solid #FFD700;
+                    outline-offset: 2px;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // ボタンのイベントハンドラ
+            const lastMove = { rank: null, file: null };
+            
+            // moveメソッドの最後で駒の位置を記録する
+            document.getElementById('btn-promote-yes')?.addEventListener('click', function() {
+                handlePromotion(true);
+                dialog.remove();
+            });
+            
+            document.getElementById('btn-promote-no')?.addEventListener('click', function() {
+                handlePromotion(false);
+                dialog.remove();
+            });
+        }
+        
+        // 成りを確定
+        function handlePromotion(promote) {
+            // 成り確定APIを呼び出す（実装中）
+            console.log('成り:', promote);
+            // この処理は次のステップで実装
         }
         
         // 操作ボタン
