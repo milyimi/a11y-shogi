@@ -2,6 +2,22 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const waitForOptionalNavigation = async (page, timeout = 5000) => {
+  try {
+    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const getState = async (page) => {
+  return await page.evaluate(async () => {
+    const res = await fetch(`/game/${window.gameSessionId}/state`);
+    const data = await res.json();
+    return { ok: res.ok, data };
+  });
+};
 
 (async () => {
   let browser;
@@ -84,6 +100,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       console.log('BROWSER:', msg.text());
     });
 
+    // confirm/alertを自動で許可
+    page.on('dialog', async (dialog) => {
+      console.log('DIALOG:', dialog.message());
+      await dialog.accept();
+    });
+
     // ページ内 JavaScript を実行して状態を確認
     const gameState = await page.evaluate(() => {
       return {
@@ -145,6 +167,65 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         console.log('最終アナウンスメント:', finalState.announcement);
       }
     }
+
+    // 待った/リセット/投了のテスト
+    console.log('\n=== ボタン動作テスト ===');
+
+    // 1手進める（7三の歩を7四に）
+    console.log('手を進めて待ったテストの準備...');
+    const moveResult = await page.evaluate(async () => {
+      const token = document.querySelector('meta[name="csrf-token"]').content;
+      const res = await fetch(`/game/${window.gameSessionId}/move`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': token,
+        },
+        body: JSON.stringify({ from_file: 7, from_rank: 3, to_file: 7, to_rank: 4 })
+      });
+      const data = await res.json();
+      return { ok: res.ok, data };
+    });
+    console.log('移動結果:', moveResult.ok ? '成功' : '失敗');
+
+    // 待った
+    console.log('待ったボタンをクリック...');
+    const undoBtn = await page.$('#btn-undo');
+    if (undoBtn) {
+      await Promise.all([
+        waitForOptionalNavigation(page),
+        undoBtn.click()
+      ]);
+    }
+
+    const undoState = await getState(page);
+    console.log('待った後の状態:', undoState.data?.data?.moveCount, undoState.data?.data?.status);
+
+    // リセット
+    console.log('リセットボタンをクリック...');
+    const resetBtn = await page.$('#btn-reset');
+    if (resetBtn) {
+      await Promise.all([
+        waitForOptionalNavigation(page),
+        resetBtn.click()
+      ]);
+    }
+
+    const resetState = await getState(page);
+    console.log('リセット後の状態:', resetState.data?.data?.moveCount, resetState.data?.data?.status);
+
+    // 投了
+    console.log('投了ボタンをクリック...');
+    const resignBtn = await page.$('#btn-resign');
+    if (resignBtn) {
+      await Promise.all([
+        waitForOptionalNavigation(page),
+        resignBtn.click()
+      ]);
+    }
+
+    const resignState = await getState(page);
+    console.log('投了後の状態:', resignState.data?.data?.status);
 
     console.log('\n✅ テスト完了');
 

@@ -1121,19 +1121,35 @@
         
         // 操作ボタン
         document.getElementById('btn-undo')?.addEventListener('click', function() {
-            alert('待った機能は実装中です');
+            handleUndo();
         });
         
         document.getElementById('btn-resign')?.addEventListener('click', function() {
             if (confirm('投了しますか？')) {
-                alert('投了機能は実装中です');
+                fetchJson(`/game/{{ $game->id }}/resign`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('game-announcements').textContent = '投了しました';
+                        location.reload();
+                    } else {
+                        alert(data.message || '投了処理に失敗しました');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('エラーが発生しました');
+                });
             }
         });
         
         document.getElementById('btn-reset')?.addEventListener('click', function() {
-            if (confirm('ゲームをリセットしますか？')) {
-                alert('リセット機能は実装中です');
-            }
+              handleReset();
         });
     });
 </script>

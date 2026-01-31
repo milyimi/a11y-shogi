@@ -516,11 +516,23 @@ class GameController extends Controller
      */
     public function resign(GameSession $session): JsonResponse
     {
-        return response()->json([
-            'success' => false,
-            'error' => 'not_implemented',
-            'message' => '投了機能は実装中です。',
-        ], 501);
+        try {
+            $session->status = 'resigned';
+            $session->winner = 'ai';
+            $session->winner_type = 'resignation';
+            $session->finished_at = now();
+            $session->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => '投了しました',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'エラーが発生しました: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -537,7 +549,7 @@ class GameController extends Controller
             // ゲームセッションをリセット
             $session->updateBoardPosition($boardState);
             $session->total_moves = 0;
-            $session->status = 'playing';
+            $session->status = 'in_progress';
             $session->save();
 
             // 指し手の履歴を削除
