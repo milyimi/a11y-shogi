@@ -191,6 +191,13 @@
 <div class="game-page">
     <h2 class="sr-only">将棋ゲーム</h2>
     
+    {{-- ゲーム状態を表示 --}}
+    @if($game->status === 'paused')
+        <div style="background: #FFF3CD; border: 1px solid #FFC107; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <p style="margin: 0; color: #856404;"><strong>一時停止中</strong>：このゲームは一度中断されています。再開するか、ホームに戻るかを選択できます。</p>
+        </div>
+    @endif
+    
     {{-- ゲーム専用のARIAライブリージョン --}}
     <div aria-live="assertive" aria-atomic="true" class="sr-only" id="game-announcements"></div>
     <div aria-live="polite" aria-atomic="true" class="sr-only" id="game-status"></div>
@@ -333,6 +340,9 @@
                     </button>
                     <button type="button" class="btn" id="btn-reset">
                         リセット
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-quit">
+                        ホームに戻る
                     </button>
                 </div>
             </section>
@@ -1150,6 +1160,12 @@
         
         document.getElementById('btn-reset')?.addEventListener('click', function() {
               handleReset();
+        });
+        
+        document.getElementById('btn-quit')?.addEventListener('click', function() {
+            if (confirm('ゲームをやめてホームに戻りますか？')) {
+                window.location.href = '/';
+            }
         });
     });
 </script>

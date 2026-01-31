@@ -63,6 +63,12 @@ class GameController extends Controller
      */
     public function show(GameSession $session): View
     {
+        // 一時停止中のゲームを再開
+        if ($session->status === 'paused') {
+            $session->status = 'in_progress';
+            $session->save();
+        }
+        
         $this->gameService->updateElapsedTime($session);
         
         return view('game.show', [
@@ -634,4 +640,23 @@ class GameController extends Controller
             ], 500);
         }
     }
-}
+
+    /**
+     * ゲームを一時停止してホームに戻る
+     */
+    public function quit(GameSession $session)
+    {
+        // ゲーム状態を「一時停止」に更新（後で再開可能）
+        $session->status = 'paused';
+        $session->save();
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'ゲームを一時停止しました',
+                'redirect' => '/',
+            ]);
+        }
+
+        return redirect('/');
+    }}

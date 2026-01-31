@@ -17,6 +17,7 @@ Route::prefix('game')->name('game.')->group(function () {
     Route::post('/{session}/promote', [GameController::class, 'promote'])->name('promote');
     Route::post('/{session}/undo', [GameController::class, 'undo'])->name('undo');
     Route::post('/{session}/resign', [GameController::class, 'resign'])->name('resign');
+    Route::post('/{session}/quit', [GameController::class, 'quit'])->name('quit');
     Route::get('/{session}/state', [GameController::class, 'state'])->name('state');
     Route::post('/{session}/reset', [GameController::class, 'reset'])->name('reset');
 });

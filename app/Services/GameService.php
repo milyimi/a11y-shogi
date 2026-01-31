@@ -37,7 +37,7 @@ class GameService
     public function getCurrentGame(): ?GameSession
     {
         return GameSession::where('session_id', session()->getId())
-            ->where('status', 'in_progress')
+            ->whereIn('status', ['in_progress', 'paused'])
             ->latest()
             ->first();
     }

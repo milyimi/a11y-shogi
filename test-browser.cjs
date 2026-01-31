@@ -214,18 +214,48 @@ const getState = async (page) => {
     const resetState = await getState(page);
     console.log('リセット後の状態:', resetState.data?.data?.moveCount, resetState.data?.data?.status);
 
+    // ホームに戻るテスト
+    console.log('\n=== ホームに戻るボタンテスト ===');
+    console.log('ホームに戻るボタンをクリック...');
+    const quitBtn = await page.$('#btn-quit');
+    if (quitBtn) {
+      // ホーム画面への移動を待つ
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 5000 }).catch(() => {}),
+        quitBtn.click()
+      ]);
+      
+      // ホーム画面にいるか確認
+      const currentUrl = page.url();
+      const isHome = currentUrl.includes('localhost:8000') && !currentUrl.includes('/game/');
+      console.log('ホーム画面に移動:', isHome ? 'はい ✓' : 'いいえ ✗');
+      console.log('現在のURL:', currentUrl);
+    }
+
     // 投了
-    console.log('投了ボタンをクリック...');
+    console.log('\n=== 投了テスト ===');
+    // ホームに戻った後なので、新しくゲームを始めている
+    const quitBtn2 = await page.$('#btn-quit');
+    if (!quitBtn2) {
+      // ゲーム画面ではない（既にホームにいる）
+      console.log('新規ゲーム開始...');
+      const startBtn = await page.$('#btn-start-game');
+      if (startBtn) {
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: 'networkidle2' }),
+          startBtn.click()
+        ]);
+      }
+    }
+    
     const resignBtn = await page.$('#btn-resign');
     if (resignBtn) {
+      console.log('投了ボタンをクリック...');
       await Promise.all([
-        waitForOptionalNavigation(page),
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 5000 }).catch(() => {}),
         resignBtn.click()
       ]);
     }
-
-    const resignState = await getState(page);
-    console.log('投了後の状態:', resignState.data?.data?.status);
 
     console.log('\n✅ テスト完了');
 

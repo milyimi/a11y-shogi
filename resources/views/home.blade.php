@@ -9,7 +9,11 @@
     @if($hasActiveGame)
         <section aria-labelledby="continue-game-heading">
             <h3 id="continue-game-heading">進行中のゲーム</h3>
-            <p>進行中のゲームがあります。</p>
+            @if($currentGame->status === 'paused')
+                <p>一時停止中のゲームがあります。</p>
+            @else
+                <p>進行中のゲームがあります。</p>
+            @endif
             <div style="margin-top: 16px;">
                 <a href="{{ route('game.show', ['session' => $currentGame->id]) }}" class="btn btn-primary">
                     ゲームを続ける
