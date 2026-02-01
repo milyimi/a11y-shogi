@@ -230,7 +230,7 @@ class AIService
     }
 
     /**
-     * 初級用：ほぼランダム（30%の確率で明らかに悪い手を選ぶ）
+     * 初級用：ほぼランダム（50%の確率で明らかに悪い手を選ぶ）
      */
     private function getEasyMove(array $moves, array $boardState, string $color): ?array
     {
@@ -238,16 +238,24 @@ class AIService
             return null;
         }
 
-        // 30%の確率で完全ランダムに（悪い手もあり得る）
-        if (rand(0, 100) < 30) {
+        // 50%の確率で完全ランダムに（悪い手もあり得る）
+        if (rand(0, 100) < 50) {
             return $this->getRandomMove($moves);
         }
 
-        // 70%の確率で少し考える（駒を取る手を少し優先）
+        // 30%の確率で駒を取る手を優先（少しだけ考える）
         $captureMoves = array_filter($moves, fn($m) => $m['capture']);
         
-        if (!empty($captureMoves) && rand(0, 100) < 60) {
+        if (!empty($captureMoves) && rand(0, 100) < 30) {
             return $captureMoves[array_rand($captureMoves)];
+        }
+
+        // 20%の確率で詰みだけは見逃さない（完全初心者ではない）
+        if (rand(0, 100) < 20) {
+            $mateMove = $this->findMateInOne($moves, $boardState, $color);
+            if ($mateMove) {
+                return $mateMove;
+            }
         }
 
         return $this->getRandomMove($moves);
@@ -267,8 +275,14 @@ class AIService
             return $this->getRandomMove($moves);
         }
 
-        // 通常は簡易評価で指す
-        return $this->getSimpleEvaluatedMove($moves, $boardState, $color);
+        // 1手詰めがあれば必ず指す
+        $mateMove = $this->findMateInOne($moves, $boardState, $color);
+        if ($mateMove) {
+            return $mateMove;
+        }
+
+        // 1手先読みで評価
+        return $this->getMinimaxMove($moves, $boardState, $color, 1);
     }
 
     /**
@@ -280,8 +294,236 @@ class AIService
             return null;
         }
 
-        // 先読み的な評価で最良手を選ぶ
-        return $this->getAdvancedEvaluatedMove($moves, $boardState, $color);
+        // まず詰みがないかチェック
+        $mateMove = $this->findMateInOne($moves, $boardState, $color);
+        if ($mateMove) {
+            return $mateMove;
+        }
+
+        // ミニマックス探索で最良手を選ぶ（3手先まで読む）
+            return $this->getMinimaxMove($moves, $boardState, $color, 2);
+    }
+    
+    /**
+     * 1手詰めがあるか探索
+     */
+    private function findMateInOne(array $moves, array $boardState, string $color): ?array
+    {
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        
+        foreach ($moves as $move) {
+            // この手を指した後の盤面をシミュレート
+            $newBoard = $this->simulateMove($boardState, $move, $color);
+            
+            // 詰みかチェック
+            if ($this->shogiService->isCheckmate($newBoard, $enemyColor)) {
+                return $move;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * ミニマックス探索で最良手を選択
+     */
+    private function getMinimaxMove(array $moves, array $boardState, string $color, int $depth): ?array
+    {
+        $bestScore = -PHP_INT_MAX;
+        $bestMove = null;
+        $alpha = -PHP_INT_MAX;
+        $beta = PHP_INT_MAX;
+        
+        // 探索する手数を制限（上位20手まで）
+        $scoredMoves = [];
+        foreach ($moves as $move) {
+            $score = $this->evaluateMove($move, $boardState, $color);
+            $scoredMoves[] = ['move' => $move, 'score' => $score];
+        }
+        usort($scoredMoves, fn($a, $b) => $b['score'] <=> $a['score']);
+        $topMoves = array_slice($scoredMoves, 0, 20);
+        
+        foreach ($topMoves as $item) {
+            $move = $item['move'];
+            $newBoard = $this->simulateMove($boardState, $move, $color);
+            $score = $this->minimax($newBoard, $depth - 1, $alpha, $beta, false, $color);
+            
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestMove = $move;
+            }
+            
+            $alpha = max($alpha, $score);
+        }
+        
+        return $bestMove ?? $this->getAdvancedEvaluatedMove($moves, $boardState, $color);
+    }
+    
+    /**
+     * ミニマックスアルゴリズム（アルファベータ枝刈り付き）
+     */
+    private function minimax(array $boardState, int $depth, int $alpha, int $beta, bool $maximizing, string $aiColor): int
+    {
+        // 深さ制限または終局
+        if ($depth <= 0) {
+            return $this->evaluatePosition($boardState, $aiColor);
+        }
+        
+        $currentColor = $maximizing ? $aiColor : ($aiColor === 'sente' ? 'gote' : 'sente');
+        $moves = $this->getPossibleMoves($boardState, $currentColor);
+        
+        if (empty($moves)) {
+            // 手がない = 詰み
+            return $maximizing ? -999999 : 999999;
+        }
+        
+        // 手数が多い場合は上位15手のみ探索
+        if (count($moves) > 15) {
+            $scoredMoves = [];
+            foreach ($moves as $move) {
+                $quickScore = ($move['capture'] ?? false) ? 1000 : 0;
+                $scoredMoves[] = ['move' => $move, 'score' => $quickScore];
+            }
+            usort($scoredMoves, fn($a, $b) => $b['score'] <=> $a['score']);
+            $moves = array_column(array_slice($scoredMoves, 0, 15), 'move');
+        }
+        
+        if ($maximizing) {
+            $maxScore = -PHP_INT_MAX;
+            foreach ($moves as $move) {
+                $newBoard = $this->simulateMove($boardState, $move, $currentColor);
+                $score = $this->minimax($newBoard, $depth - 1, $alpha, $beta, false, $aiColor);
+                $maxScore = max($maxScore, $score);
+                $alpha = max($alpha, $score);
+                if ($beta <= $alpha) {
+                    break; // ベータ刈り
+                }
+            }
+            return $maxScore;
+        } else {
+            $minScore = PHP_INT_MAX;
+            foreach ($moves as $move) {
+                $newBoard = $this->simulateMove($boardState, $move, $currentColor);
+                $score = $this->minimax($newBoard, $depth - 1, $alpha, $beta, true, $aiColor);
+                $minScore = min($minScore, $score);
+                $beta = min($beta, $score);
+                if ($beta <= $alpha) {
+                    break; // アルファ刈り
+                }
+            }
+            return $minScore;
+        }
+    }
+    
+    /**
+     * 手をシミュレートして新しい盤面を返す
+     */
+    private function simulateMove(array $boardState, array $move, string $color): array
+    {
+        $newBoard = json_decode(json_encode($boardState), true); // Deep copy
+        
+        if ($move['is_drop'] ?? false) {
+            // 駒打ち
+            $newBoard['board'][$move['to_rank']][$move['to_file']] = [
+                'type' => $move['piece_type'],
+                'color' => $color,
+            ];
+            $newBoard['hand'][$color][$move['piece_type']]--;
+        } else {
+            // 通常の移動
+            $piece = $newBoard['board'][$move['from_rank']][$move['from_file']];
+            
+            // キャプチャ
+            if ($move['capture']) {
+                $capturedPiece = $newBoard['board'][$move['to_rank']][$move['to_file']];
+                $capturedType = $this->shogiService->demotePiece($capturedPiece['type']);
+                if (!isset($newBoard['hand'][$color][$capturedType])) {
+                    $newBoard['hand'][$color][$capturedType] = 0;
+                }
+                $newBoard['hand'][$color][$capturedType]++;
+            }
+            
+            // 移動
+            $newBoard['board'][$move['to_rank']][$move['to_file']] = $piece;
+            $newBoard['board'][$move['from_rank']][$move['from_file']] = null;
+        }
+        
+        $newBoard['turn'] = $color === 'sente' ? 'gote' : 'sente';
+        return $newBoard;
+    }
+    
+    /**
+     * 盤面全体の評価値を計算
+     */
+    private function evaluatePosition(array $boardState, string $aiColor): int
+    {
+        $score = 0;
+        $enemyColor = $aiColor === 'sente' ? 'gote' : 'sente';
+        
+        $pieceValues = [
+            'gyoku' => 10000, 'ou' => 10000,
+            'hisha' => 1000, 'kaku' => 900,
+            'kin' => 600, 'gin' => 500,
+            'keima' => 400, 'kyosha' => 350,
+            'fu' => 100,
+            'ryu' => 1200, 'uma' => 1100,
+            'tokin' => 600, 'nkyosha' => 550,
+            'nkeima' => 600, 'ngin' => 700,
+        ];
+        
+        // 盤面上の駒を評価
+        for ($rank = 1; $rank <= 9; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $boardState['board'][$rank][$file] ?? null;
+                if (!$piece) continue;
+                
+                $value = $pieceValues[$piece['type']] ?? 0;
+                $positionBonus = $this->getPositionBonus($piece['type'], $rank, $file, $piece['color']);
+                
+                if ($piece['color'] === $aiColor) {
+                    $score += $value + $positionBonus;
+                } else {
+                    $score -= $value + $positionBonus;
+                }
+            }
+        }
+        
+        // 持ち駒を評価
+        foreach ($boardState['hand'][$aiColor] ?? [] as $type => $count) {
+            $score += ($pieceValues[$type] ?? 0) * $count * 0.8; // 持ち駒は少し価値低め
+        }
+        
+        foreach ($boardState['hand'][$enemyColor] ?? [] as $type => $count) {
+            $score -= ($pieceValues[$type] ?? 0) * $count * 0.8;
+        }
+        
+        return $score;
+    }
+    
+    /**
+     * 駒の位置ボーナス
+     */
+    private function getPositionBonus(string $type, int $rank, int $file, string $color): int
+    {
+        $bonus = 0;
+        
+        // 中央制御
+        $centerDist = abs($file - 5);
+        $bonus += (4 - $centerDist) * 10;
+        
+        // 前進ボーナス
+        if ($color === 'sente') {
+            $bonus += (10 - $rank) * 15;
+        } else {
+            $bonus += $rank * 15;
+        }
+        
+        // 特定の駒の配置ボーナス
+        if (in_array($type, ['hisha', 'kaku', 'ryu', 'uma'])) {
+            $bonus += 100; // 大駒は存在自体が価値
+        }
+        
+        return $bonus;
     }
 
     /**

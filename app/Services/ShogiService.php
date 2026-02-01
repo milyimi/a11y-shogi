@@ -530,6 +530,23 @@ class ShogiService
     }
 
     /**
+     * 成った駒を元の駒に戻す（取られたときの持ち駒化）
+     */
+    public function demotePiece(string $pieceType): string
+    {
+        $demotionMap = [
+            'tokin' => 'fu',
+            'nkyosha' => 'kyosha',
+            'nkeima' => 'keima',
+            'ngin' => 'gin',
+            'uma' => 'kaku',
+            'ryu' => 'hisha',
+        ];
+
+        return $demotionMap[$pieceType] ?? $pieceType;
+    }
+
+    /**
      * 成った駒の名前を取得
      */
     public function getPromotedPieceName(string $pieceType): string

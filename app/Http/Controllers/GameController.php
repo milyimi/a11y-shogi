@@ -173,7 +173,7 @@ class GameController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'ゲームは終了しています。',
-                ], 400);
+                ]);
             }
             // 現在のボード状態を取得
             $boardState = $session->getBoardPosition();
@@ -196,30 +196,66 @@ class GameController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => 'あなたの手番ではありません',
-                    ], 400);
+                    ]);
                 }
 
                 $targetPiece = $boardState['board'][$toRank][$toFile] ?? null;
                 if ($targetPiece) {
+                    \Log::info('[GameController::move] Drop rejected - occupied', [
+                        'piece_type' => $pieceType,
+                        'to_file' => $toFile,
+                        'to_rank' => $toRank,
+                        'current_turn' => $currentTurn,
+                        'target_piece' => $targetPiece,
+                    ]);
                     return response()->json([
                         'success' => false,
                         'message' => 'そのマスには駒があります',
-                    ], 400);
+                    ]);
                 }
 
                 $handCount = $boardState['hand'][$currentTurn][$pieceType] ?? 0;
                 if ($handCount < 1) {
+                    \Log::info('[GameController::move] Drop rejected - no hand', [
+                        'piece_type' => $pieceType,
+                        'to_file' => $toFile,
+                        'to_rank' => $toRank,
+                        'current_turn' => $currentTurn,
+                        'hand' => $boardState['hand'][$currentTurn] ?? [],
+                    ]);
                     return response()->json([
                         'success' => false,
                         'message' => 'その持ち駒がありません',
-                    ], 400);
+                    ]);
                 }
 
                 if (!$this->shogiService->isLegalDrop($boardState, $pieceType, $toRank, $toFile, $currentTurn)) {
+                    if ($pieceType === 'fu') {
+                        $filePieces = [];
+                        for ($rank = 1; $rank <= 9; $rank++) {
+                            $p = $boardState['board'][$rank][$toFile] ?? null;
+                            if ($p) {
+                                $filePieces[$rank] = $p['type'] . ':' . $p['color'];
+                            }
+                        }
+                        \Log::info('[GameController::move] Pawn drop rejected - file state', [
+                            'to_file' => $toFile,
+                            'to_rank' => $toRank,
+                            'current_turn' => $currentTurn,
+                            'file_pieces' => $filePieces,
+                        ]);
+                    } else {
+                        \Log::info('[GameController::move] Drop rejected - illegal', [
+                            'piece_type' => $pieceType,
+                            'to_file' => $toFile,
+                            'to_rank' => $toRank,
+                            'current_turn' => $currentTurn,
+                        ]);
+                    }
                     return response()->json([
                         'success' => false,
                         'message' => 'その場所には打てません',
-                    ], 400);
+                    ]);
                 }
 
                 $boardState['board'][$toRank][$toFile] = [
@@ -322,7 +358,7 @@ class GameController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => '移動元に駒がありません',
-                ], 400);
+                ]);
             }
             
             // 指し手が合法か確認（新規追加）
@@ -330,7 +366,7 @@ class GameController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'その指し手は合法ではありません',
-                ], 400);
+                ]);
             }
             
             // 移動先にある駒を取得（取られる駒）
@@ -346,7 +382,7 @@ class GameController extends Controller
             // 駒を取った場合、持ち駒に追加
             if ($capturedPiece) {
                 $opponentColor = $piece['color'] === 'sente' ? 'sente' : 'gote';
-                $pieceType = $capturedPiece['type'];
+                $pieceType = $this->shogiService->demotePiece($capturedPiece['type']);
                 
                 if (!isset($boardState['hand'][$opponentColor][$pieceType])) {
                     $boardState['hand'][$opponentColor][$pieceType] = 0;
@@ -459,10 +495,11 @@ class GameController extends Controller
 
             return response()->json($response);
         } catch (\Exception $e) {
+            \Log::error('Move error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'エラーが発生しました: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
@@ -503,8 +540,8 @@ class GameController extends Controller
         $boardState['board'][$move['from_rank']][$move['from_file']] = null;
         
         // 駒を取った場合
-        if ($capturedPiece) {
-            $pieceType = $capturedPiece['type'];
+            if ($capturedPiece) {
+                $pieceType = $this->shogiService->demotePiece($capturedPiece['type']);
             
             if (!isset($boardState['hand'][$boardState['turn']][$pieceType])) {
                 $boardState['hand'][$boardState['turn']][$pieceType] = 0;
@@ -530,7 +567,7 @@ class GameController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => '戻す指し手がありません',
-                ], 400);
+                ]);
             }
 
             // 一つ前のボード状態を取得
@@ -567,10 +604,11 @@ class GameController extends Controller
                 'boardState' => $boardState,
             ]);
         } catch (\Exception $e) {
+            \Log::error('Undo error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'エラーが発生しました: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
@@ -591,10 +629,11 @@ class GameController extends Controller
                 'message' => '投了しました',
             ]);
         } catch (\Exception $e) {
+            \Log::error('Resign error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'エラーが発生しました: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
@@ -628,10 +667,16 @@ class GameController extends Controller
                 'boardState' => $boardState,
             ]);
         } catch (\Exception $e) {
+            \Log::error('Reset error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'エラーが発生しました: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 
@@ -654,7 +699,7 @@ class GameController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => '指定位置に駒がありません',
-                ], 400);
+                ]);
             }
 
             // 成り可能か確認
@@ -662,7 +707,7 @@ class GameController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'この駒は成ることができません',
-                ], 400);
+                ]);
             }
 
             // 成りを確定
@@ -674,21 +719,66 @@ class GameController extends Controller
                 $message = '成らないことを選択しました';
             }
 
+            // 手番を切り替え
+            $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
+
             // ボード状態を更新
             $session->updateBoardPosition($boardState);
             $session->save();
+
+            // AIの手番になった場合、AIに指させる
+            $aiMove = null;
+            if ($boardState['turn'] !== $session->human_color) {
+                $aiMove = $this->aiService->generateMove(
+                    $boardState,
+                    $session->difficulty,
+                    $boardState['turn']
+                );
+
+                if ($aiMove) {
+                    $aiCapturedPiece = $aiMove['capture']
+                        ? ($boardState['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null)
+                        : null;
+                    $aiCapturedKing = $aiCapturedPiece && in_array($aiCapturedPiece['type'], ['gyoku', 'ou'], true);
+
+                    $aiBoard = $this->executeMove($boardState, $aiMove);
+                    $aiBoard['turn'] = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+
+                    $session->updateBoardPosition($aiBoard);
+                    $session->increment('total_moves');
+
+                    if ($aiCapturedKing) {
+                        $session->status = 'mate';
+                        $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+                        $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
+                        $session->winner_type = 'checkmate';
+                        $this->gameService->updateElapsedTime($session);
+                    } elseif ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
+                        $session->status = 'mate';
+                        $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+                        $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
+                        $session->winner_type = 'checkmate';
+                        $this->gameService->updateElapsedTime($session);
+                    }
+
+                    $session->save();
+                    $boardState = $aiBoard;
+                }
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => $message,
                 'boardState' => $boardState,
                 'piece' => $piece,
+                'aiMove' => $aiMove,
             ]);
         } catch (\Exception $e) {
+            \Log::error('Promote error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'エラーが発生しました: ' . $e->getMessage(),
-            ], 500);
+            ]);
         }
     }
 

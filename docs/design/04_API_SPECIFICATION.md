@@ -2,8 +2,8 @@
 
 ## 基本情報
 
-- **ベースURL**: `/api`
-- **フォーマット**: JSON
+- **ベースURL**: `/`（Web ルート）
+- **フォーマット**: HTML / JSON（AJAX）
 - **認証**: セッションベース（Laravel Session）
 - **エラーハンドリ**: 標準的な HTTP ステータスコード + JSONエラーレスポンス
 
@@ -15,9 +15,12 @@
 | POST | `/game/start` | 新規ゲーム開始 |
 | GET | `/game/{sessionId}` | ゲーム画面表示 |
 | POST | `/game/{sessionId}/move` | 指し手送信 |
+| POST | `/game/{sessionId}/promote` | 成り確定 |
 | POST | `/game/{sessionId}/undo` | 棋譜1手戻す |
 | POST | `/game/{sessionId}/resign` | 投了 |
+| POST | `/game/{sessionId}/quit` | 一時停止 |
 | GET | `/game/{sessionId}/state` | ゲーム状態取得（JSON） |
+| POST | `/game/{sessionId}/reset` | 対局リセット |
 | POST | `/ranking/register` | ランキング登録 |
 | GET | `/ranking` | ランキング一覧表示 |
 | GET | `/ranking/{difficulty}` | 難易度別ランキング |

@@ -18,10 +18,9 @@ class GameService
     {
         $sessionId = session()->getId();
         
-        // 既存のゲーム（status: in_progress）があれば削除
-        // （同じセッションIDでのUNIQUE制約回避のため）
+        // 既存のゲームがあれば削除
+        // （session_id が UNIQUE のため同セッションで複数レコードを持てない）
         GameSession::where('session_id', $sessionId)
-            ->where('status', 'in_progress')
             ->delete();
         
         $initialBoard = $this->shogiService->getInitialBoard();
@@ -45,7 +44,7 @@ class GameService
     public function getCurrentGame(): ?GameSession
     {
         return GameSession::where('session_id', session()->getId())
-            ->whereIn('status', ['in_progress', 'paused'])
+            ->whereIn('status', ['in_progress', 'mate', 'draw', 'resigned'])
             ->latest()
             ->first();
     }

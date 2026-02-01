@@ -734,7 +734,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.warn('Error:', error);
                     alert('エラーが発生しました');
                 });
             }
@@ -759,7 +759,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.warn('Error:', error);
                     alert('エラーが発生しました');
                 });
             }
@@ -950,13 +950,13 @@
                         }, 500);
                     }
                 } else {
-                    console.error('[makeMove] Move failed:', data.message);
+                    console.warn('[makeMove] Move failed:', data.message);
                     document.getElementById('game-announcements').textContent = 
                         `移動できません: ${data.message || 'エラーが発生しました'}`;
                 }
             })
             .catch(error => {
-                console.error('[makeMove] Error:', error);
+                console.warn('[makeMove] Error:', error);
                 document.getElementById('game-announcements').textContent = 'エラーが発生しました';
             });
         };
@@ -994,13 +994,13 @@
                     updateBoard(data.boardState);
                     updateGameInfo(data);
                 } else {
-                    console.error('[makeDrop] Drop failed:', data.message);
+                    console.warn('[makeDrop] Drop failed:', data.message);
                     document.getElementById('game-announcements').textContent = 
                         `打てません: ${data.message || 'エラーが発生しました'}`;
                 }
             })
             .catch(error => {
-                console.error('[makeDrop] Fetch error:', error);
+                console.warn('[makeDrop] Fetch error:', error);
                 document.getElementById('game-announcements').textContent = 'エラーが発生しました';
             });
         }
@@ -1341,7 +1341,7 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.warn('Error:', error);
                 document.getElementById('game-announcements').textContent = '成りの確定に失敗しました';
             });
         }
@@ -1369,7 +1369,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.warn('Error:', error);
                     alert('エラーが発生しました');
                 });
             }
@@ -1457,7 +1457,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.warn('Error:', error);
                     alert('エラーが発生しました');
                     document.getElementById('ranking-nickname-input')?.focus();
                 });

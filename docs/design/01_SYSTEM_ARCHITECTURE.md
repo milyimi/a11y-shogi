@@ -36,9 +36,19 @@
 Routes/web.php
   ├── GET  / → GameController@home
   ├── POST /game/start → GameController@start
-  ├── POST /game/{sessionId}/move → MoveController@submitMove
-  ├── GET  /game/{sessionId} → GameController@show
-  └── GET  /game/{sessionId}/undo → GameController@undo
+  ├── GET  /game/{session} → GameController@show
+  ├── POST /game/{session}/move → GameController@move
+  ├── POST /game/{session}/promote → GameController@promote
+  ├── POST /game/{session}/undo → GameController@undo
+  ├── POST /game/{session}/resign → GameController@resign
+  ├── POST /game/{session}/quit → GameController@quit
+  ├── GET  /game/{session}/state → GameController@state
+  ├── POST /game/{session}/reset → GameController@reset
+  ├── GET  /session/status → GameController@sessionStatus
+  ├── POST /session/extend → GameController@extendSession
+  ├── GET  /ranking → RankingController@index
+  ├── POST /ranking/register → RankingController@register
+  └── GET  /help → GameController@help
 ```
 
 ### 2. アプリケーション層
@@ -48,11 +58,19 @@ app/Http/Controllers/
   │   ├── home()           - ホーム画面表示
   │   ├── start()          - 新規ゲーム開始
   │   ├── show()           - ゲーム画面表示
+  │   ├── move()           - 指し手処理（移動/打ち）
+  │   ├── promote()        - 成り確定
   │   ├── undo()           - 棋譜戻る
-  │   └── getStatus()      - ゲーム状態取得（JSON）
+  │   ├── resign()         - 投了
+  │   ├── quit()           - 一時停止
+  │   ├── state()          - ゲーム状態取得（JSON）
+  │   ├── reset()          - 対局リセット
+  │   ├── sessionStatus()  - セッション状態取得
+  │   └── extendSession()  - セッション延長
   │
-  └── MoveController
-      └── submitMove()     - 指し手処理
+  └── RankingController
+      ├── index()          - ランキング一覧
+      └── register()       - 勝利時の登録
 ```
 
 ### 3. ビジネスロジック層
@@ -65,23 +83,19 @@ app/Services/
   │   ├── applyMove()            - 指し手を局面に適用
   │   └── checkGameEnd()         - ゲーム終了判定
   │
-  ├── AIEngine
-  │   ├── generateMove(difficulty)  - 指し手生成 ★改善
-  │   │   ├── easy: ランダム選択
-  │   │   ├── medium: 簡易評価（駒の価値優先）
-  │   │   └── hard: 高度な評価
-  │   │       ├── 駒を取る手を最優先
-  │   │       ├── 敵陣への進出を評価
-  │   │       ├── 盤面中央の制御
-  │   │       ├── 駒の成り可能性
-  │   │       └── 敵王への接近度
-  │   ├── evaluateMove()           - 指し手評価（改善版）
-  │   └── canPromoteAtTarget()     - 成り可能性判定 ★新規
+  ├── AIService
+  │   ├── generateMove(difficulty)  - 指し手生成
+  │   │   ├── easy: 高ランダム性 + ミス率
+  │   │   ├── medium: 1手先読み + 詰み優先
+  │   │   └── hard: 2手先ミニマックス + アルファベータ枝刈り
+  │   ├── evaluateMove()           - 指し手評価
+  │   ├── evaluatePosition()       - 盤面評価
+  │   └── findMateInOne()          - 1手詰め探索
   │
-  └── ShogiRules
+  └── ShogiService
       ├── isValidMove()     - ルール検証
-      ├── getPossibleMoves() - 合法手生成
-      ├── isInCheck()       - 王手判定
+      ├── isLegalDrop()     - 打ちの合法性
+      ├── canPromote()      - 成り可能判定
       └── isCheckmate()     - チェックメイト判定
 ```
 
