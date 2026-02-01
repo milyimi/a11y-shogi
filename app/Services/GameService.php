@@ -54,16 +54,27 @@ class GameService
             'currentPlayer' => $currentPlayer,
         ]);
         
+        // move_historyを明示的に配列として取得
+        $moveHistory = $game->move_history;
+        if (is_string($moveHistory)) {
+            $moveHistory = json_decode($moveHistory, true) ?? [];
+        }
+        if (!is_array($moveHistory)) {
+            $moveHistory = [];
+        }
+        
         return [
             'sessionId' => $game->session_id,
             'status' => $game->status,
             'difficulty' => $game->difficulty,
             'currentPlayer' => $currentPlayer,
             'boardState' => $game->getBoardPosition(),
-            'moveHistory' => $game->move_history,
+            'moveHistory' => $moveHistory,
             'moveCount' => $game->total_moves,
             'elapsedSeconds' => $game->elapsed_seconds,
-        ];
+                'winner' => $game->winner,
+                'winnerType' => $game->winner_type,
+          ];
     }
 
     /**
@@ -87,7 +98,7 @@ class GameService
     public function updateElapsedTime(GameSession $game): void
     {
         if ($game->started_at) {
-            $game->elapsed_seconds = now()->diffInSeconds($game->started_at);
+            $game->elapsed_seconds = (int) now()->diffInSeconds($game->started_at, true);
             $game->save();
         }
     }

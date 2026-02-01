@@ -14,22 +14,21 @@ class RankingController extends Controller
      */
     public function index(Request $request): View
     {
-        $perPage = 20; // ページあたりのアイテム数
-        $difficulty = $request->query('difficulty');
-        
-        $query = Ranking::with('gameSession')
-            ->orderByDesc('score');
-        
-        if ($difficulty && in_array($difficulty, ['easy', 'medium', 'hard'])) {
-            $query->difficulty($difficulty);
+        $difficulties = ['easy' => '初級', 'medium' => '中級', 'hard' => '上級'];
+        $rankingsByDifficulty = [];
+
+        foreach (array_keys($difficulties) as $diff) {
+            $rankingsByDifficulty[$diff] = Ranking::with('gameSession')
+                ->difficulty($diff)
+                ->orderByDesc('score')
+                ->limit(20)
+                ->get();
         }
-        
-        $rankings = $query->paginate($perPage);
-        
+
         return view('ranking.index', [
-            'rankings' => $rankings,
-            'currentDifficulty' => $difficulty,
-            'difficulties' => ['easy' => '初級', 'medium' => '中級', 'hard' => '上級'],
+            'rankingsByDifficulty' => $rankingsByDifficulty,
+            'currentDifficulty' => null,
+            'difficulties' => $difficulties,
         ]);
     }
 
@@ -85,15 +84,15 @@ class RankingController extends Controller
         // ゲームセッションからスコアを計算
         $gameSession = \App\Models\GameSession::findOrFail($validated['game_session_id']);
         
-        if ($gameSession->status !== 'finished') {
+        if (!in_array($gameSession->status, ['mate', 'resigned', 'draw'], true)) {
             return response()->json([
                 'success' => false,
                 'error' => 'game_not_finished',
                 'message' => 'ゲームが終了していません。',
             ], 400);
         }
-        
-        if ($gameSession->result !== 'win') {
+
+        if ($gameSession->winner !== 'human') {
             return response()->json([
                 'success' => false,
                 'error' => 'must_win',

@@ -184,6 +184,11 @@
             font-size: 18px;
         }
     }
+    
+    /* ランキング登録ダイアログスタイル */
+    #ranking-registration-dialog[style*="display: flex"] {
+        display: flex !important;
+    }
 </style>
 @endpush
 
@@ -285,13 +290,73 @@
                             data-file="{{ $file }}"
                             aria-label="{{ $ariaLabel }}"
                             tabindex="{{ ($rank === 9 && $file === 9) ? 0 : -1 }}"
-                        >
-                            {{ $pieceText }}
-                        </button>
+                        ><span class="piece-text">{{ $pieceText }}</span></button>
                     @endfor
                 @endfor
             </div>
         </main>
+        
+        {{-- ランキング登録ダイアログ --}}
+        <div id="ranking-registration-dialog" role="dialog" aria-modal="true" aria-labelledby="ranking-dialog-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center; z-index: 2000;">
+            <div style="background: #FFF; border: 4px solid #333; border-radius: 8px; padding: 32px; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);">
+                <h2 id="ranking-dialog-title" style="margin-top: 0; margin-bottom: 16px; font-size: 1.5rem;">🎉 ランキングに登録しますか？</h2>
+                
+                <p style="margin-bottom: 24px; font-size: 1.1rem; line-height: 1.6;">
+                    おめでとうございます！AIに勝利しました。
+                    <br>ニックネームを入力してランキングに登録してください。
+                </p>
+                
+                <div style="margin-bottom: 24px;">
+                    <label for="ranking-nickname-input" style="display: block; margin-bottom: 8px; font-weight: bold;">
+                        ニックネーム（3〜15文字）:
+                    </label>
+                    <input 
+                        type="text" 
+                        id="ranking-nickname-input" 
+                        placeholder="例: 将棋マスター"
+                        maxlength="15"
+                        style="width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #CCC; border-radius: 4px; box-sizing: border-box;"
+                    >
+                    <small style="display: block; margin-top: 4px; color: #666;">3〜15文字で入力してください</small>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <strong>難易度:</strong>
+                        <span style="font-size: 1.1rem;">
+                            @if($game->difficulty === 'easy')
+                                初級
+                            @elseif($game->difficulty === 'medium')
+                                中級
+                            @else
+                                上級
+                            @endif
+                        </span>
+                    </div>
+                    <div>
+                        <strong>手数:</strong>
+                        <span style="font-size: 1.1rem;" id="ranking-moves">{{ $game->total_moves ?? 0 }}手</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button 
+                        id="btn-register-ranking" 
+                        class="btn btn-primary" 
+                        style="flex: 1; padding: 12px; font-size: 1rem; cursor: pointer;"
+                    >
+                        ランキングに登録
+                    </button>
+                    <button 
+                        id="btn-skip-ranking" 
+                        class="btn btn-secondary" 
+                        style="flex: 1; padding: 12px; font-size: 1rem; cursor: pointer;"
+                    >
+                        スキップ
+                    </button>
+                </div>
+            </div>
+        </div>
         
         {{-- 情報パネル --}}
         <aside class="info-panel" aria-labelledby="info-heading">
@@ -425,6 +490,41 @@
                 cell.tabIndex = -1;
             }
         });
+    }
+    
+    // ゲーム終了時のランキング登録ダイアログを表示
+    function showRankingRegistrationDialog() {
+        const gameData = window.gameData || {};
+        
+        // ゲームが終了し、人間が勝利した場合のみ表示
+        if (gameData.status === 'mate' && gameData.winner === 'human') {
+            // 既に登録済みか確認
+            const rankingDialog = document.getElementById('ranking-registration-dialog');
+            if (rankingDialog && !rankingDialog.dataset.shown) {
+                rankingDialog.dataset.shown = 'true';
+                rankingDialog.style.display = 'flex';
+                
+                // ニックネーム入力にフォーカス
+                setTimeout(() => {
+                    const nicknameInput = document.getElementById('ranking-nickname-input');
+                    if (nicknameInput) {
+                        nicknameInput.focus();
+                    }
+                }, 100);
+                
+                // Escキーでダイアログを閉じる
+                const handleEscape = (e) => {
+                    if (e.key === 'Escape') {
+                        rankingDialog.style.display = 'none';
+                        document.getElementById('game-announcements').textContent = 'ランキング登録をキャンセルしました';
+                        const firstCell = document.querySelector('.cell');
+                        if (firstCell) firstCell.focus();
+                        document.removeEventListener('keydown', handleEscape);
+                    }
+                };
+                document.addEventListener('keydown', handleEscape);
+            }
+        }
     }
 </script>
 @endsection
@@ -563,6 +663,10 @@
             };
         }
 
+        function isGameOver() {
+            return window.gameData && window.gameData.status && window.gameData.status !== 'in_progress';
+        }
+
         // 待った（undo）
         function handleUndo() {
             if (confirm('一手前に戻しますか？')) {
@@ -693,6 +797,10 @@
         });
         
         function handleCellSelect(cell) {
+            if (isGameOver()) {
+                document.getElementById('game-announcements').textContent = 'ゲームは終了しています';
+                return;
+            }
             const rank = parseInt(cell.dataset.rank);
             const file = parseInt(cell.dataset.file);
             
@@ -751,6 +859,11 @@
         }
         
         function makeMove(fromFile, fromRank, toFile, toRank) {
+            if (isGameOver()) {
+                document.getElementById('game-announcements').textContent = 'ゲームは終了しています';
+                return;
+            }
+            console.log('[makeMove] Starting move:', { fromFile, fromRank, toFile, toRank });
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             
             fetchJson(`/game/{{ $game->id }}/move`, {
@@ -767,6 +880,7 @@
                 })
             })
             .then(data => {
+                console.log('[makeMove] API response:', data.success, 'boardState available:', !!data.boardState);
                 if (data.success) {
                     window.lastMoveTarget = { rank: toRank, file: toFile };
                     if (data.promotionTarget) {
@@ -776,6 +890,7 @@
                         `${fromFile}の${fromRank}から${toFile}の${toRank}に移動しました`;
                     
                     // ボード更新
+                    console.log('[makeMove] Calling updateBoard with:', data.boardState);
                     updateBoard(data.boardState);
                     updateGameInfo(data);
                     
@@ -787,17 +902,22 @@
                         }, 500);
                     }
                 } else {
+                    console.error('[makeMove] Move failed:', data.message);
                     document.getElementById('game-announcements').textContent = 
                         `移動できません: ${data.message || 'エラーが発生しました'}`;
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('[makeMove] Error:', error);
                 document.getElementById('game-announcements').textContent = 'エラーが発生しました';
             });
-        }
+        };
 
         function makeDrop(pieceType, toFile, toRank) {
+            if (isGameOver()) {
+                document.getElementById('game-announcements').textContent = 'ゲームは終了しています';
+                return;
+            }
             console.log('[makeDrop] Starting drop:', {pieceType, toFile, toRank});
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             
@@ -840,7 +960,15 @@
         function updateBoard(boardState) {
             if (!boardState || !boardState.board) return;
             
+            // デバッグログ
+            console.log('[updateBoard] Called with boardState:', boardState);
+            console.log('[updateBoard] Board keys:', Object.keys(boardState.board).slice(0, 3));
+            
+            // グローバル状態を更新
+            window.gameData.boardState = boardState;
+
             const cells = document.querySelectorAll('.cell');
+            let updateCount = 0;
             cells.forEach(cell => {
                 const rank = parseInt(cell.dataset.rank);
                 const file = parseInt(cell.dataset.file);
@@ -866,22 +994,39 @@
                 
                 // 駒の色クラスをリセット
                 cell.className = 'cell';
-                cell.textContent = '';
+                
+                // セルの内容を完全にクリアして再構築
+                cell.innerHTML = '';
                 
                 if (piece) {
                     const pieceName = pieceNameMap[piece.type] || piece.type;
-                    cell.textContent = pieceName;
+                    const pieceTextSpan = document.createElement('span');
+                    pieceTextSpan.className = 'piece-text';
+                    pieceTextSpan.textContent = pieceName;
+                    cell.appendChild(pieceTextSpan);
                     cell.classList.add('piece-' + piece.color);
                     
                     const colorName = piece.color === 'sente' ? '先手' : '後手';
                     cell.setAttribute('aria-label', `${file}の${rank} ${colorName}の${pieceName}`);
                 } else {
+                    // 空のセルにも空のspanを追加（一貫性のため）
+                    const pieceTextSpan = document.createElement('span');
+                    pieceTextSpan.className = 'piece-text';
+                    cell.appendChild(pieceTextSpan);
                     cell.setAttribute('aria-label', `${file}の${rank} 空`);
                 }
+                updateCount++;
             });
 
+            console.log('[updateBoard] Updated', updateCount, 'cells');
             updateHands(boardState.hand || { sente: {}, gote: {} });
+            
+            // DOM更新を強制的に反映
+            void document.body.offsetHeight;
         }
+
+        // グローバルに割り当て
+        window.updateBoard = updateBoard;
 
         function updateHands(hand) {
             console.log('[updateHands] Updating hands with:', hand);
@@ -928,6 +1073,10 @@
         }
 
         function handleHandPieceSelect(e) {
+            if (isGameOver()) {
+                document.getElementById('game-announcements').textContent = 'ゲームは終了しています';
+                return;
+            }
             const button = e.currentTarget;
             const pieceColor = button.dataset.color;
             const pieceType = button.dataset.piece;
@@ -980,8 +1129,28 @@
                 currentPlayer = data.currentPlayer;
             }
             
-            // 成り可能かチェック
-            if (data.canPromote) {
+            // ゲーム状態を更新
+            if (data.status !== undefined) {
+                window.gameData.status = data.status;
+            }
+            if (data.winner !== undefined) {
+                window.gameData.winner = data.winner;
+            }
+            if (data.moveCount !== undefined) {
+                window.gameData.moveCount = data.moveCount;
+            }
+            
+            // ゲーム終了時のランキング登録ダイアログを表示
+            if (data.status === 'mate' && data.winner === 'human') {
+                console.log('[updateGameInfo] Game won! Showing ranking dialog');
+                // 少し遅延させてダイアログを表示（アニメーションのため）
+                setTimeout(() => {
+                    showRankingRegistrationDialog();
+                }, 500);
+            }
+            
+            // 成り可能かチェック（ゲーム終了時は表示しない）
+            if (data.canPromote && !isGameOver()) {
                 showPromotionDialog(data.piece, data.boardState);
             }
         }
@@ -1167,6 +1336,99 @@
                 window.location.href = '/';
             }
         });
+        
+        // ゲーム終了時のランキング登録ダイアログ処理
+        const rankingDialog = document.getElementById('ranking-registration-dialog');
+        if (rankingDialog) {
+            // 登録ボタンのクリックハンドラ
+            document.getElementById('btn-register-ranking')?.addEventListener('click', function() {
+                const nickname = document.getElementById('ranking-nickname-input').value.trim();
+                
+                if (!nickname) {
+                    alert('ニックネームを入力してください');
+                    return;
+                }
+                
+                if (nickname.length < 3 || nickname.length > 15) {
+                    alert('ニックネームは3〜15文字で入力してください');
+                    return;
+                }
+                
+                // ランキングに登録
+                fetch('/ranking/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        game_session_id: window.gameSessionId,
+                        nickname: nickname
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const rank = data.data?.rank || '';
+                        const message = rank ? `${rank}位に登録されました！` : 'ランキングに登録されました！';
+                        
+                        // aria-live領域に通知
+                        const announcements = document.getElementById('game-announcements');
+                        announcements.textContent = message;
+                        
+                        // ダイアログを閉じる
+                        rankingDialog.style.display = 'none';
+                        
+                        // ランキングページへのリンクを表示
+                        const infoPanel = document.querySelector('.info-panel');
+                        if (infoPanel) {
+                            const linkDiv = document.createElement('div');
+                            linkDiv.style.marginTop = '24px';
+                            linkDiv.style.padding = '16px';
+                            linkDiv.style.background = '#E6F3FF';
+                            linkDiv.style.borderRadius = '4px';
+                            linkDiv.innerHTML = `
+                                <p style="margin: 0 0 12px 0; font-weight: bold;">${message}</p>
+                                <a href="/ranking" class="btn btn-primary" style="display: inline-block;">
+                                    ランキングを見る
+                                </a>
+                            `;
+                            infoPanel.appendChild(linkDiv);
+                            
+                            // ランキングリンクにフォーカスを移動（スクロールなし）
+                            const rankingLink = linkDiv.querySelector('a');
+                            if (rankingLink) {
+                                rankingLink.focus({ preventScroll: true });
+                                announcements.textContent = message + ' ランキングを見るボタンにフォーカスしました。';
+                            }
+                        }
+                    } else {
+                        alert(data.message || 'ランキング登録に失敗しました');
+                        // 失敗時は入力フィールドにフォーカスを戻す
+                        document.getElementById('ranking-nickname-input')?.focus();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('エラーが発生しました');
+                    document.getElementById('ranking-nickname-input')?.focus();
+                });
+            });
+            
+            // スキップボタンのクリックハンドラ
+            document.getElementById('btn-skip-ranking')?.addEventListener('click', function() {
+                rankingDialog.style.display = 'none';
+                document.getElementById('game-announcements').textContent = 'ランキング登録をスキップしました';
+                // 盤面の最初のセルにフォーカスを戻す
+                const firstCell = document.querySelector('.cell');
+                if (firstCell) {
+                    firstCell.focus();
+                }
+            });
+        }
+        
+        // ページ読み込み時にゲーム終了状態を確認
+        showRankingRegistrationDialog();
     });
 </script>
 @endpush

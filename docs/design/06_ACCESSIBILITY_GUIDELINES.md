@@ -249,6 +249,22 @@ function handleKeyDown(e) {
 }
 ```
 
+**実装例: ランキング登録ダイアログ** ★実装済み
+```javascript
+// Escapeキーでダイアログを閉じる
+const handleEscape = (e) => {
+  if (e.key === 'Escape') {
+    rankingDialog.style.display = 'none';
+    document.getElementById('game-announcements').textContent = 
+      'ランキング登録をキャンセルしました';
+    const firstCell = document.querySelector('.cell');
+    if (firstCell) firstCell.focus();
+    document.removeEventListener('keydown', handleEscape);
+  }
+};
+document.addEventListener('keydown', handleEscape);
+```
+
 #### 2.1.4 文字キーショートカット（レベルA）
 
 **要件**
@@ -372,6 +388,22 @@ button:focus-visible {
   }
 }
 ```
+
+**フォーカス管理のベストプラクティス** ★実装済み
+```javascript
+// 動的に追加された要素へのフォーカス移動
+// preventScroll オプションでスクロールを防止
+rankingLink.focus({ preventScroll: true });
+
+// aria-live でフォーカス移動をアナウンス
+announcements.textContent = 
+  '1位に登録されました！ ランキングを見るボタンにフォーカスしました。';
+```
+
+**実装のポイント**
+- `preventScroll: true` で予期しないスクロールを防止
+- フォーカス移動時は aria-live でアナウンス
+- スクリーンリーダーユーザーに状態変化を明確に伝える
 
 ---
 

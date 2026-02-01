@@ -169,6 +169,12 @@ class GameController extends Controller
         }
 
         try {
+            if ($session->status !== 'in_progress') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ゲームは終了しています。',
+                ], 400);
+            }
             // 現在のボード状態を取得
             $boardState = $session->getBoardPosition();
 
@@ -229,8 +235,10 @@ class GameController extends Controller
 
                 $opponentColor = $boardState['turn'];
                 if ($this->shogiService->isCheckmate($boardState, $opponentColor)) {
-                    $session->status = 'finished';
-                    $session->result = $currentTurn === 'sente' ? 'sente_win' : 'gote_win';
+                    $session->status = 'mate';
+                    $session->winner = $currentTurn === $session->human_color ? 'human' : 'ai';
+                    $session->winner_type = 'checkmate';
+                    $this->gameService->updateElapsedTime($session);
                 }
 
                 $session->save();
@@ -244,6 +252,8 @@ class GameController extends Controller
                     'moveCount' => $gameState['moveCount'],
                     'currentPlayer' => $gameState['currentPlayer'],
                     'humanColor' => $session->human_color,
+                    'status' => $gameState['status'],
+                    'winner' => $gameState['winner'],
                     'canPromote' => false,
                     'piece' => [
                         'type' => $pieceType,
@@ -268,8 +278,11 @@ class GameController extends Controller
                         $session->increment('total_moves');
 
                         if ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
-                            $session->status = 'finished';
-                            $session->result = $boardState['turn'] === 'sente' ? 'sente_win' : 'gote_win';
+                            $session->status = 'mate';
+                            $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+                            $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
+                            $session->winner_type = 'checkmate';
+                            $this->gameService->updateElapsedTime($session);
                         }
 
                         $session->save();
@@ -340,8 +353,10 @@ class GameController extends Controller
             // 人間の指し手後、相手が詰みか確認
             $opponentColor = $boardState['turn'];
             if ($this->shogiService->isCheckmate($boardState, $opponentColor)) {
-                $session->status = 'finished';
-                $session->result = $piece['color'] === 'sente' ? 'sente_win' : 'gote_win';
+                $session->status = 'mate';
+                $session->winner = $piece['color'] === $session->human_color ? 'human' : 'ai';
+                $session->winner_type = 'checkmate';
+                $this->gameService->updateElapsedTime($session);
             }
             
             $session->save();
@@ -356,6 +371,8 @@ class GameController extends Controller
                 'moveCount' => $gameState['moveCount'],
                 'currentPlayer' => $gameState['currentPlayer'],
                 'humanColor' => $session->human_color,
+                'status' => $gameState['status'],
+                'winner' => $gameState['winner'],
                 'canPromote' => $canPromote,
                 'piece' => $piece,
                 'promotionTarget' => [
@@ -386,8 +403,11 @@ class GameController extends Controller
                     
                     // AI の指し手後、人間が詰みか確認
                     if ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
-                        $session->status = 'finished';
-                        $session->result = $boardState['turn'] === 'sente' ? 'sente_win' : 'gote_win';
+                        $session->status = 'mate';
+                        $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+                        $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
+                        $session->winner_type = 'checkmate';
+                        $this->gameService->updateElapsedTime($session);
                     }
                     
                     $session->save();

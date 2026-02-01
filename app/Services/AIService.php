@@ -206,6 +206,7 @@ class AIService
                             'to_file' => $file,
                             'piece_type' => $pieceType,
                             'is_drop' => true,
+                            'capture' => false,  // ドロップは駒を取らない
                         ];
                     }
                 }
