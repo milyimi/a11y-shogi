@@ -16,10 +16,18 @@ class GameService
      */
     public function createGame(string $difficulty, string $humanColor = 'sente'): GameSession
     {
+        $sessionId = session()->getId();
+        
+        // 既存のゲーム（status: in_progress）があれば削除
+        // （同じセッションIDでのUNIQUE制約回避のため）
+        GameSession::where('session_id', $sessionId)
+            ->where('status', 'in_progress')
+            ->delete();
+        
         $initialBoard = $this->shogiService->getInitialBoard();
         
         return GameSession::create([
-            'session_id' => session()->getId(),
+            'session_id' => $sessionId,
             'difficulty' => $difficulty,
             'human_color' => $humanColor,
             'current_board_position' => json_encode($initialBoard),

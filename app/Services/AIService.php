@@ -19,16 +19,16 @@ class AIService
 
         switch ($difficulty) {
             case 'easy':
-                // 初級：ランダムに指す
-                return $this->getRandomMove($possibleMoves);
+                // 初級：ほぼランダムに指す（30%の確率で悪い手）
+                return $this->getEasyMove($possibleMoves, $boardState, $aiColor);
             
             case 'medium':
-                // 中級：簡易評価（駒を取る手を優先）
-                return $this->getSimpleEvaluatedMove($possibleMoves, $boardState, $aiColor);
+                // 中級：基本的な戦術を理解しているが時々ミス（10%失敗率）
+                return $this->getMediumMove($possibleMoves, $boardState, $aiColor);
             
             case 'hard':
-                // 上級：より深い評価
-                return $this->getAdvancedEvaluatedMove($possibleMoves, $boardState, $aiColor);
+                // 上級：市販ソフト並みの強さ
+                return $this->getHardMove($possibleMoves, $boardState, $aiColor);
             
             default:
                 return $this->getRandomMove($possibleMoves);
@@ -230,6 +230,61 @@ class AIService
     }
 
     /**
+     * 初級用：ほぼランダム（30%の確率で明らかに悪い手を選ぶ）
+     */
+    private function getEasyMove(array $moves, array $boardState, string $color): ?array
+    {
+        if (empty($moves)) {
+            return null;
+        }
+
+        // 30%の確率で完全ランダムに（悪い手もあり得る）
+        if (rand(0, 100) < 30) {
+            return $this->getRandomMove($moves);
+        }
+
+        // 70%の確率で少し考える（駒を取る手を少し優先）
+        $captureMoves = array_filter($moves, fn($m) => $m['capture']);
+        
+        if (!empty($captureMoves) && rand(0, 100) < 60) {
+            return $captureMoves[array_rand($captureMoves)];
+        }
+
+        return $this->getRandomMove($moves);
+    }
+
+    /**
+     * 中級用：基本的な戦術（10%の確率で失敗）
+     */
+    private function getMediumMove(array $moves, array $boardState, string $color): ?array
+    {
+        if (empty($moves)) {
+            return null;
+        }
+
+        // 10%の確率で悪い手を選ぶ（ミス）
+        if (rand(0, 100) < 10) {
+            return $this->getRandomMove($moves);
+        }
+
+        // 通常は簡易評価で指す
+        return $this->getSimpleEvaluatedMove($moves, $boardState, $color);
+    }
+
+    /**
+     * 上級用：市販ソフト並みの強さ
+     */
+    private function getHardMove(array $moves, array $boardState, string $color): ?array
+    {
+        if (empty($moves)) {
+            return null;
+        }
+
+        // 先読み的な評価で最良手を選ぶ
+        return $this->getAdvancedEvaluatedMove($moves, $boardState, $color);
+    }
+
+    /**
      * 簡易評価で指し手を選択（中級用）
      * 駒を取る手を優先、その中でも価値の高い駒から
      */
@@ -298,7 +353,7 @@ class AIService
     }
 
     /**
-     * 指し手のスコアを評価
+     * 指し手のスコアを評価（市販ソフト並み）
      */
     private function evaluateMove(array $move, array $boardState, string $color): int
     {
@@ -315,33 +370,108 @@ class AIService
             'keima' => 200,
             'kyosha' => 150,
             'fu' => 100,
+            // 成った駒
+            'ryu' => 600,      // 龍（飛の成）
+            'uma' => 500,      // 馬（角の成）
+            'tokin' => 150,    // と金
+            'nkyosha' => 160,  // 成香
+            'nkeima' => 210,   // 成桂
+            'ngin' => 260,     // 成銀
         ];
 
-        // 駒を取る場合
+        // ========== 1. 詰みに関連する手（最高優先度） ==========
+        // 敵の王を取れば即座に最良手
+        if ($move['capture']) {
+            $targetRank = $move['to_rank'];
+            $targetFile = $move['to_file'];
+            $targetPiece = $boardState['board'][$targetRank][$targetFile];
+            
+            if ($targetPiece && in_array($targetPiece['type'], ['gyoku', 'ou'])) {
+                return 999999; // 詰みスコア
+            }
+        }
+
+        // ========== 2. 駒を取る手（高い優先度） ==========
         if ($move['capture']) {
             $targetRank = $move['to_rank'];
             $targetFile = $move['to_file'];
             $targetPiece = $boardState['board'][$targetRank][$targetFile];
             
             if ($targetPiece) {
-                $score += $pieceValues[$targetPiece['type']] ?? 0;
-                
-                // 相手の王を取ればゲーム終了（最高スコア）
-                if (in_array($targetPiece['type'], ['gyoku', 'ou'])) {
-                    $score += 10000;
-                }
+                $captureValue = $pieceValues[$targetPiece['type']] ?? 0;
+                $score += $captureValue * 3; // 駒を取る手を強く優先
             }
         }
 
-        // 進出（敵陣に入る）の評価
-        $opponentRankStart = $color === 'sente' ? 1 : 9;
-        if ($move['to_rank'] <= 3 || $move['to_rank'] >= 7) {
-            $score += 50;
+        // ========== 3. 敵陣への進出と攻撃性 ==========
+        $enemyTerritory = ($color === 'sente') ? ($move['to_rank'] <= 3) : ($move['to_rank'] >= 7);
+        if ($enemyTerritory) {
+            $score += 150;
+            
+            // さらに深く進出していれば加点
+            $depth = ($color === 'sente') ? (4 - $move['to_rank']) : ($move['to_rank'] - 6);
+            $score += $depth * 50;
         }
 
-        // 駒の集中度
-        $score += rand(0, 20); // 同スコアの場合のランダム性
+        // ========== 4. 成り可能な手の高い優先度 ==========
+        if ($this->canPromoteAtTarget($boardState, $move, $color)) {
+            $score += 200; // 成れる手は強く優先
+        }
+
+        // ========== 5. 盤面中央への移動（陣地取り） ==========
+        $centerFile = abs($move['to_file'] - 5);
+        $centerRank = abs($move['to_rank'] - 5);
+        if ($centerFile <= 2 && $centerRank <= 2) {
+            $score += 80;
+        } elseif ($centerFile <= 3 && $centerRank <= 3) {
+            $score += 40;
+        }
+
+        // ========== 6. 敵王への圧力 ==========
+        // 敵の王の周辺マスに進出
+        $enemyKingRank = $color === 'sente' ? 1 : 9; // 敵王は通常ここ付近
+        $distanceToEnemyKing = abs($move['to_rank'] - $enemyKingRank);
+        if ($distanceToEnemyKing <= 3) {
+            $score += 100 - ($distanceToEnemyKing * 20);
+        }
+
+        // ========== 7. 自分の王の防御 ==========
+        if ($move['is_drop'] ?? false) {
+            // ドロップ（打ち込み）は防御的な手として評価
+            $score += 80;
+        }
+
+        // 自分の王の周辺に駒を配置（防御）
+        $myKingRank = $color === 'sente' ? 9 : 1;
+        $distanceToMyKing = abs($move['to_rank'] - $myKingRank);
+        if ($distanceToMyKing >= 5) {
+            $score += 30; // 王から離れている手は少し加点（前進する意思）
+        }
+
+        // ========== 8. ランダム性（強さの微調整） ==========
+        $score += rand(-5, 15); // 小さなランダム要素で自然な戦い
 
         return $score;
+    }
+
+    /**
+     * 指定位置で成ることができるか確認
+     */
+    private function canPromoteAtTarget(array $boardState, array $move, string $color): bool
+    {
+        $piece = $boardState['board'][$move['from_rank']][$move['from_file']] ?? null;
+        if (!$piece) return false;
+
+        // 成ることができる駒か
+        if (!$this->shogiService->canPromote($piece['type'])) {
+            return false;
+        }
+
+        // 敵陣にいるか
+        if ($color === 'sente') {
+            return $move['to_rank'] <= 3;
+        } else {
+            return $move['to_rank'] >= 7;
+        }
     }
 }

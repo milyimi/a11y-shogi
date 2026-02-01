@@ -66,9 +66,17 @@ app/Services/
   │   └── checkGameEnd()         - ゲーム終了判定
   │
   ├── AIEngine
-  │   ├── generateMove(difficulty) - 指し手生成
-  │   ├── evaluateBoard()          - 局面評価
-  │   └── minimax()                - ミニマックス探索
+  │   ├── generateMove(difficulty)  - 指し手生成 ★改善
+  │   │   ├── easy: ランダム選択
+  │   │   ├── medium: 簡易評価（駒の価値優先）
+  │   │   └── hard: 高度な評価
+  │   │       ├── 駒を取る手を最優先
+  │   │       ├── 敵陣への進出を評価
+  │   │       ├── 盤面中央の制御
+  │   │       ├── 駒の成り可能性
+  │   │       └── 敵王への接近度
+  │   ├── evaluateMove()           - 指し手評価（改善版）
+  │   └── canPromoteAtTarget()     - 成り可能性判定 ★新規
   │
   └── ShogiRules
       ├── isValidMove()     - ルール検証
