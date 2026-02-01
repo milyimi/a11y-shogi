@@ -271,13 +271,24 @@ class GameController extends Controller
                     );
 
                     if ($aiMove) {
+                        $aiCapturedPiece = $aiMove['capture']
+                            ? ($boardState['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null)
+                            : null;
+                        $aiCapturedKing = $aiCapturedPiece && in_array($aiCapturedPiece['type'], ['gyoku', 'ou'], true);
+
                         $aiBoard = $this->executeMove($boardState, $aiMove);
                         $aiBoard['turn'] = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
 
                         $session->updateBoardPosition($aiBoard);
                         $session->increment('total_moves');
 
-                        if ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
+                        if ($aiCapturedKing) {
+                            $session->status = 'mate';
+                            $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+                            $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
+                            $session->winner_type = 'checkmate';
+                            $this->gameService->updateElapsedTime($session);
+                        } elseif ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
                             $session->status = 'mate';
                             $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
                             $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
@@ -342,6 +353,14 @@ class GameController extends Controller
                 }
                 $boardState['hand'][$opponentColor][$pieceType]++;
             }
+
+            // 玉（王）を取った場合は即終了
+            if ($capturedPiece && in_array($capturedPiece['type'], ['gyoku', 'ou'], true)) {
+                $session->status = 'mate';
+                $session->winner = $piece['color'] === $session->human_color ? 'human' : 'ai';
+                $session->winner_type = 'checkmate';
+                $this->gameService->updateElapsedTime($session);
+            }
             
             // 手番を交代
             $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
@@ -350,9 +369,9 @@ class GameController extends Controller
             $session->updateBoardPosition($boardState);
             $session->increment('total_moves');
             
-            // 人間の指し手後、相手が詰みか確認
+            // 人間の指し手後、相手が詰みか確認（王を取っていない場合のみ）
             $opponentColor = $boardState['turn'];
-            if ($this->shogiService->isCheckmate($boardState, $opponentColor)) {
+            if ($session->status !== 'mate' && $this->shogiService->isCheckmate($boardState, $opponentColor)) {
                 $session->status = 'mate';
                 $session->winner = $piece['color'] === $session->human_color ? 'human' : 'ai';
                 $session->winner_type = 'checkmate';
@@ -393,6 +412,11 @@ class GameController extends Controller
                 );
                 
                 if ($aiMove) {
+                    $aiCapturedPiece = $aiMove['capture']
+                        ? ($boardState['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null)
+                        : null;
+                    $aiCapturedKing = $aiCapturedPiece && in_array($aiCapturedPiece['type'], ['gyoku', 'ou'], true);
+
                     // AIの指し手を実行
                     $aiBoard = $this->executeMove($boardState, $aiMove);
                     $aiBoard['turn'] = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
@@ -401,8 +425,14 @@ class GameController extends Controller
                     $session->updateBoardPosition($aiBoard);
                     $session->increment('total_moves');
                     
-                    // AI の指し手後、人間が詰みか確認
-                    if ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
+                    // AI の指し手後、人間が詰みか確認（王を取った場合は即終了）
+                    if ($aiCapturedKing) {
+                        $session->status = 'mate';
+                        $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+                        $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
+                        $session->winner_type = 'checkmate';
+                        $this->gameService->updateElapsedTime($session);
+                    } elseif ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
                         $session->status = 'mate';
                         $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
                         $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
@@ -582,6 +612,7 @@ class GameController extends Controller
             // ゲームセッションをリセット
             $session->updateBoardPosition($boardState);
             $session->total_moves = 0;
+            $session->elapsed_seconds = 0;
             $session->status = 'in_progress';
             $session->save();
 

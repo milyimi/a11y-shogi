@@ -301,12 +301,12 @@
             <div style="background: #FFF; border: 4px solid #333; border-radius: 8px; padding: 32px; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);">
                 <h2 id="ranking-dialog-title" style="margin-top: 0; margin-bottom: 16px; font-size: 1.5rem;">🎉 ランキングに登録しますか？</h2>
                 
-                <p style="margin-bottom: 24px; font-size: 1.1rem; line-height: 1.6;">
+                <p id="ranking-dialog-message" style="margin-bottom: 24px; font-size: 1.1rem; line-height: 1.6;">
                     おめでとうございます！AIに勝利しました。
                     <br>ニックネームを入力してランキングに登録してください。
                 </p>
                 
-                <div style="margin-bottom: 24px;">
+                <div id="ranking-input-section" style="margin-bottom: 24px;">
                     <label for="ranking-nickname-input" style="display: block; margin-bottom: 8px; font-weight: bold;">
                         ニックネーム（3〜15文字）:
                     </label>
@@ -496,27 +496,69 @@
     function showRankingRegistrationDialog() {
         const gameData = window.gameData || {};
         
-        // ゲームが終了し、人間が勝利した場合のみ表示
-        if (gameData.status === 'mate' && gameData.winner === 'human') {
-            // 既に登録済みか確認
+        // ゲームが終了した場合に表示
+        if (gameData.status && gameData.status !== 'in_progress') {
+            const isHumanWin = gameData.status === 'mate' && gameData.winner === 'human';
+
+            // 既に表示済みか確認
             const rankingDialog = document.getElementById('ranking-registration-dialog');
             if (rankingDialog && !rankingDialog.dataset.shown) {
+                const titleEl = document.getElementById('ranking-dialog-title');
+                const messageEl = document.getElementById('ranking-dialog-message');
+                const inputSection = document.getElementById('ranking-input-section');
+                const registerBtn = document.getElementById('btn-register-ranking');
+                const skipBtn = document.getElementById('btn-skip-ranking');
+
                 rankingDialog.dataset.shown = 'true';
                 rankingDialog.style.display = 'flex';
-                
-                // ニックネーム入力にフォーカス
-                setTimeout(() => {
-                    const nicknameInput = document.getElementById('ranking-nickname-input');
-                    if (nicknameInput) {
-                        nicknameInput.focus();
+
+                if (isHumanWin) {
+                    if (titleEl) titleEl.textContent = '🎉 ランキングに登録しますか？';
+                    if (messageEl) {
+                        messageEl.innerHTML = 'おめでとうございます！AIに勝利しました。<br>ニックネームを入力してランキングに登録してください。';
                     }
-                }, 100);
+                    if (inputSection) inputSection.style.display = '';
+                    if (registerBtn) {
+                        registerBtn.style.display = '';
+                        registerBtn.disabled = false;
+                    }
+                    if (skipBtn) skipBtn.textContent = 'スキップ';
+
+                    // ニックネーム入力にフォーカス
+                    setTimeout(() => {
+                        const nicknameInput = document.getElementById('ranking-nickname-input');
+                        if (nicknameInput) {
+                            nicknameInput.focus({ preventScroll: true });
+                        }
+                    }, 100);
+                } else {
+                    if (titleEl) titleEl.textContent = '対局が終了しました';
+                    if (messageEl) {
+                        messageEl.innerHTML = '今回はランキング登録の対象外です。<br>ランキングを見ることができます。';
+                    }
+                    if (inputSection) inputSection.style.display = 'none';
+                    if (registerBtn) {
+                        registerBtn.style.display = 'none';
+                        registerBtn.disabled = true;
+                    }
+                    if (skipBtn) skipBtn.textContent = '閉じる';
+
+                    // 閉じるボタンにフォーカス
+                    setTimeout(() => {
+                        if (skipBtn) {
+                            skipBtn.focus({ preventScroll: true });
+                        }
+                    }, 100);
+                }
                 
                 // Escキーでダイアログを閉じる
                 const handleEscape = (e) => {
                     if (e.key === 'Escape') {
                         rankingDialog.style.display = 'none';
-                        document.getElementById('game-announcements').textContent = 'ランキング登録をキャンセルしました';
+                        const announcement = isHumanWin
+                            ? 'ランキング登録をキャンセルしました'
+                            : '対局を終了しました';
+                        document.getElementById('game-announcements').textContent = announcement;
                         const firstCell = document.querySelector('.cell');
                         if (firstCell) firstCell.focus();
                         document.removeEventListener('keydown', handleEscape);
@@ -531,6 +573,12 @@
 
 @push('scripts')
 <script>
+    // ページ読み込み時にランキング登録ダイアログの表示フラグをリセット
+    const rankingDialog = document.getElementById('ranking-registration-dialog');
+    if (rankingDialog) {
+        rankingDialog.dataset.shown = '';
+    }
+    
     // キーボード操作対応
     document.addEventListener('DOMContentLoaded', function() {
         const cells = document.querySelectorAll('.cell');
@@ -1141,8 +1189,8 @@
             }
             
             // ゲーム終了時のランキング登録ダイアログを表示
-            if (data.status === 'mate' && data.winner === 'human') {
-                console.log('[updateGameInfo] Game won! Showing ranking dialog');
+            if (data.status && data.status !== 'in_progress') {
+                console.log('[updateGameInfo] Game finished! Showing dialog');
                 // 少し遅延させてダイアログを表示（アニメーションのため）
                 setTimeout(() => {
                     showRankingRegistrationDialog();
@@ -1417,8 +1465,11 @@
             
             // スキップボタンのクリックハンドラ
             document.getElementById('btn-skip-ranking')?.addEventListener('click', function() {
+                const isHumanWin = window.gameData?.status === 'mate' && window.gameData?.winner === 'human';
                 rankingDialog.style.display = 'none';
-                document.getElementById('game-announcements').textContent = 'ランキング登録をスキップしました';
+                document.getElementById('game-announcements').textContent = isHumanWin
+                    ? 'ランキング登録をスキップしました'
+                    : '対局を終了しました';
                 // 盤面の最初のセルにフォーカスを戻す
                 const firstCell = document.querySelector('.cell');
                 if (firstCell) {
