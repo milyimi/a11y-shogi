@@ -653,6 +653,7 @@ class GameController extends Controller
             $session->total_moves = 0;
             $session->elapsed_seconds = 0;
             $session->status = 'in_progress';
+            $session->winner = null;
             $session->save();
 
             // 指し手の履歴を削除
@@ -660,6 +661,9 @@ class GameController extends Controller
 
             // ボード状態の履歴を削除
             BoardState::where('game_session_id', $session->id)->delete();
+
+            // このセッションの古いランキング登録を削除（リセット後に再度登録可能にする）
+            \App\Models\Ranking::where('game_session_id', $session->id)->delete();
 
             return response()->json([
                 'success' => true,

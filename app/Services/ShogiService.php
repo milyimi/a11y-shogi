@@ -377,6 +377,22 @@ class ShogiService
     }
 
     /**
+     * 王手されているか確認
+     */
+    public function isKingInCheck(array $boardState, string $color): bool
+    {
+        $board = $boardState['board'] ?? [];
+        $kingPos = $this->findKing($board, $color);
+        if (!$kingPos) {
+            return true;
+        }
+
+        $opponentColor = $color === 'sente' ? 'gote' : 'sente';
+
+        return $this->isPositionUnderAttack($board, $kingPos['rank'], $kingPos['file'], $opponentColor);
+    }
+
+    /**
      * 駒が指定した位置を攻撃できるか確認
      */
     private function canAttack(array $board, int $fromRank, int $fromFile, int $toRank, int $toFile, string $type, string $color): bool

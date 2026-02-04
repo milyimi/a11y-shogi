@@ -11,7 +11,7 @@ describe('盤面の境界値テスト - エッジケース', function () {
         // 歩は1段に打てない
         $isLegal = $shogi->isLegalDrop($boardState, 'fu', 1, 5, 'sente');
         expect($isLegal)->toBeFalse();
-    });
+    })->group('smoke');
 
     it('盤の端（9段）への移動が制限される駒がある', function () {
         $shogi = app(ShogiService::class);

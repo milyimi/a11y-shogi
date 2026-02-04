@@ -10,7 +10,7 @@ it('二歩は禁止される', function () {
     $isLegal = $shogi->isLegalDrop($boardState, 'fu', 5, 5, 'sente');
 
     expect($isLegal)->toBeFalse();
-});
+})->group('smoke');
 
 it('成駒がある列でも歩は打てる（成駒は二歩対象外）', function () {
     $shogi = app(ShogiService::class);

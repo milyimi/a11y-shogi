@@ -4,6 +4,8 @@ use App\Services\AIService;
 use App\Services\ShogiService;
 use Illuminate\Support\Facades\Artisan;
 
+$runSlow = filter_var(env('RUN_SLOW_TESTS', false), FILTER_VALIDATE_BOOLEAN);
+
 describe('AI Benchmark コマンド - 自己対局ベンチマーク', function () {
     it('ai:benchmark コマンドが実行可能', function () {
         $code = Artisan::call('ai:benchmark', [
@@ -94,7 +96,7 @@ describe('AI Benchmark コマンド - 自己対局ベンチマーク', function 
         expect($output1)->toContain('先手勝ち');
         expect($output2)->toContain('先手勝ち');
     });
-});
+})->group('slow')->skip(fn () => !$runSlow, 'RUN_SLOW_TESTS=1 で実行');
 
 describe('AI Elo レーティング コマンド', function () {
     it('ai:elo コマンドが実行可能', function () {
@@ -224,7 +226,7 @@ describe('AI Elo レーティング コマンド', function () {
         expect($output1)->toContain('Elo(easy)');
         expect($output2)->toContain('Elo(hard)');
     });
-});
+})->group('slow')->skip(fn () => !$runSlow, 'RUN_SLOW_TESTS=1 で実行');
 
 describe('AI 評価指標統合テスト', function () {
     it('複数難易度のランキングが作成可能', function () {
@@ -327,4 +329,4 @@ describe('AI 評価指標統合テスト', function () {
         // 同じシードで実行すれば結果が同じはず
         expect($output1)->toBe($output2);
     });
-});
+})->group('slow')->skip(fn () => !$runSlow, 'RUN_SLOW_TESTS=1 で実行');
