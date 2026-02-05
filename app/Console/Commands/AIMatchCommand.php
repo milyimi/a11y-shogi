@@ -200,13 +200,22 @@ class AIMatchCommand extends Command
                 $logName = $saveLog ?: ('ai_match_' . now()->format('Ymd_His') . '.json');
                 $logPath = 'ai_matches/' . $logName;
                 $payload = [
-                    'meta' => [
+                    'config' => [
                         'games' => $games,
                         'php_depth' => $phpDepth,
                         'external_depth' => $externalDepth,
+                        'external_type' => $externalType,
+                        'external_label' => $externalLabel,
+                        'usi_path' => $usiPath ?? null,
+                        'usi_variant' => $usiVariant ?? null,
+                        'usi_movetime' => $usiMovetime ?? null,
                         'max_moves' => $maxMoves,
                         'seed' => $seed,
                         'k' => $k,
+                        'sennichite' => $sennichiteThreshold,
+                        'sennichite_min_moves' => $sennichiteMinMoves,
+                        'external_noise' => $externalNoise,
+                        'php_noise' => $phpNoise,
                         'timestamp' => now()->toIso8601String(),
                     ],
                     'results' => $results,
