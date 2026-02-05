@@ -16,7 +16,7 @@ class AIMatchCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=} {--k=20} {--save-log=} {--external=python} {--usi-path=}';
+    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=} {--k=20} {--save-log=} {--external=python} {--usi-path=} {--sennichite=4} {--sennichite-min-moves=24}';
 
     /**
      * The console command description.
@@ -39,6 +39,8 @@ class AIMatchCommand extends Command
         $saveLog = $this->option('save-log');
         $externalType = (string) $this->option('external');
         $usiPath = $this->option('usi-path');
+        $sennichiteThreshold = (int) $this->option('sennichite');
+        $sennichiteMinMoves = (int) $this->option('sennichite-min-moves');
 
         if ($seed) {
             mt_srand($seed);
@@ -123,7 +125,7 @@ class AIMatchCommand extends Command
                 // 千日手チェック
                 $hash = $this->hashPosition($boardState);
                 $positionCounts[$hash] = ($positionCounts[$hash] ?? 0) + 1;
-                if ($positionCounts[$hash] >= 3) {
+                if ($sennichiteThreshold > 0 && $moves >= $sennichiteMinMoves && $positionCounts[$hash] >= $sennichiteThreshold) {
                     $winner = 'draw';
                     $endReason = 'sennichite';
                     break;
