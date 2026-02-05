@@ -415,25 +415,58 @@ class ShogiService
         $board = $boardState['board'];
         $hand = $boardState['hand'] ?? ['sente' => [], 'gote' => []];
 
-        // 盤面の全てのマスをチェック
+        // まず王手かチェック
+        $kingPos = $this->findKing($board, $color);
+        if (!$kingPos) {
+            return false; // 王がない（あり得ない）
+        }
+
+        $isInCheck = $this->isPositionUnderAttack($board, $kingPos['rank'], $kingPos['file'], $color === 'sente' ? 'gote' : 'sente');
+
+        // 王手されていないなら詰みではない
+        if (!$isInCheck) {
+            return false;
+        }
+
+        // 王手されているので、詰み判定をする
+        // 高速化のため、まず王の移動が可能かチェック
+        for ($dr = -1; $dr <= 1; $dr++) {
+            for ($df = -1; $df <= 1; $df++) {
+                if ($dr === 0 && $df === 0) continue;
+                
+                $newRank = $kingPos['rank'] + $dr;
+                $newFile = $kingPos['file'] + $df;
+                
+                if ($newRank < 1 || $newRank > 9 || $newFile < 1 || $newFile > 9) {
+                    continue;
+                }
+                
+                // この移動が合法か確認
+                if ($this->isValidMove($boardState, $kingPos['rank'], $kingPos['file'], $newRank, $newFile, $color)) {
+                    return false; // 王が逃げられる
+                }
+            }
+        }
+
+        // 王が逃げられない場合、駒で王手を止められるか確認
+        // 盤面の全ての駒をチェック
         for ($rank = 1; $rank <= 9; $rank++) {
             for ($file = 1; $file <= 9; $file++) {
                 $piece = $board[$rank][$file] ?? null;
 
-                // 自分の駒の場合、移動できるマスがあるか確認
                 if ($piece && $piece['color'] === $color) {
-                    // 通常の移動先
+                    // この駒で何か指せるか確認（最初の3つの目標マスだけ）
                     for ($toRank = 1; $toRank <= 9; $toRank++) {
                         for ($toFile = 1; $toFile <= 9; $toFile++) {
-                            // 同じマスではない
-                            if ($rank === $toRank && $file === $toFile) {
-                                continue;
-                            }
+                            if ($rank === $toRank && $file === $toFile) continue;
 
-                            // 合法的な指し手か確認
                             if ($this->isValidMove($boardState, $rank, $file, $toRank, $toFile, $color)) {
-                                // 合法的な指し手がある = 詰みではない
-                                return false;
+                                // 指した後の盤面で王手が解けるか確認
+                                $testBoard = $this->simulateMove($boardState, $rank, $file, $toRank, $toFile, $color);
+                                $newKingPos = $this->findKing($testBoard['board'], $color);
+                                if ($newKingPos && !$this->isPositionUnderAttack($testBoard['board'], $newKingPos['rank'], $newKingPos['file'], $color === 'sente' ? 'gote' : 'sente')) {
+                                    return false; // 王手が解ける指し手がある
+                                }
                             }
                         }
                     }
@@ -441,45 +474,37 @@ class ShogiService
             }
         }
 
-        // 手札の駒で打つ（drop）ことができるか確認
+        // 手札の駒を確認
         if (!empty($hand[$color])) {
-            // 盤面の全てのマスをチェック
             for ($rank = 1; $rank <= 9; $rank++) {
                 for ($file = 1; $file <= 9; $file++) {
-                    $targetPiece = $board[$rank][$file] ?? null;
-
-                    // 空きマスの場合、駒を打つことができるか確認
-                    if (!$targetPiece) {
-                        foreach ($hand[$color] as $handPieceType => $count) {
-                            if ($count > 0) {
-                                if (!$this->isLegalDrop($boardState, $handPieceType, $rank, $file, $color, true)) {
-                                    continue;
-                                }
-
-                                // 手札の駒を打つことでcheck状態を解除できるか
-                                $testBoard = $board;
-                                $testBoard[$rank][$file] = ['type' => $handPieceType, 'color' => $color];
-
-                                $testBoardState = [
-                                    'board' => $testBoard,
-                                    'hand' => $hand,
-                                ];
-
-                                // 王が安全か確認
-                                $kingPos = $this->findKing($testBoard, $color);
-                                if ($kingPos && !$this->isPositionUnderAttack($testBoard, $kingPos['rank'], $kingPos['file'], $color === 'sente' ? 'gote' : 'sente')) {
-                                    // 合法的な打ちがある = 詰みではない
-                                    return false;
-                                }
-                            }
+                    foreach ($hand[$color] as $pieceType => $count) {
+                        if ($count > 0 && $this->isLegalDrop($boardState, $pieceType, $rank, $file, $color, true)) {
+                            return false; // 打つことで詰みから逃げられる
                         }
                     }
                 }
             }
         }
 
-        // 合法的な指し手がない = 詰み
+        // すべての手段を尽くしても詰みが解けない
         return true;
+    }
+
+    /**
+     * 指し手をシミュレート
+     */
+    private function simulateMove(array $boardState, int $fromRank, int $fromFile, int $toRank, int $toFile, string $color): array
+    {
+        $board = $boardState['board'];
+        $piece = $board[$fromRank][$fromFile];
+
+        // 駒を移動
+        $board[$toRank][$toFile] = $piece;
+        $board[$fromRank][$fromFile] = null;
+
+        $boardState['board'] = $board;
+        return $boardState;
     }
 
     /**

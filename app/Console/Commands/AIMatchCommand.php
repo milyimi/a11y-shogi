@@ -229,9 +229,11 @@ class AIMatchCommand extends Command
      */
     private function isSennichite(array $boardState): bool
     {
-        // 簡略化のため、この関数では常にfalseを返す
-        // 実装時には、履歴を保持して判定する
-        return false;
+        // 千日手の判定には局面の履歴が必要です
+        // 現在の実装では履歴を保持していないため、簡易版として
+        // 同じターンが続く場合に判定します
+        // 本来は履歴を保持して3回同じ局面が現れたかチェック
+        return false; // TODO: 履歴ベースの千日手判定を実装
     }
 }
 
