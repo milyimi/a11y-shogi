@@ -683,6 +683,14 @@ class AIService
         // 敵玉への攻撃評価
         $score += $this->evaluateAttackPotential($boardState, $aiColor, $enemyColor);
         $score -= $this->evaluateAttackPotential($boardState, $enemyColor, $aiColor);
+
+        // 詰み手筋評価（終盤で重要）
+        $score += $this->evaluateMatingAttack($boardState, $aiColor, $enemyColor);
+        $score -= $this->evaluateMatingAttack($boardState, $enemyColor, $aiColor);
+
+        // 大駒連携評価
+        $score += $this->evaluateMajorPieceCoordination($boardState, $aiColor);
+        $score -= $this->evaluateMajorPieceCoordination($boardState, $enemyColor);
         
         return $score;
     }
@@ -1250,5 +1258,141 @@ class AIService
             }
         }
         return null;
+    }
+
+    /**
+     * 終盤評価：敵玉への詰み手筋を検出
+     */
+    private function evaluateMatingAttack(array $boardState, string $color, string $enemyColor): int
+    {
+        $board = $boardState['board'];
+        $enemyKingPos = $this->findKing($board, $enemyColor);
+        if (!$enemyKingPos) {
+            return 0;
+        }
+
+        $matingScore = 0;
+        $kr = $enemyKingPos['rank'];
+        $kf = $enemyKingPos['file'];
+
+        // 敵玉の脱出マスをカウント
+        $escapeSquares = 0;
+        for ($dr = -1; $dr <= 1; $dr++) {
+            for ($df = -1; $df <= 1; $df++) {
+                if ($dr === 0 && $df === 0) continue;
+                $r = $kr + $dr;
+                $f = $kf + $df;
+                if ($r < 1 || $r > 9 || $f < 1 || $f > 9) continue;
+                
+                $piece = $board[$r][$f] ?? null;
+                if (!$piece || $piece['color'] !== $enemyColor) {
+                    $escapeSquares++;
+                }
+            }
+        }
+
+        // 脱出マスが少ないほど詰みに近い → 加点
+        if ($escapeSquares <= 1) {
+            $matingScore += 1500; // 詰み状態に近い
+        } elseif ($escapeSquares <= 2) {
+            $matingScore += 800;
+        } elseif ($escapeSquares <= 3) {
+            $matingScore += 400;
+        }
+
+        // 敵玉が盤端または隅に追い詰められている
+        $cornerDistance = min(
+            min($kr - 1, 9 - $kr),
+            min($kf - 1, 9 - $kf)
+        );
+        if ($cornerDistance === 0) {
+            $matingScore += 600; // 隅に詰み
+        } elseif ($cornerDistance === 1) {
+            $matingScore += 300; // 辺に詰み
+        }
+
+        // 攻撃駒の数（敵玉の周辺3マス以内）
+        $attackingPieces = 0;
+        for ($rank = 1; $rank <= 9; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if (!$piece || $piece['color'] !== $color) continue;
+
+                $dist = max(abs($rank - $kr), abs($file - $kf));
+                if ($dist <= 2 && in_array($piece['type'], ['hisha', 'ryu', 'kaku', 'uma', 'kin', 'gin'])) {
+                    $attackingPieces++;
+                    if (in_array($piece['type'], ['hisha', 'ryu'])) {
+                        $matingScore += 150;
+                    } elseif (in_array($piece['type'], ['kaku', 'uma'])) {
+                        $matingScore += 120;
+                    } else {
+                        $matingScore += 80;
+                    }
+                }
+            }
+        }
+
+        // 複数の攻撃駒がいると大きなボーナス
+        if ($attackingPieces >= 3) {
+            $matingScore += 600;
+        } elseif ($attackingPieces >= 2) {
+            $matingScore += 300;
+        }
+
+        return $matingScore;
+    }
+
+    /**
+     * 二枚飛車など強力な大駒連携をボーナス
+     */
+    private function evaluateMajorPieceCoordination(array $boardState, string $color): int
+    {
+        $board = $boardState['board'];
+        $coordination = 0;
+
+        $rooks = 0;
+        $bishops = 0;
+
+        for ($rank = 1; $rank <= 9; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if (!$piece || $piece['color'] !== $color) continue;
+
+                if (in_array($piece['type'], ['hisha', 'ryu'])) {
+                    $rooks++;
+                }
+                if (in_array($piece['type'], ['kaku', 'uma'])) {
+                    $bishops++;
+                }
+            }
+        }
+
+        // 二枚以上の飛車があるとボーナス
+        if ($rooks >= 2) {
+            $coordination += 400;
+        }
+
+        // 飛車と角の組み合わせ
+        if ($rooks >= 1 && $bishops >= 1) {
+            $coordination += 300;
+        }
+
+        // 成り駒の補正
+        for ($rank = 1; $rank <= 9; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if (!$piece || $piece['color'] !== $color) continue;
+
+                if (in_array($piece['type'], ['tokin', 'nkyosha', 'nkeima', 'ngin'])) {
+                    // 敵陣での成り駒は活躍しやすい
+                    $enemyTerritory = $color === 'sente' ? $rank >= 7 : $rank <= 3;
+                    if ($enemyTerritory) {
+                        $coordination += 100;
+                    }
+                }
+            }
+        }
+
+        return $coordination;
     }
 }
