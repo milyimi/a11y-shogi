@@ -87,16 +87,57 @@ app/Services/
   │   ├── generateMove(difficulty)  - 指し手生成
   │   │   ├── easy: 高ランダム性 + ミス率
   │   │   ├── medium: 1手先読み + 詰み優先
-  │   │   └── hard: 2手先ミニマックス + アルファベータ枝刈り
+  │   │   └── hard: 4手先ミニマックス + アルファベータ枝刈り
   │   ├── evaluateMove()           - 指し手評価
   │   ├── evaluatePosition()       - 盤面評価
-  │   └── findMateInOne()          - 1手詰め探索
+  │   │   ├── 駒価値評価
+  │   │   ├── 位置ボーナス評価
+  │   │   ├── 王の安全性評価
+  │   │   ├── 駒の連携評価
+  │   │   ├── 詰み手筋評価（NEW）
+  │   │   └── 大駒連携評価（NEW）
+  │   ├── findMateInOne()          - 1手詰め探索
+  │   └── transpositionTable       - 探索キャッシュ（500K）
+  │
+  ├── ExternalAIService
+  │   └── generateMove()           - python-shogi との IPC
+  │
+  ├── UsiEngineService
+  │   ├── generateMove()           - USI プロトコル通信
+  │   ├── boardStateToSfen()       - SFEN 形式変換
+  │   └── usiMoveToPhp()           - USI 棋譜パース
   │
   └── ShogiService
       ├── isValidMove()     - ルール検証
       ├── isLegalDrop()     - 打ちの合法性
       ├── canPromote()      - 成り可能判定
       └── isCheckmate()     - チェックメイト判定
+```
+
+### 4. 外部AI統合層（AI評価・対局テスト用）
+```
+外部エンジン統合
+  ├── python-shogi (ai_engine.py)
+  │   ├── SFEN 形式での局面受信
+  │   ├── シンプルな評価関数
+  │   └── JSON による指し手返却
+  │
+  ├── Fairy-Stockfish (USI)
+  │   ├── /usr/games/fairy-stockfish
+  │   ├── USI プロトコル通信
+  │   ├── go depth / go movetime
+  │   └── variant=shogi 対応
+  │
+  └── GPSShogi (USI)
+      ├── /usr/games/gpsusi
+      └── go コマンド（depth非対応）
+
+Artisan コマンド
+  └── ai:match
+      ├── PHP AI vs 外部エンジンの対局
+      ├── Elo レーティング計算
+      ├── 統計出力（勝率、平均手数）
+      └── JSON ログ保存
 ```
 
 ### 4. データアクセス層

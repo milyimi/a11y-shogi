@@ -1,59 +1,120 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# a11y-shogi
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+アクセシビリティに配慮した将棋アプリケーション
 
-## About Laravel
+## 概要
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+a11y-shogiは、視覚障害者を含むすべてのユーザーが楽しめる将棋対局システムです。Laravel + Viteをベースに、Web標準のアクセシビリティガイドライン（WCAG 2.1）に準拠した設計となっています。
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 主な機能
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **対人対局**: PHP AI エンジンとの対局（3段階の難易度設定）
+- **外部AI対局**: python-shogi / USIエンジンとの対局テスト
+- **ランキング機能**: 難易度別スコア記録
+- **アクセシビリティ**: スクリーンリーダー完全対応、キーボード操作
+- **棋譜機能**: 対局履歴の保存と再生
 
-## Learning Laravel
+## 技術スタック
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Backend**: PHP 8.3.27, Laravel 12.48.1
+- **Frontend**: Vite 7.3.1, Vanilla JavaScript
+- **AI Engine**: Minimax + Alpha-Beta Pruning (Depth 4)
+- **External AI**: python-shogi 1.1.1, Fairy-Stockfish 11.1
+- **Testing**: Pest (84/100 tests passing)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## セットアップ
 
-## Laravel Sponsors
+```bash
+# 依存関係インストール
+composer install
+npm install
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# 環境設定
+cp .env.example .env
+php artisan key:generate
 
-### Premium Partners
+# データベースマイグレーション
+php artisan migrate
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 開発サーバー起動
+php artisan serve &
+npm run dev
+```
 
-## Contributing
+## AI 対局テスト
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Python-shogi との対局
 
-## Code of Conduct
+```bash
+php artisan ai:match --external=python --games=5
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### USI エンジンとの対局
 
-## Security Vulnerabilities
+```bash
+# Fairy-Stockfish (depth-based)
+php artisan ai:match --external=usi --usi-path=/usr/games/fairy-stockfish --games=5
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Fairy-Stockfish (time-based)
+php artisan ai:match --external=usi --usi-path=/usr/games/fairy-stockfish --usi-movetime=500 --games=5
+```
 
-## License
+### オプション一覧
+
+| オプション | 説明 | デフォルト |
+|-----------|------|-----------|
+| `--games=N` | 対局数 | 1 |
+| `--external=TYPE` | 外部AIタイプ (python/usi) | - |
+| `--php-depth=N` | PHP AI探索深さ | 4 |
+| `--external-depth=N` | 外部AI探索深さ | 3 |
+| `--usi-path=PATH` | USIエンジンパス | /usr/games/fairy-stockfish |
+| `--usi-variant=VAR` | USI variant | shogi |
+| `--usi-movetime=MS` | USI思考時間(ms) | null |
+| `--max-moves=N` | 最大手数 | 300 |
+| `--sennichite=N` | 千日手閾値(0=無効) | 4 |
+| `--sennichite-min-moves=N` | 千日手判定開始手数 | 24 |
+| `--php-noise=N` | PHP AIノイズ(%) | 0 |
+| `--external-noise=N` | 外部AIノイズ(%) | 0 |
+| `--seed=N` | 乱数シード | random |
+| `--save-log` | JSON ログ保存 | false |
+
+### 統計分析
+
+```bash
+python analyze_matches.py storage/app/private/ai_matches/*.json
+```
+
+出力情報:
+- 勝率 (PHP vs External)
+- 平均手数
+- 終局理由分布
+- 設定別比較
+
+## テスト実行
+
+```bash
+# 全テスト実行
+vendor/bin/pest
+
+# 低速テストを含む
+RUN_SLOW_TESTS=true vendor/bin/pest
+
+# ブラウザビルド確認
+npm run build
+```
+
+## ドキュメント
+
+- [プロジェクト概要](docs/design/00_PROJECT_OVERVIEW.md)
+- [システムアーキテクチャ](docs/design/01_SYSTEM_ARCHITECTURE.md)
+- [ユーザーフロー](docs/design/02_USER_FLOWS.md)
+- [データベース設計](docs/design/03_DATABASE_DESIGN.md)
+- [API仕様](docs/design/04_API_SPECIFICATION.md)
+- [ワイヤーフレーム](docs/design/05_WIREFRAMES.md)
+- [アクセシビリティガイドライン](docs/design/06_ACCESSIBILITY_GUIDELINES.md)
+- [AI強化レポート](AI_ENHANCEMENT_REPORT.md)
+- [ランキング実装レポート](RANKING_IMPLEMENTATION_REPORT.md)
+
+## ライセンス
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

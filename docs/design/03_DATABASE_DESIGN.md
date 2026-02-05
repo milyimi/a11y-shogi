@@ -272,3 +272,53 @@ WHERE id = ?
 - **セッションデータ**: セッションタイムアウト後7日間保持
 - **ゲーム履歴**: 1年間保持（分析用）
 - **古いレコード**: 自動削除バッチジョブで処理
+
+## 9. AI 対局ログ（ファイルストレージ）
+
+AIエンジン間の対局結果は、データベースではなくファイルストレージに JSON 形式で保存されます。
+
+### 9.1 ストレージパス
+```
+storage/app/private/ai_matches/
+├── match_YYYYMMDD_HHMMSS_XXXXX.json
+└── match_YYYYMMDD_HHMMSS_XXXXX.json
+```
+
+### 9.2 JSON スキーマ
+
+```json
+{
+  "winner": "PHP|External|Draw",
+  "end_reason": "Checkmate|Repetition|MaxMoves",
+  "moves": 123,
+  "timestamp": "2024-01-01T12:34:56.000000Z",
+  "config": {
+    "php_depth": 4,
+    "external_type": "usi",
+    "external_depth": 3,
+    "usi_movetime": null,
+    "usi_path": "/usr/games/fairy-stockfish",
+    "usi_variant": "shogi",
+    "max_moves": 300,
+    "php_noise": 0,
+    "external_noise": 0,
+    "sennichite_threshold": 4,
+    "sennichite_min_moves": 24,
+    "seed": 12345
+  }
+}
+```
+
+### 9.3 統計分析
+
+`analyze_matches.py` スクリプトで統計分析を実行:
+
+```bash
+python analyze_matches.py storage/app/private/ai_matches/*.json
+```
+
+出力情報:
+- 勝率 (PHP vs External)
+- 平均手数
+- 終局理由分布 (千日手 / 詰み / 最大手数)
+- 設定別比較 (depth, noise, sennichite)
