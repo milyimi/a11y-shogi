@@ -16,7 +16,7 @@ class AIMatchCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=} {--k=20} {--save-log=} {--external=python} {--usi-path=} {--usi-variant=shogi} {--sennichite=4} {--sennichite-min-moves=24} {--external-noise=0} {--php-noise=0}';
+    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=} {--k=20} {--save-log=} {--external=python} {--usi-path=} {--usi-variant=shogi} {--usi-movetime=} {--sennichite=4} {--sennichite-min-moves=24} {--external-noise=0} {--php-noise=0}';
 
     /**
      * The console command description.
@@ -40,6 +40,7 @@ class AIMatchCommand extends Command
         $externalType = (string) $this->option('external');
         $usiPath = $this->option('usi-path');
         $usiVariant = (string) $this->option('usi-variant');
+        $usiMovetime = $this->option('usi-movetime') ? (int) $this->option('usi-movetime') : null;
         $sennichiteThreshold = (int) $this->option('sennichite');
         $sennichiteMinMoves = (int) $this->option('sennichite-min-moves');
         $externalNoise = (int) $this->option('external-noise');
@@ -107,7 +108,7 @@ class AIMatchCommand extends Command
                     }
                 } else {
                     if ($externalType === 'usi') {
-                        $move = $usiEngine->generateMove($boardState, $externalDepth, $usiPath, $usiVariant);
+                        $move = $usiEngine->generateMove($boardState, $externalDepth, $usiPath, $usiVariant, $usiMovetime);
                     } else {
                         $move = $externalAI->generateMove($boardState, $externalDepth);
                     }

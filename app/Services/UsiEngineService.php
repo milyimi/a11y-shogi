@@ -18,7 +18,7 @@ class UsiEngineService
         $this->enginePath = $enginePath;
     }
 
-    public function generateMove(array $boardState, int $depth = 3, ?string $enginePath = null, ?string $variant = null): ?array
+    public function generateMove(array $boardState, int $depth = 3, ?string $enginePath = null, ?string $variant = null, ?int $movetime = null): ?array
     {
         $path = $enginePath ?? $this->enginePath;
         if (!$path) {
@@ -52,7 +52,12 @@ class UsiEngineService
             $this->readUntil($stdout, 'readyok', 2.0);
 
             $this->write($stdin, "position sfen {$sfen}\n");
-            $this->write($stdin, "go depth {$depth}\n");
+            
+            if ($movetime !== null) {
+                $this->write($stdin, "go movetime {$movetime}\n");
+            } else {
+                $this->write($stdin, "go depth {$depth}\n");
+            }
 
             $bestMoveLine = $this->readUntil($stdout, 'bestmove', 5.0);
             if (!$bestMoveLine) {
