@@ -5,7 +5,9 @@ namespace App\Console\Commands;
 use App\Services\AIService;
 use App\Services\ShogiService;
 use App\Services\ExternalAIService;
+use App\Services\UsiEngineService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 
 class AIMatchCommand extends Command
 {
@@ -14,7 +16,7 @@ class AIMatchCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=}';
+    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=} {--k=20} {--save-log=} {--external=python} {--usi-path=}';
 
     /**
      * The console command description.
@@ -26,13 +28,17 @@ class AIMatchCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(AIService $aiService, ShogiService $shogiService, ExternalAIService $externalAI)
+    public function handle(AIService $aiService, ShogiService $shogiService, ExternalAIService $externalAI, UsiEngineService $usiEngine)
     {
         $games = (int) $this->argument('games');
         $phpDepth = (int) $this->option('php-depth');
         $externalDepth = (int) $this->option('external-depth');
         $maxMoves = (int) $this->option('max-moves');
         $seed = $this->option('seed') ? (int) $this->option('seed') : null;
+        $k = (int) $this->option('k');
+        $saveLog = $this->option('save-log');
+        $externalType = (string) $this->option('external');
+        $usiPath = $this->option('usi-path');
 
         if ($seed) {
             mt_srand($seed);
@@ -46,7 +52,18 @@ class AIMatchCommand extends Command
             'games' => [],
         ];
 
-        $this->info("PHP AI vs External AI（python-shogi）");
+        $elo = [
+            'php' => 1500.0,
+            'external' => 1500.0,
+        ];
+
+        $externalLabel = $externalType === 'usi' ? 'USI Engine' : 'python-shogi';
+        if ($externalType === 'usi' && !$usiPath) {
+            $this->error('USIエンジンを使うには --usi-path を指定してください。');
+            return 1;
+        }
+
+        $this->info("PHP AI vs External AI（{$externalLabel}）");
         $this->info("Games: {$games}, PHP Depth: {$phpDepth}, External Depth: {$externalDepth}");
         $this->newLine();
 
@@ -57,6 +74,9 @@ class AIMatchCommand extends Command
             $moves = 0;
             $winner = null;
             $endReason = null;
+            $positionCounts = [];
+            $initialHash = $this->hashPosition($boardState);
+            $positionCounts[$initialHash] = 1;
 
             while ($moves < $maxMoves) {
                 $currentColor = $boardState['turn'];
@@ -75,7 +95,11 @@ class AIMatchCommand extends Command
                 if ($currentColor === 'sente') {
                     $move = $aiService->generateMove($boardState, 'hard');
                 } else {
-                    $move = $externalAI->generateMove($boardState, $externalDepth);
+                    if ($externalType === 'usi') {
+                        $move = $usiEngine->generateMove($boardState, $externalDepth, $usiPath);
+                    } else {
+                        $move = $externalAI->generateMove($boardState, $externalDepth);
+                    }
                 }
 
                 if (!$move) {
@@ -97,7 +121,9 @@ class AIMatchCommand extends Command
                 }
 
                 // 千日手チェック
-                if ($moves > 200 && $this->isSennichite($boardState)) {
+                $hash = $this->hashPosition($boardState);
+                $positionCounts[$hash] = ($positionCounts[$hash] ?? 0) + 1;
+                if ($positionCounts[$hash] >= 3) {
                     $winner = 'draw';
                     $endReason = 'sennichite';
                     break;
@@ -117,6 +143,9 @@ class AIMatchCommand extends Command
             } else {
                 $results['draw']++;
             }
+
+            // Elo更新
+            [$elo['php'], $elo['external']] = $this->updateElo($elo['php'], $elo['external'], $winner, $k);
 
             $results['total_moves'] += $moves;
             $results['games'][] = [
@@ -142,6 +171,35 @@ class AIMatchCommand extends Command
             $phpWinRate = ($results['php_win'] / $games) * 100;
             $this->line("PHP勝率: {$phpWinRate}%");
         }
+
+            $this->newLine();
+            $this->info('=== Elo レーティング ===');
+            $this->line('Elo(PHP): ' . round($elo['php'], 2));
+            $this->line('Elo(External): ' . round($elo['external'], 2));
+
+            if ($saveLog !== null) {
+                $logName = $saveLog ?: ('ai_match_' . now()->format('Ymd_His') . '.json');
+                $logPath = 'ai_matches/' . $logName;
+                $payload = [
+                    'meta' => [
+                        'games' => $games,
+                        'php_depth' => $phpDepth,
+                        'external_depth' => $externalDepth,
+                        'max_moves' => $maxMoves,
+                        'seed' => $seed,
+                        'k' => $k,
+                        'timestamp' => now()->toIso8601String(),
+                    ],
+                    'results' => $results,
+                    'elo' => [
+                        'php' => round($elo['php'], 2),
+                        'external' => round($elo['external'], 2),
+                    ],
+                ];
+
+                Storage::disk('local')->put($logPath, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+                $this->line('ログ保存: ' . storage_path('app/' . $logPath));
+            }
 
         return 0;
     }
@@ -225,15 +283,40 @@ class AIMatchCommand extends Command
     }
 
     /**
-     * 千日手判定（簡易版）
+     * 局面ハッシュを作成
      */
-    private function isSennichite(array $boardState): bool
+    private function hashPosition(array $boardState): string
     {
-        // 千日手の判定には局面の履歴が必要です
-        // 現在の実装では履歴を保持していないため、簡易版として
-        // 同じターンが続く場合に判定します
-        // 本来は履歴を保持して3回同じ局面が現れたかチェック
-        return false; // TODO: 履歴ベースの千日手判定を実装
+        $data = [
+            'board' => $boardState['board'] ?? [],
+            'hand' => $boardState['hand'] ?? ['sente' => [], 'gote' => []],
+            'turn' => $boardState['turn'] ?? 'sente',
+        ];
+
+        return hash('sha256', json_encode($data));
+    }
+
+    /**
+     * Eloレーティングを更新
+     */
+    private function updateElo(float $phpRating, float $externalRating, string $winner, int $k): array
+    {
+        $phpScore = 0.5;
+        if ($winner === 'PHP') {
+            $phpScore = 1.0;
+        } elseif ($winner === 'External') {
+            $phpScore = 0.0;
+        }
+
+        $externalScore = 1.0 - $phpScore;
+
+        $phpExpected = 1 / (1 + pow(10, ($externalRating - $phpRating) / 400));
+        $externalExpected = 1 / (1 + pow(10, ($phpRating - $externalRating) / 400));
+
+        $phpRating = $phpRating + $k * ($phpScore - $phpExpected);
+        $externalRating = $externalRating + $k * ($externalScore - $externalExpected);
+
+        return [$phpRating, $externalRating];
     }
 }
 
