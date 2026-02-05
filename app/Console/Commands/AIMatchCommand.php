@@ -16,7 +16,7 @@ class AIMatchCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=} {--k=20} {--save-log=} {--external=python} {--usi-path=} {--sennichite=4} {--sennichite-min-moves=24}';
+    protected $signature = 'ai:match {games=1} {--php-depth=3} {--external-depth=3} {--max-moves=300} {--seed=} {--k=20} {--save-log=} {--external=python} {--usi-path=} {--usi-variant=shogi} {--sennichite=4} {--sennichite-min-moves=24} {--external-noise=0} {--php-noise=0}';
 
     /**
      * The console command description.
@@ -39,8 +39,11 @@ class AIMatchCommand extends Command
         $saveLog = $this->option('save-log');
         $externalType = (string) $this->option('external');
         $usiPath = $this->option('usi-path');
+        $usiVariant = (string) $this->option('usi-variant');
         $sennichiteThreshold = (int) $this->option('sennichite');
         $sennichiteMinMoves = (int) $this->option('sennichite-min-moves');
+        $externalNoise = (int) $this->option('external-noise');
+        $phpNoise = (int) $this->option('php-noise');
 
         if ($seed) {
             mt_srand($seed);
@@ -96,11 +99,24 @@ class AIMatchCommand extends Command
                 $move = null;
                 if ($currentColor === 'sente') {
                     $move = $aiService->generateMove($boardState, 'hard');
+                    if ($phpNoise > 0 && !empty($possibleMoves)) {
+                        $roll = mt_rand(1, 100);
+                        if ($roll <= $phpNoise) {
+                            $move = $possibleMoves[array_rand($possibleMoves)];
+                        }
+                    }
                 } else {
                     if ($externalType === 'usi') {
-                        $move = $usiEngine->generateMove($boardState, $externalDepth, $usiPath);
+                        $move = $usiEngine->generateMove($boardState, $externalDepth, $usiPath, $usiVariant);
                     } else {
                         $move = $externalAI->generateMove($boardState, $externalDepth);
+                    }
+
+                    if ($externalNoise > 0 && !empty($possibleMoves)) {
+                        $roll = mt_rand(1, 100);
+                        if ($roll <= $externalNoise) {
+                            $move = $possibleMoves[array_rand($possibleMoves)];
+                        }
                     }
                 }
 

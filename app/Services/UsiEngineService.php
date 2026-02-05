@@ -18,7 +18,7 @@ class UsiEngineService
         $this->enginePath = $enginePath;
     }
 
-    public function generateMove(array $boardState, int $depth = 3, ?string $enginePath = null): ?array
+    public function generateMove(array $boardState, int $depth = 3, ?string $enginePath = null, ?string $variant = null): ?array
     {
         $path = $enginePath ?? $this->enginePath;
         if (!$path) {
@@ -42,6 +42,11 @@ class UsiEngineService
         try {
             $this->write($stdin, "usi\n");
             $this->readUntil($stdout, 'usiok', 2.0);
+
+            if ($variant) {
+                $this->write($stdin, "setoption name Variant value {$variant}\n");
+                $this->write($stdin, "setoption name UCI_Variant value {$variant}\n");
+            }
 
             $this->write($stdin, "isready\n");
             $this->readUntil($stdout, 'readyok', 2.0);
