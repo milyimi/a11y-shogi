@@ -5,7 +5,7 @@ namespace App\Services;
 class AIService
 {
     private array $transpositionTable = [];
-    private int $transpositionTableSize = 100000;
+    private int $transpositionTableSize = 500000;
     private array $killerMoves = [];
 
     public function __construct(private ShogiService $shogiService) {}
@@ -308,14 +308,15 @@ class AIService
         }
 
         // 探索深度（静止探索で実質+1手深く読む）
-        $depth = 3;
+        // デフォルト: depth=4 (強化版)、序盤は depth=3 に制限
+        $depth = 4;
         
         $pieceCount = $this->countPieces($boardState);
         $moveCount = count($moves);
         
-        // 終盤や選択肢が極端に少ない場合のみ4plyに
-        if ($pieceCount <= 12 || $moveCount <= 8) {
-            $depth = 4;
+        // 序盤（駒が多い+手が多い）場合のみ depth=3 に制限
+        if ($pieceCount >= 30 && $moveCount >= 30) {
+            $depth = 3;
         }
 
         return $this->getMinimaxMove($moves, $boardState, $color, $depth);
@@ -396,8 +397,8 @@ class AIService
         $alpha = -PHP_INT_MAX;
         $beta = PHP_INT_MAX;
         
-        // 探索する手数を制限（上位30手まで、深さに応じて調整）
-        $maxMoves = $depth >= 5 ? 25 : 30;
+        // 探索する手数を制限（depth=4 では上位20手、それ以外は25手）
+        $maxMoves = $depth >= 4 ? 20 : 25;
         $scoredMoves = [];
         foreach ($moves as $move) {
             $score = $this->evaluateMove($move, $boardState, $color);
@@ -437,7 +438,7 @@ class AIService
                 return 999999;
             }
             // 静止探索を追加：駒取り合いが続く間は深く読む
-            return $this->quiescence($boardState, $alpha, $beta, $maximizing, $aiColor, 1);
+            return $this->quiescence($boardState, $alpha, $beta, $maximizing, $aiColor, 0);
         }
         
         $currentColor = $maximizing ? $aiColor : ($aiColor === 'sente' ? 'gote' : 'sente');
@@ -448,15 +449,15 @@ class AIService
             return $maximizing ? -999999 : 999999;
         }
         
-        // 手数が多い場合は上位15手のみ探索
-        if (count($moves) > 15) {
+        // 手数が多い場合は上位10手のみ探索（枝刈り強化）
+        if (count($moves) > 10) {
             $scoredMoves = [];
             foreach ($moves as $move) {
                 $quickScore = ($move['capture'] ?? false) ? 1000 : 0;
                 $scoredMoves[] = ['move' => $move, 'score' => $quickScore];
             }
             usort($scoredMoves, fn($a, $b) => $b['score'] <=> $a['score']);
-            $moves = array_column(array_slice($scoredMoves, 0, 15), 'move');
+            $moves = array_column(array_slice($scoredMoves, 0, 10), 'move');
         }
         
         if ($maximizing) {
