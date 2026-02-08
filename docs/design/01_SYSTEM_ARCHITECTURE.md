@@ -88,16 +88,21 @@ app/Services/
   │   │   ├── easy: 高ランダム性 + ミス率
   │   │   ├── medium: 1手先読み + 詰み優先
   │   │   └── hard: 4手先ミニマックス + アルファベータ枝刈り
-  │   ├── evaluateMove()           - 指し手評価
-  │   ├── evaluatePosition()       - 盤面評価
+  │   ├── getPossibleMoves()        - 全合法手生成（成り/不成/強制成り含む）
+  │   ├── simulateMove()            - 指し手シミュレーション（成り駒変換含む）
+  │   ├── evaluateMove()            - 指し手評価
+  │   ├── evaluatePosition()        - 盤面評価
   │   │   ├── 駒価値評価
   │   │   ├── 位置ボーナス評価
   │   │   ├── 王の安全性評価
   │   │   ├── 駒の連携評価
   │   │   ├── 詰み手筋評価（NEW）
   │   │   └── 大駒連携評価（NEW）
-  │   ├── findMateInOne()          - 1手詰め探索
-  │   └── transpositionTable       - 探索キャッシュ（500K）
+  │   ├── getMovementPatterns()     - 駒種別移動パターン（成駒対応）
+  │   │   ├── 基本駒: fu, kyosha, keima, gin, kin, hisha, kaku, gyoku
+  │   │   └── 成駒: tokin, nkyosha, nkeima, ngin, ryu, uma
+  │   ├── findMateInOne()           - 1手詰め探索
+  │   └── transpositionTable        - 探索キャッシュ（500K）
   │
   ├── ExternalAIService
   │   └── generateMove()           - python-shogi との IPC
@@ -133,11 +138,18 @@ app/Services/
       └── go コマンド（depth非対応）
 
 Artisan コマンド
-  └── ai:match
-      ├── PHP AI vs 外部エンジンの対局
-      ├── Elo レーティング計算
-      ├── 統計出力（勝率、平均手数）
-      └── JSON ログ保存
+  ├── ai:match
+  │   ├── PHP AI vs 外部エンジンの対局
+  │   ├── Elo レーティング計算
+  │   ├── 統計出力（勝率、平均手数）
+  │   └── JSON ログ保存
+  │
+  └── battle
+      ├── PHP AI vs Fairy-Stockfish USI 対戦テスト
+      ├── USI座標 ↔ アプリ座標変換 (10-x 反転)
+      ├── SF Skill Level 指定 (1-20)
+      ├── 先後交代対局
+      └── 勝率・平均手数の統計
 ```
 
 ### 4. データアクセス層

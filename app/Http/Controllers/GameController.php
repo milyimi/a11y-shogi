@@ -299,12 +299,21 @@ class GameController extends Controller
 
                 $isAITurn = $this->isAITurn($session, $boardState);
 
-                if ($isAITurn) {
+                if ($isAITurn && $session->status !== 'mate') {
+                    \Log::info('[GameController::move] AI turn detected', [
+                        'current_turn' => $boardState['turn'],
+                        'difficulty' => $session->difficulty,
+                    ]);
+                    
                     $aiMove = $this->aiService->generateMove(
                         $boardState,
                         $session->difficulty,
                         $boardState['turn']
                     );
+
+                    \Log::info('[GameController::move] AI move generated', [
+                        'ai_move' => $aiMove ? 'generated' : 'null',
+                    ]);
 
                     if ($aiMove) {
                         $aiCapturedPiece = $aiMove['capture']
@@ -379,35 +388,35 @@ class GameController extends Controller
             $boardState['board'][$validated['to_rank']][$validated['to_file']] = $piece;
             $boardState['board'][$validated['from_rank']][$validated['from_file']] = null;
             
-            // 駒を取った場合、持ち駒に追加
-            if ($capturedPiece) {
-                $opponentColor = $piece['color'] === 'sente' ? 'sente' : 'gote';
-                $pieceType = $this->shogiService->demotePiece($capturedPiece['type']);
-                
-                if (!isset($boardState['hand'][$opponentColor][$pieceType])) {
-                    $boardState['hand'][$opponentColor][$pieceType] = 0;
-                }
-                $boardState['hand'][$opponentColor][$pieceType]++;
-            }
-
-            // 玉（王）を取った場合は即終了
+            // 玉（王）を取った場合は即終了（持ち駒に追加しない）
             if ($capturedPiece && in_array($capturedPiece['type'], ['gyoku', 'ou'], true)) {
                 $session->status = 'mate';
                 $session->winner = $piece['color'] === $session->human_color ? 'human' : 'ai';
                 $session->winner_type = 'checkmate';
                 $this->gameService->updateElapsedTime($session);
+            } elseif ($capturedPiece) {
+                // 玉以外の駒を取った場合、持ち駒に追加
+                $currentPlayerColor = $piece['color'];  // 駒を取った側
+                $pieceType = $this->shogiService->demotePiece($capturedPiece['type']);
+                
+                if (!isset($boardState['hand'][$currentPlayerColor][$pieceType])) {
+                    $boardState['hand'][$currentPlayerColor][$pieceType] = 0;
+                }
+                $boardState['hand'][$currentPlayerColor][$pieceType]++;
             }
             
-            // 手番を交代
-            $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
+            // 手番を交代（成り確認待ちの場合はpromote()側で切り替えるのでスキップ）
+            if (!$canPromote) {
+                $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
+            }
             
             // ゲームセッションを更新
             $session->updateBoardPosition($boardState);
             $session->increment('total_moves');
             
-            // 人間の指し手後、相手が詰みか確認（王を取っていない場合のみ）
-            $opponentColor = $boardState['turn'];
-            if ($session->status !== 'mate' && $this->shogiService->isCheckmate($boardState, $opponentColor)) {
+            // 人間の指し手後、相手が詰みか確認（王を取っていない場合のみ、成り確認中はスキップ）
+            $opponentColor = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
+            if (!$canPromote && $session->status !== 'mate' && $this->shogiService->isCheckmate($boardState, $opponentColor)) {
                 $session->status = 'mate';
                 $session->winner = $piece['color'] === $session->human_color ? 'human' : 'ai';
                 $session->winner_type = 'checkmate';
@@ -416,7 +425,6 @@ class GameController extends Controller
             
             $session->save();
             
-            // 新しいゲーム状態を返す
             $gameState = $this->gameService->getGameState($session);
             
             $response = [
@@ -436,10 +444,15 @@ class GameController extends Controller
                 ],
             ];
 
-            // AIの手番かチェック
+            // AIの手番かチェック（ゲーム終了時はスキップ）
             $isAITurn = $this->isAITurn($session, $boardState);
             
-            if ($isAITurn && !$canPromote) {
+            if ($isAITurn && !$canPromote && $session->status !== 'mate') {
+                \Log::info('[GameController::move] AI turn detected', [
+                    'current_turn' => $boardState['turn'],
+                    'difficulty' => $session->difficulty
+                ]);
+                
                 // AIの指し手を自動生成
                 $aiMove = $this->aiService->generateMove(
                     $boardState,
@@ -448,10 +461,28 @@ class GameController extends Controller
                 );
                 
                 if ($aiMove) {
+                    \Log::info('[GameController::move] AI move generated', ['ai_move' => 'generated']);
+                    
+                    // AIの指し手が玉を取るかチェック（executeMove実行前）
                     $aiCapturedPiece = $aiMove['capture']
                         ? ($boardState['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null)
                         : null;
+                    
+                    \Log::info('[GameController::move] AI move analysis', [
+                        'from' => "{$aiMove['from_file']}-{$aiMove['from_rank']}",
+                        'to' => "{$aiMove['to_file']}-{$aiMove['to_rank']}",
+                        'capture' => $aiMove['capture'] ?? false,
+                        'captured_piece' => $aiCapturedPiece ? $aiCapturedPiece['type'] : null
+                    ]);
+                    
                     $aiCapturedKing = $aiCapturedPiece && in_array($aiCapturedPiece['type'], ['gyoku', 'ou'], true);
+                    
+                    if ($aiCapturedKing) {
+                        \Log::info('[GameController::move] AI captured king!', [
+                            'piece' => $aiCapturedPiece['type'],
+                            'ai_color' => $boardState['turn']
+                        ]);
+                    }
 
                     // AIの指し手を実行
                     $aiBoard = $this->executeMove($boardState, $aiMove);
@@ -463,12 +494,14 @@ class GameController extends Controller
                     
                     // AI の指し手後、人間が詰みか確認（王を取った場合は即終了）
                     if ($aiCapturedKing) {
+                        \Log::info('[GameController::move] Game ending: AI captured king');
                         $session->status = 'mate';
-                        $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+                        $aiColor = $boardState['turn'];
                         $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
                         $session->winner_type = 'checkmate';
                         $this->gameService->updateElapsedTime($session);
                     } elseif ($this->shogiService->isCheckmate($aiBoard, $aiBoard['turn'])) {
+                        \Log::info('[GameController::move] Game ending: checkmate detected');
                         $session->status = 'mate';
                         $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
                         $session->winner = $aiColor === $session->human_color ? 'human' : 'ai';
@@ -536,17 +569,43 @@ class GameController extends Controller
         $piece = $boardState['board'][$move['from_rank']][$move['from_file']];
         $capturedPiece = $boardState['board'][$move['to_rank']][$move['to_file']] ?? null;
         
+        \Log::info('[GameController::executeMove] Executing move', [
+            'from' => "{$move['from_file']}-{$move['from_rank']}",
+            'to' => "{$move['to_file']}-{$move['to_rank']}",
+            'piece' => $piece ? $piece['type'] : 'null',
+            'captured' => $capturedPiece ? $capturedPiece['type'] : 'null',
+            'current_turn' => $boardState['turn']
+        ]);
+        
         $boardState['board'][$move['to_rank']][$move['to_file']] = $piece;
         $boardState['board'][$move['from_rank']][$move['from_file']] = null;
         
-        // 駒を取った場合
-            if ($capturedPiece) {
-                $pieceType = $this->shogiService->demotePiece($capturedPiece['type']);
+        // AIの成り処理（promote: true が設定されている場合）
+        if (!empty($move['promote'])) {
+            $promotedType = $this->shogiService->promotePiece($piece['type']);
+            $boardState['board'][$move['to_rank']][$move['to_file']]['type'] = $promotedType;
+            \Log::info('[GameController::executeMove] AI promotion applied', [
+                'from_type' => $piece['type'],
+                'to_type' => $promotedType,
+                'position' => "{$move['to_file']}-{$move['to_rank']}",
+            ]);
+        }
+        
+        // 玉以外の駒を取った場合のみ持ち駒に追加
+        if ($capturedPiece && !in_array($capturedPiece['type'], ['gyoku', 'ou'], true)) {
+            $pieceType = $this->shogiService->demotePiece($capturedPiece['type']);
             
             if (!isset($boardState['hand'][$boardState['turn']][$pieceType])) {
                 $boardState['hand'][$boardState['turn']][$pieceType] = 0;
             }
             $boardState['hand'][$boardState['turn']][$pieceType]++;
+        } elseif ($capturedPiece && in_array($capturedPiece['type'], ['gyoku', 'ou'], true)) {
+            \Log::warning('[GameController::executeMove] KING CAPTURED!', [
+                'king_type' => $capturedPiece['type'],
+                'captured_by' => $boardState['turn'],
+                'from' => "{$move['from_file']}-{$move['from_rank']}",
+                'to' => "{$move['to_file']}-{$move['to_rank']}"
+            ]);
         }
         
         return $boardState;
@@ -723,8 +782,15 @@ class GameController extends Controller
                 $message = '成らないことを選択しました';
             }
 
-            // 手番を切り替え
+            // 手番を切り替え（move()側ではcanPromote時にスキップしているのでここで切り替える）
             $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
+            
+            \Log::info('[GameController::promote] 成り処理完了', [
+                'promote' => $validated['promote'],
+                'piece' => $piece['type'],
+                'turn_after' => $boardState['turn'],
+                'human_color' => $session->human_color,
+            ]);
 
             // ボード状態を更新
             $session->updateBoardPosition($boardState);
@@ -733,13 +799,28 @@ class GameController extends Controller
             // AIの手番になった場合、AIに指させる
             $aiMove = null;
             if ($boardState['turn'] !== $session->human_color) {
+                \Log::info('[GameController::promote] AI turn detected after promotion', [
+                    'current_turn' => $boardState['turn'],
+                    'difficulty' => $session->difficulty,
+                ]);
+                
                 $aiMove = $this->aiService->generateMove(
                     $boardState,
                     $session->difficulty,
                     $boardState['turn']
                 );
 
+                \Log::info('[GameController::promote] AI move generated', [
+                    'ai_move' => $aiMove ? 'generated' : 'null',
+                ]);
+
                 if ($aiMove) {
+                    \Log::info('[GameController::promote] AI move details', [
+                        'from' => "{$aiMove['from_file']}-{$aiMove['from_rank']}",
+                        'to' => "{$aiMove['to_file']}-{$aiMove['to_rank']}",
+                        'capture' => $aiMove['capture'] ?? false,
+                    ]);
+
                     $aiCapturedPiece = $aiMove['capture']
                         ? ($boardState['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null)
                         : null;
@@ -770,12 +851,19 @@ class GameController extends Controller
                 }
             }
 
+            $gameState = $this->gameService->getGameState($session);
+
             return response()->json([
                 'success' => true,
                 'message' => $message,
                 'boardState' => $boardState,
                 'piece' => $piece,
                 'aiMove' => $aiMove,
+                'moveCount' => $gameState['moveCount'],
+                'currentPlayer' => $gameState['currentPlayer'],
+                'humanColor' => $session->human_color,
+                'status' => $gameState['status'],
+                'winner' => $gameState['winner'],
             ]);
         } catch (\Exception $e) {
             \Log::error('Promote error: ' . $e->getMessage());

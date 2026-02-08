@@ -1335,7 +1335,19 @@
                     if (data.boardState) {
                         updateBoard(data.boardState);
                     }
+                    
+                    // ゲーム情報を更新（currentPlayer, moveCount, status等）
+                    updateGameInfo(data);
+                    
                     document.getElementById('game-announcements').textContent = data.message || '成りを確定しました';
+                    
+                    // AIが指し手を返した場合のアナウンス
+                    if (data.aiMove) {
+                        setTimeout(() => {
+                            document.getElementById('game-announcements').textContent = 
+                                `AIが${data.aiMove.from_file}の${data.aiMove.from_rank}から${data.aiMove.to_file}の${data.aiMove.to_rank}に移動しました`;
+                        }, 500);
+                    }
                 } else {
                     document.getElementById('game-announcements').textContent = data.message || '成りの確定に失敗しました';
                 }

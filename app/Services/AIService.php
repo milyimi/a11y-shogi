@@ -58,7 +58,7 @@ class AIService
                         for ($toFile = 1; $toFile <= 9; $toFile++) {
                             if ($this->shogiService->isValidMove($boardState, $rank, $file, $toRank, $toFile, $color)) {
                                 $target = $board[$toRank][$toFile] ?? null;
-                                $moves[] = [
+                                $baseMove = [
                                     'from_rank' => $rank,
                                     'from_file' => $file,
                                     'to_rank' => $toRank,
@@ -66,6 +66,37 @@ class AIService
                                     'piece_type' => $piece['type'],
                                     'capture' => $target !== null,
                                 ];
+                                
+                                // 成り判定
+                                $canPromote = $this->shogiService->canPromote($piece['type']);
+                                $enteringEnemyTerritory = $this->shogiService->isInEnemyTerritory($toRank, $color);
+                                $leavingEnemyTerritory = $this->shogiService->isInEnemyTerritory($rank, $color);
+                                $shouldConsiderPromotion = $canPromote && ($enteringEnemyTerritory || $leavingEnemyTerritory);
+                                
+                                // 強制成り判定（歩・香が最奥段、桂が最奥2段）
+                                // 先手の最奥段はrank=9（敵陣最深部）、後手の最奥段はrank=1
+                                $mustPromote = false;
+                                if ($canPromote) {
+                                    if ($color === 'sente') {
+                                        if (in_array($piece['type'], ['fu', 'kyosha']) && $toRank >= 9) $mustPromote = true;
+                                        if ($piece['type'] === 'keima' && $toRank >= 8) $mustPromote = true;
+                                    } else {
+                                        if (in_array($piece['type'], ['fu', 'kyosha']) && $toRank <= 1) $mustPromote = true;
+                                        if ($piece['type'] === 'keima' && $toRank <= 2) $mustPromote = true;
+                                    }
+                                }
+                                
+                                if ($mustPromote) {
+                                    // 強制成り：成り手のみ
+                                    $moves[] = array_merge($baseMove, ['promote' => true]);
+                                } elseif ($shouldConsiderPromotion) {
+                                    // 任意成り：成りと不成の両方を候補に
+                                    $moves[] = array_merge($baseMove, ['promote' => true]);
+                                    $moves[] = array_merge($baseMove, ['promote' => false]);
+                                } else {
+                                    // 成り不可
+                                    $moves[] = $baseMove;
+                                }
                             }
                         }
                     }
@@ -147,11 +178,47 @@ class AIService
             
             case 'kin': // 金
             case 'tokin': // と（成った歩）
+            case 'nkyosha': // 成香
+            case 'nkeima': // 成桂
+            case 'ngin': // 成銀
                 return [
                     [$direction, -1], [$direction, 0], [$direction, 1],
                     [-$direction, 0],
                     [0, -1], [0, 1],
                 ];
+            
+            case 'ryu': // 龍（飛車の成り）= 飛車 + 斜め1マス
+                $moves = [];
+                for ($i = 1; $i <= 8; $i++) {
+                    $moves[] = [$i, 0];
+                    $moves[] = [-$i, 0];
+                    $moves[] = [0, $i];
+                    $moves[] = [0, -$i];
+                }
+                // 斜め1マス
+                $moves[] = [1, 1];
+                $moves[] = [1, -1];
+                $moves[] = [-1, 1];
+                $moves[] = [-1, -1];
+                return $moves;
+            
+            case 'uma': // 馬（角の成り）= 角 + 縦横1マス
+                $moves = [
+                    [1, 1], [1, -1], [-1, 1], [-1, -1],
+                    [2, 2], [2, -2], [-2, 2], [-2, -2],
+                    [3, 3], [3, -3], [-3, 3], [-3, -3],
+                    [4, 4], [4, -4], [-4, 4], [-4, -4],
+                    [5, 5], [5, -5], [-5, 5], [-5, -5],
+                    [6, 6], [6, -6], [-6, 6], [-6, -6],
+                    [7, 7], [7, -7], [-7, 7], [-7, -7],
+                    [8, 8], [8, -8], [-8, 8], [-8, -8],
+                ];
+                // 縦横1マス
+                $moves[] = [1, 0];
+                $moves[] = [-1, 0];
+                $moves[] = [0, 1];
+                $moves[] = [0, -1];
+                return $moves;
             
             case 'kaku': // 角
                 return [
@@ -247,7 +314,8 @@ class AIService
 
         // 40%の確率でランダムに（ミスは残す）
         if (rand(0, 100) < 40) {
-            return $this->getRandomMove($candidateMoves);
+            $chosen = $this->getRandomMove($candidateMoves);
+            return $this->ensureKingSafety($chosen, $moves, $boardState, $color);
         }
 
         // 20%の確率で詰みだけは見逃さない
@@ -259,7 +327,8 @@ class AIService
         }
 
         // 残りは軽い評価で上位からランダム選択
-        return $this->getTopScoredRandomMove($candidateMoves, $boardState, $color, 6, 80);
+        $chosen = $this->getTopScoredRandomMove($candidateMoves, $boardState, $color, 6, 80);
+        return $this->ensureKingSafety($chosen, $moves, $boardState, $color);
     }
 
     /**
@@ -276,7 +345,8 @@ class AIService
 
         // 5%の確率で悪い手を選ぶ（ミス）
         if (rand(0, 100) < 5) {
-            return $this->getRandomMove($candidateMoves);
+            $chosen = $this->getRandomMove($candidateMoves);
+            return $this->ensureKingSafety($chosen, $moves, $boardState, $color);
         }
 
         // 1手詰めがあれば必ず指す
@@ -286,7 +356,8 @@ class AIService
         }
 
         // 2手先読みで評価（上級より浅い）
-        return $this->getMinimaxMove($candidateMoves, $boardState, $color, 2);
+        $bestMove = $this->getMinimaxMove($candidateMoves, $boardState, $color, 2);
+        return $this->ensureKingSafety($bestMove, $moves, $boardState, $color);
     }
 
     /**
@@ -298,12 +369,97 @@ class AIService
             return null;
         }
 
-        // Killer Movesをクリア
-        $this->killerMoves = [];
+        \Log::warning('[AIService::getHardMove] VERSION CHECK - フィルタリング付きバージョン', [
+            'moves_count' => count($moves),
+        ]);
+        
+        // 移動先が敵の飛車・角に直接取られる手を検出
+        // 取られた後に敵の大駒が玉周辺に到達して詰む危険な手を除外
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        $filteredMoves = [];
+        foreach ($moves as $move) {
+            $shouldExclude = false;
+            
+            $boardAfter = $this->simulateMove($boardState, $move, $color);
+            
+            // この手の後、移動先の駒を敵が取れるか確認
+            $enemyMoves = $this->getPossibleMoves($boardAfter, $enemyColor);
+            foreach ($enemyMoves as $enemyMove) {
+                // 敵が移動先の駒を取る手があるか
+                if ($enemyMove['to_rank'] === $move['to_rank'] && $enemyMove['to_file'] === $move['to_file'] && ($enemyMove['capture'] ?? false)) {
+                    $enemyPieceType = $enemyMove['piece_type'];
+                    // 敵の飛車/角/龍/馬が取りに来る場合
+                    if (in_array($enemyPieceType, ['hisha', 'kaku', 'ryu', 'uma'])) {
+                        // 敵がこの駒を取った後の盤面をシミュレーション
+                        $boardAfterCapture = $this->simulateMove($boardAfter, $enemyMove, $enemyColor);
+                        
+                        // 取られた後に、敵の大駒が玉に隣接するか、同じライン上にいるか確認
+                        $myKingPos = $this->findKingPosition($boardAfterCapture['board'], $color);
+                        if ($myKingPos) {
+                            $distRank = abs($enemyMove['to_rank'] - $myKingPos['rank']);
+                            $distFile = abs($enemyMove['to_file'] - $myKingPos['file']);
+                            
+                            // 玉に隣接（1マス以内）
+                            if ($distRank <= 1 && $distFile <= 1) {
+                                $shouldExclude = true;
+                                \Log::warning('[AIService::getHardMove] 取られた後に玉の隣に敵大駒が来る手を除外', [
+                                    'myPiece' => $move['piece_type'],
+                                    'myMove' => "{$move['from_file']}-{$move['from_rank']} -> {$move['to_file']}-{$move['to_rank']}",
+                                    'enemyPiece' => $enemyPieceType,
+                                    'kingPos' => "{$myKingPos['file']}-{$myKingPos['rank']}",
+                                ]);
+                                break;
+                            }
+                            
+                            // 同じ筋/段で玉との間に遮蔽物がない（飛車系の場合）
+                            if (in_array($enemyPieceType, ['hisha', 'ryu']) && 
+                                ($enemyMove['to_file'] === $myKingPos['file'] || $enemyMove['to_rank'] === $myKingPos['rank'])) {
+                                $shouldExclude = true;
+                                \Log::warning('[AIService::getHardMove] 取られた後に玉と同じ筋/段に敵飛車が来る手を除外', [
+                                    'myPiece' => $move['piece_type'],
+                                    'myMove' => "{$move['from_file']}-{$move['from_rank']} -> {$move['to_file']}-{$move['to_rank']}",
+                                    'enemyPiece' => $enemyPieceType,
+                                    'kingPos' => "{$myKingPos['file']}-{$myKingPos['rank']}",
+                                    'distRank' => $distRank,
+                                    'distFile' => $distFile,
+                                ]);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (!$shouldExclude) {
+                $filteredMoves[] = $move;
+            }
+        }
+        
+        // 除外後に手がない場合は最も被害の少ない手を選ぶ
+        if (empty($filteredMoves)) {
+            \Log::warning('[AIService::getHardMove] 全ての手が危険 - 玉を逃がす手を探す');
+            // 玉を動かす手を最優先
+            foreach ($moves as $move) {
+                if (in_array($move['piece_type'], ['gyoku', 'ou'])) {
+                    $filteredMoves[] = $move;
+                }
+            }
+            // 玉の手もない場合は元のリストを使用
+            if (empty($filteredMoves)) {
+                $filteredMoves = $moves;
+            }
+        }
 
         // まず1手詰めがないかチェック
-        $mateMove = $this->findMateInOne($moves, $boardState, $color);
+        $mateMove = $this->findMateInOne($filteredMoves, $boardState, $color);
         if ($mateMove) {
+            \Log::info('[AIService::getHardMove] Mate in one found', [
+                'from_rank' => $mateMove['from_rank'],
+                'from_file' => $mateMove['from_file'],
+                'to_rank' => $mateMove['to_rank'],
+                'to_file' => $mateMove['to_file'],
+                'color' => $color,
+            ]);
             return $mateMove;
         }
 
@@ -312,14 +468,306 @@ class AIService
         $depth = 4;
         
         $pieceCount = $this->countPieces($boardState);
-        $moveCount = count($moves);
+        $moveCount = count($filteredMoves);
         
         // 序盤（駒が多い+手が多い）場合のみ depth=3 に制限
         if ($pieceCount >= 30 && $moveCount >= 30) {
             $depth = 3;
         }
 
-        return $this->getMinimaxMove($moves, $boardState, $color, $depth);
+        \Log::info('[AIService::getHardMove] Starting minimax search', [
+            'depth' => $depth,
+            'color' => $color,
+            'possible_moves_count' => count($filteredMoves),
+            'piece_count' => $pieceCount,
+        ]);
+
+        $bestMove = $this->getMinimaxMove($filteredMoves, $boardState, $color, $depth);
+        
+        \Log::info('[AIService::getHardMove] Minimax result', [
+            'from_rank' => $bestMove['from_rank'] ?? null,
+            'from_file' => $bestMove['from_file'] ?? null,
+            'to_rank' => $bestMove['to_rank'],
+            'to_file' => $bestMove['to_file'],
+            'color' => $color,
+        ]);
+        
+        // ========== 最終安全チェック ==========
+        // 選んだ手を指した後、相手が玉を脅かさないことを確認
+        // 全ての合法手($moves)を渡して、安全な代替手を探す
+        $safeMove = $this->ensureKingSafety($bestMove, $moves, $boardState, $color);
+        if ($safeMove !== $bestMove) {
+            \Log::warning('[AIService::getHardMove] 最終安全チェックで手を変更', [
+                'original' => "{$bestMove['from_file']}-{$bestMove['from_rank']} -> {$bestMove['to_file']}-{$bestMove['to_rank']}",
+                'safe' => "{$safeMove['from_file']}-{$safeMove['from_rank']} -> {$safeMove['to_file']}-{$safeMove['to_rank']}",
+            ]);
+        }
+        
+        return $safeMove;
+    }
+    
+    /**
+     * 選んだ手が安全かチェックし、危険なら安全な手を返す
+     */
+    private function ensureKingSafety(array $bestMove, array $allMoves, array $boardState, string $color): array
+    {
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        
+        // 全ての手を安全性で分類
+        $safeMoves = [];
+        $riskyMoves = [];
+        
+        foreach ($allMoves as $move) {
+            $danger = $this->canEnemyCaptureKingAfter($move, $boardState, $color, $enemyColor);
+            if ($danger) {
+                $riskyMoves[] = $move;
+            } else {
+                $safeMoves[] = $move;
+            }
+        }
+        
+        // bestMoveが安全ならそのまま返す
+        $bestIsSafe = !$this->canEnemyCaptureKingAfter($bestMove, $boardState, $color, $enemyColor);
+        if ($bestIsSafe) {
+            return $bestMove;
+        }
+        
+        \Log::warning('[AIService::ensureKingSafety] bestMoveは危険', [
+            'move' => "{$bestMove['from_file']}-{$bestMove['from_rank']} -> {$bestMove['to_file']}-{$bestMove['to_rank']}",
+            'safeMoves' => count($safeMoves),
+            'riskyMoves' => count($riskyMoves),
+        ]);
+        
+        // 安全な手があればその中で最も評価の高い手を選ぶ
+        if (!empty($safeMoves)) {
+            $bestSafe = null;
+            $bestSafeScore = -PHP_INT_MAX;
+            foreach ($safeMoves as $move) {
+                $score = $this->evaluateMove($move, $boardState, $color);
+                if ($score > $bestSafeScore) {
+                    $bestSafeScore = $score;
+                    $bestSafe = $move;
+                }
+            }
+            return $bestSafe;
+        }
+        
+        // 安全な手がない場合は玉を逃がす手を探す（逃げた先も安全か確認）
+        \Log::warning('[AIService::ensureKingSafety] 安全な手がない - 玉を逃がす手を探す');
+        $kingMoves = [];
+        foreach ($allMoves as $move) {
+            if (in_array($move['piece_type'], ['gyoku', 'ou'])) {
+                // 逃げた先でも取られないか確認
+                $boardAfterKingMove = $this->simulateMove($boardState, $move, $color);
+                $enemyMovesAfter = $this->getPossibleMoves($boardAfterKingMove, $enemyColor);
+                $kingNewRank = $move['to_rank'];
+                $kingNewFile = $move['to_file'];
+                $isSafe = true;
+                foreach ($enemyMovesAfter as $em) {
+                    if ($em['to_rank'] === $kingNewRank && $em['to_file'] === $kingNewFile) {
+                        $isSafe = false;
+                        break;
+                    }
+                }
+                if ($isSafe) {
+                    $kingMoves[] = $move;
+                }
+            }
+        }
+        
+        if (!empty($kingMoves)) {
+            \Log::warning('[AIService::ensureKingSafety] 安全な玉の逃げ場を発見', ['count' => count($kingMoves)]);
+            return $kingMoves[0]; // 最初の安全な逃げ場
+        }
+        
+        // 玉の安全な逃げ場もない場合、「自分の駒を大駒の前に置かない」手を優先
+        \Log::warning('[AIService::ensureKingSafety] 玉の安全な逃げ場もなし - 最も被害の少ない手を選択');
+        
+        // まず「1手で直接玉が取られない」手をフィルタ
+        $notDirectlyDangerous = [];
+        foreach ($allMoves as $move) {
+            $boardAfterMove = $this->simulateMove($boardState, $move, $color);
+            $kingPos = $this->findKingPosition($boardAfterMove['board'], $color);
+            if (!$kingPos) continue;
+            $enemyMovesAfter = $this->getPossibleMoves($boardAfterMove, $enemyColor);
+            $directThreat = false;
+            foreach ($enemyMovesAfter as $em) {
+                if ($em['to_rank'] === $kingPos['rank'] && $em['to_file'] === $kingPos['file']) {
+                    $directThreat = true;
+                    break;
+                }
+            }
+            if (!$directThreat) {
+                $notDirectlyDangerous[] = $move;
+            }
+        }
+        
+        if (!empty($notDirectlyDangerous)) {
+            // その中で、大駒に取られて玉が危険になるパターンを避ける
+            // 「大駒が駒を取って玉の隣に来る」パターンを避ける手を探す
+            $safestMoves = [];
+            foreach ($notDirectlyDangerous as $move) {
+                $boardAfterMove = $this->simulateMove($boardState, $move, $color);
+                $kingPos = $this->findKingPosition($boardAfterMove['board'], $color);
+                if (!$kingPos) continue;
+                
+                // 大駒が玉の周囲（隣接マス）の自分の駒を取れるか
+                $majorThreatToKing = false;
+                $emAfter = $this->getPossibleMoves($boardAfterMove, $enemyColor);
+                foreach ($emAfter as $em) {
+                    if (!in_array($em['piece_type'], ['hisha', 'kaku', 'ryu', 'uma'])) continue;
+                    if (!($em['capture'] ?? false)) continue;
+                    
+                    $distR = abs($em['to_rank'] - $kingPos['rank']);
+                    $distF = abs($em['to_file'] - $kingPos['file']);
+                    if ($distR <= 1 && $distF <= 1) {
+                        // 大駒が玉の隣で駒を取れる → 非常に危険
+                        $majorThreatToKing = true;
+                        break;
+                    }
+                }
+                
+                if (!$majorThreatToKing) {
+                    $safestMoves[] = $move;
+                }
+            }
+            
+            if (!empty($safestMoves)) {
+                // 最も価値の低い駒を動かす手を選ぶ
+                $bestChoice = null;
+                $lowestValue = PHP_INT_MAX;
+                foreach ($safestMoves as $move) {
+                    $value = $this->getPieceValue($move['piece_type']);
+                    if ($value < $lowestValue) {
+                        $lowestValue = $value;
+                        $bestChoice = $move;
+                    }
+                }
+                \Log::warning('[AIService::ensureKingSafety] 最も安全な手を選択', [
+                    'piece' => $bestChoice['piece_type'],
+                    'move' => "{$bestChoice['from_file']}-{$bestChoice['from_rank']} -> {$bestChoice['to_file']}-{$bestChoice['to_rank']}",
+                ]);
+                return $bestChoice;
+            }
+            
+            // それでも見つからなければ、玉の隣に駒を動かさない手を優先
+            $kingPos = $this->findKingPosition($boardState['board'], $color);
+            if ($kingPos) {
+                // 玉の隣接マスに移動しない手を探す
+                $awayFromKing = [];
+                foreach ($notDirectlyDangerous as $move) {
+                    $distR = abs($move['to_rank'] - $kingPos['rank']);
+                    $distF = abs($move['to_file'] - $kingPos['file']);
+                    if ($distR > 1 || $distF > 1) {
+                        $awayFromKing[] = $move;
+                    }
+                }
+                if (!empty($awayFromKing)) {
+                    // 最も価値の低い駒を動かす
+                    $bestChoice = null;
+                    $lowestValue = PHP_INT_MAX;
+                    foreach ($awayFromKing as $move) {
+                        $value = $this->getPieceValue($move['piece_type']);
+                        if ($value < $lowestValue) {
+                            $lowestValue = $value;
+                            $bestChoice = $move;
+                        }
+                    }
+                    \Log::warning('[AIService::ensureKingSafety] 玉から離れた安全な手を選択', [
+                        'piece' => $bestChoice['piece_type'],
+                        'move' => ($bestChoice['from_file'] ?? '-') . "-" . ($bestChoice['from_rank'] ?? '-') . " -> {$bestChoice['to_file']}-{$bestChoice['to_rank']}",
+                    ]);
+                    return $bestChoice;
+                }
+            }
+            
+            \Log::warning('[AIService::ensureKingSafety] 直接脅威なしの手を選択（玉近く）');
+            return $notDirectlyDangerous[0];
+        }
+        
+        // 何もなければ元の手を返す（仕方ない）
+        return $bestMove;
+    }
+    
+    /**
+     * この手を指した後、敵が玉を脅かせるか判定
+     * パターン1: 敵が直接玉を取れる（王手放置）→ 常に危険
+     * パターン2: 敵の大駒が自分の駒を取った後、玉も取れるが、防御可能かチェック
+     */
+    private function canEnemyCaptureKingAfter(array $move, array $boardState, string $color, string $enemyColor): bool
+    {
+        $boardAfter = $this->simulateMove($boardState, $move, $color);
+        $myKingPos = $this->findKingPosition($boardAfter['board'], $color);
+        if (!$myKingPos) return false;
+        
+        // 敵の全ての手を調べる
+        $enemyMoves = $this->getPossibleMoves($boardAfter, $enemyColor);
+        
+        foreach ($enemyMoves as $enemyMove) {
+            // パターン1: 敵が直接玉を取れるか → 常に危険（王手放置）
+            if ($enemyMove['to_rank'] === $myKingPos['rank'] && $enemyMove['to_file'] === $myKingPos['file']) {
+                return true;
+            }
+        }
+        
+        // パターン2: 大駒が駒を取り→玉を狙えるが、防御可能なら安全
+        // evaluateDirectKingThreatがminimaxに正しく玉逃げを選ばせるので
+        // ここでは「防御不可能」な場合のみ危険とする
+        foreach ($enemyMoves as $enemyMove) {
+            if (!in_array($enemyMove['piece_type'], ['hisha', 'kaku', 'ryu', 'uma'])) continue;
+            if (!($enemyMove['capture'] ?? false)) continue;
+            
+            $boardAfterEnemy = $this->simulateMove($boardAfter, $enemyMove, $enemyColor);
+            $kingPosAfter = $this->findKingPosition($boardAfterEnemy['board'], $color);
+            if (!$kingPosAfter) return true; // 玉が消えた
+            
+            // 大駒が駒を取った後、玉が取れるか
+            $enemyMoves2 = $this->getPossibleMoves($boardAfterEnemy, $enemyColor);
+            $canTakeKing = false;
+            foreach ($enemyMoves2 as $em2) {
+                if ($em2['to_rank'] === $kingPosAfter['rank'] && $em2['to_file'] === $kingPosAfter['file']) {
+                    $canTakeKing = true;
+                    break;
+                }
+            }
+            
+            if (!$canTakeKing) continue;
+            
+            // 大駒が駒を取って玉を狙える → AIの応手で防げるか
+            $aiResponses = $this->getPossibleMoves($boardAfterEnemy, $color);
+            $canDefend = false;
+            foreach ($aiResponses as $aiResp) {
+                $boardAfterAiResp = $this->simulateMove($boardAfterEnemy, $aiResp, $color);
+                $kingPosAfterAi = $this->findKingPosition($boardAfterAiResp['board'], $color);
+                if (!$kingPosAfterAi) continue;
+                
+                // AI応手後に、敵が玉を取れるか
+                $em3s = $this->getPossibleMoves($boardAfterAiResp, $enemyColor);
+                $kingThreatened = false;
+                foreach ($em3s as $em3) {
+                    if ($em3['to_rank'] === $kingPosAfterAi['rank'] && $em3['to_file'] === $kingPosAfterAi['file']) {
+                        $kingThreatened = true;
+                        break;
+                    }
+                }
+                if (!$kingThreatened) {
+                    $canDefend = true;
+                    break;
+                }
+            }
+            
+            if (!$canDefend) {
+                \Log::warning('[canEnemyCaptureKingAfter] 防御不可能な大駒の攻撃', [
+                    'myMove' => ($move['from_file'] ?? '-') . "-" . ($move['from_rank'] ?? '-') . " -> {$move['to_file']}-{$move['to_rank']}",
+                    'enemyPiece' => $enemyMove['piece_type'],
+                    'captureAt' => "{$enemyMove['to_file']}-{$enemyMove['to_rank']}",
+                    'kingAt' => "{$kingPosAfter['file']}-{$kingPosAfter['rank']}",
+                ]);
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**
@@ -400,27 +848,118 @@ class AIService
         // 探索する手数を制限（depth=4 では上位20手、それ以外は25手）
         $maxMoves = $depth >= 4 ? 20 : 25;
         $scoredMoves = [];
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        
         foreach ($moves as $move) {
             $score = $this->evaluateMove($move, $boardState, $color);
+            
+            // 大駒を敵の攻撃ラインに晒す低価値な取りは完全に除外
+            $movedPieceType = $move['piece_type'];
+            if (in_array($movedPieceType, ['hisha', 'kaku', 'ryu', 'uma']) && ($move['capture'] ?? false)) {
+                $boardAfter = $this->simulateMove($boardState, $move, $color);
+                $isOnAttackLine = $this->isSquareOnEnemySlidingAttack($boardAfter['board'], $move['to_rank'], $move['to_file'], $enemyColor);
+                
+                if ($isOnAttackLine) {
+                    $target = $boardState['board'][$move['to_rank']][$move['to_file']] ?? null;
+                    $capturedValue = $target ? $this->getPieceValue($target['type']) : 0;
+                    
+                    \Log::info('[AIService::getMinimaxMove] 大駒の取りを検証', [
+                        'piece' => $movedPieceType,
+                        'from' => "{$move['from_file']}-{$move['from_rank']}",
+                        'to' => "{$move['to_file']}-{$move['to_rank']}",
+                        'capturedValue' => $capturedValue,
+                        'willExclude' => $capturedValue <= 200,
+                    ]);
+                    
+                    // 低価値な駒（と金・歩）を取るために大駒を晒す手は候補から除外
+                    if ($capturedValue <= 200) {
+                        \Log::warning('[AIService::getMinimaxMove] 危険な手を除外', [
+                            'piece' => $movedPieceType,
+                            'from' => "{$move['from_file']}-{$move['from_rank']}",
+                            'to' => "{$move['to_file']}-{$move['to_rank']}",
+                            'capturedValue' => $capturedValue,
+                        ]);
+                        continue; // この手をスキップ
+                    }
+                }
+            }
+            
             $scoredMoves[] = ['move' => $move, 'score' => $score];
         }
         usort($scoredMoves, fn($a, $b) => $b['score'] <=> $a['score']);
         $topMoves = array_slice($scoredMoves, 0, $maxMoves);
+        
+        $secondBestScore = -PHP_INT_MAX;
+        $secondBestMove = null;
+        
+        // デバッグ：全手の評価をログ出力
+        $moveScores = [];
         
         foreach ($topMoves as $item) {
             $move = $item['move'];
             $newBoard = $this->simulateMove($boardState, $move, $color);
             $score = $this->minimax($newBoard, $depth - 1, $alpha, $beta, false, $color);
             
-            if ($score > $bestScore) {
-                $bestScore = $score;
+            // デバッグ用に記録
+            $moveScores[] = [
+                'piece' => $move['piece_type'],
+                'from' => "{$move['from_file']}-{$move['from_rank']}",
+                'to' => "{$move['to_file']}-{$move['to_rank']}",
+                'capture' => $move['capture'] ?? false,
+                'score' => $score
+            ];
+            
+            // 玉が駒を取る手かどうかチェック
+            $isKingCapture = in_array($move['piece_type'], ['gyoku', 'ou']) && ($move['capture'] ?? false);
+            
+            // 玉が駒を取る手には大きなペナルティを追加
+            $adjustedScore = $score;
+            if ($isKingCapture) {
+                $adjustedScore -= 10000;  // 玉が駒を取る手は1万点減点
+            }
+            
+            if ($adjustedScore > $bestScore) {
+                $bestScore = $adjustedScore;
                 $bestMove = $move;
             }
             
             $alpha = max($alpha, $score);
         }
         
-        return $bestMove ?? $this->getAdvancedEvaluatedMove($moves, $boardState, $color);
+        // 玉以外の手がある場合はそれを優先、なければ仕方なく玉の手
+        $finalMove = $bestMove ?? $this->getAdvancedEvaluatedMove($moves, $boardState, $color);
+        
+        // 5-8への飛車の移動を選択した場合、詳細ログ
+        if ($finalMove && $finalMove['to_rank'] == 8 && $finalMove['to_file'] == 5 && 
+            in_array($finalMove['piece_type'], ['hisha', 'ryu'])) {
+            \Log::warning('[AIService::getMinimaxMove] 5-8への飛車/龍を選択', [
+                'selected' => "{$finalMove['from_file']}-{$finalMove['from_rank']} -> {$finalMove['to_file']}-{$finalMove['to_rank']}",
+                'piece' => $finalMove['piece_type'],
+                'capture' => $finalMove['capture'] ?? false,
+                'score' => $bestScore,
+                'all_moves' => $moveScores,
+            ]);
+        }
+        
+        // 玉が移動する場合は全手の評価をログ出力
+        if ($finalMove && in_array($finalMove['piece_type'], ['gyoku', 'ou'])) {
+            \Log::warning('[AIService::getMinimaxMove] King move selected', [
+                'selected' => "{$finalMove['from_file']}-{$finalMove['from_rank']} -> {$finalMove['to_file']}-{$finalMove['to_rank']}",
+                'all_moves' => $moveScores,
+                'total_possible' => count($moves)
+            ]);
+        }
+        
+        // デバッグログ
+        if ($finalMove && in_array($finalMove['piece_type'], ['gyoku', 'ou']) && ($finalMove['capture'] ?? false)) {
+            \Log::warning('[AIService::getMinimaxMove] King capture selected (no better alternative)', [
+                'from' => "{$finalMove['from_file']}-{$finalMove['from_rank']}",
+                'to' => "{$finalMove['to_file']}-{$finalMove['to_rank']}",
+                'total_moves' => count($moves),
+            ]);
+        }
+        
+        return $finalMove;
     }
     
     /**
@@ -449,15 +988,19 @@ class AIService
             return $maximizing ? -999999 : 999999;
         }
         
-        // 手数が多い場合は上位10手のみ探索（枝刈り強化）
-        if (count($moves) > 10) {
+        // 手数が多い場合は上位15手のみ探索（枝刈り強化）
+        if (count($moves) > 15) {
             $scoredMoves = [];
             foreach ($moves as $move) {
-                $quickScore = ($move['capture'] ?? false) ? 1000 : 0;
+                $quickScore = 0;
+                if ($move['capture'] ?? false) $quickScore += 1000;
+                if (!empty($move['promote'])) $quickScore += 500;
+                // 成り駒（龍・馬）の手を優先
+                if (in_array($move['piece_type'] ?? '', ['ryu', 'uma'])) $quickScore += 300;
                 $scoredMoves[] = ['move' => $move, 'score' => $quickScore];
             }
             usort($scoredMoves, fn($a, $b) => $b['score'] <=> $a['score']);
-            $moves = array_column(array_slice($scoredMoves, 0, 10), 'move');
+            $moves = array_column(array_slice($scoredMoves, 0, 15), 'move');
         }
         
         if ($maximizing) {
@@ -601,14 +1144,22 @@ class AIService
             // 通常の移動
             $piece = $newBoard['board'][$move['from_rank']][$move['from_file']];
             
-            // キャプチャ
+            // キャプチャ（玉は持ち駒にならない）
             if ($move['capture']) {
                 $capturedPiece = $newBoard['board'][$move['to_rank']][$move['to_file']];
-                $capturedType = $this->shogiService->demotePiece($capturedPiece['type']);
-                if (!isset($newBoard['hand'][$color][$capturedType])) {
-                    $newBoard['hand'][$color][$capturedType] = 0;
+                // 玉以外のみ持ち駒に追加
+                if (!in_array($capturedPiece['type'], ['gyoku', 'ou'], true)) {
+                    $capturedType = $this->shogiService->demotePiece($capturedPiece['type']);
+                    if (!isset($newBoard['hand'][$color][$capturedType])) {
+                        $newBoard['hand'][$color][$capturedType] = 0;
+                    }
+                    $newBoard['hand'][$color][$capturedType]++;
                 }
-                $newBoard['hand'][$color][$capturedType]++;
+            }
+            
+            // 成り処理
+            if (!empty($move['promote'])) {
+                $piece['type'] = $this->shogiService->promotePiece($piece['type']);
             }
             
             // 移動
@@ -693,7 +1244,245 @@ class AIService
         $score += $this->evaluateMajorPieceCoordination($boardState, $aiColor);
         $score -= $this->evaluateMajorPieceCoordination($boardState, $enemyColor);
         
+        // 敵の大駒による脅威を検出（重要）
+        $score -= $this->evaluateEnemyMajorPieceThreat($boardState, $aiColor) * 2;
+        $score += $this->evaluateEnemyMajorPieceThreat($boardState, $enemyColor) * 2;
+
+        // 大駒が敵の直線攻撃ラインに晒されている場合は大幅減点
+        $score -= $this->evaluateExposedMajorPieces($boardState, $aiColor);
+        $score += $this->evaluateExposedMajorPieces($boardState, $enemyColor);
+        
+        // 敵の歩/と金が自陣（玉の近く）に迫っている場合のペナルティ
+        $score -= $this->evaluateEnemyPawnInvasion($boardState, $aiColor);
+        $score += $this->evaluateEnemyPawnInvasion($boardState, $enemyColor);
+        
+        // 玉が直接取られる状態の検出（王手放置 = 致命的）
+        $score += $this->evaluateDirectKingThreat($boardState, $aiColor);
+        
         return $score;
+    }
+    
+    /**
+     * 敵が直接玉を取れる状態（王手放置）のペナルティ
+     * 軽量版：玉の周囲の敵の利きを近似的に計算
+     */
+    private function evaluateDirectKingThreat(array $boardState, string $aiColor): int
+    {
+        $enemyColor = $aiColor === 'sente' ? 'gote' : 'sente';
+        $myKingPos = $this->findKingPosition($boardState['board'], $aiColor);
+        if (!$myKingPos) return -100000; // 玉がない = 取られた
+        
+        $board = $boardState['board'];
+        $kingRank = $myKingPos['rank'];
+        $kingFile = $myKingPos['file'];
+        
+        // 飛車/龍による縦横の利き
+        // 同じ筋（file）で飛車/龍がいるか
+        $rookDirs = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // 上下左右
+        foreach ($rookDirs as [$dr, $df]) {
+            for ($step = 1; $step <= 8; $step++) {
+                $r = $kingRank + $dr * $step;
+                $f = $kingFile + $df * $step;
+                if ($r < 1 || $r > 9 || $f < 1 || $f > 9) break;
+                $piece = $board[$r][$f] ?? null;
+                if ($piece) {
+                    if ($piece['color'] === $enemyColor && in_array($piece['type'], ['hisha', 'ryu'])) {
+                        return -50000; // 飛車/龍が玉を直射
+                    }
+                    break; // 何か駒があったら遮られる
+                }
+            }
+        }
+        
+        // 角/馬による斜めの利き
+        $bishopDirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+        foreach ($bishopDirs as [$dr, $df]) {
+            for ($step = 1; $step <= 8; $step++) {
+                $r = $kingRank + $dr * $step;
+                $f = $kingFile + $df * $step;
+                if ($r < 1 || $r > 9 || $f < 1 || $f > 9) break;
+                $piece = $board[$r][$f] ?? null;
+                if ($piece) {
+                    if ($piece['color'] === $enemyColor && in_array($piece['type'], ['kaku', 'uma'])) {
+                        return -50000; // 角/馬が玉を直射
+                    }
+                    break;
+                }
+            }
+        }
+        
+        // 隣接マスの敵の駒（金銀桂香歩tokinなど）
+        $adjacentDirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+        foreach ($adjacentDirs as [$dr, $df]) {
+            $r = $kingRank + $dr;
+            $f = $kingFile + $df;
+            if ($r < 1 || $r > 9 || $f < 1 || $f > 9) continue;
+            $piece = $board[$r][$f] ?? null;
+            if (!$piece || $piece['color'] !== $enemyColor) continue;
+            
+            // この駒が玉のマスに来れるか（移動方向チェック）
+            $canAttack = $this->canPieceAttackSquare($piece['type'], $piece['color'], $r, $f, $kingRank, $kingFile);
+            if ($canAttack) {
+                return -50000;
+            }
+        }
+        
+        // 桂馬の利き（隣接ではなく飛びの利き）
+        $keimaDirs = $enemyColor === 'sente' ? [[-2, -1], [-2, 1]] : [[2, -1], [2, 1]];
+        foreach ($keimaDirs as [$dr, $df]) {
+            $r = $kingRank + $dr;
+            $f = $kingFile + $df;
+            if ($r < 1 || $r > 9 || $f < 1 || $f > 9) continue;
+            $piece = $board[$r][$f] ?? null;
+            if ($piece && $piece['color'] === $enemyColor && in_array($piece['type'], ['keima'])) {
+                return -50000;
+            }
+        }
+        
+        return 0;
+    }
+    
+    /**
+     * 駒が特定のマスを攻撃できるか（簡易チェック）
+     */
+    private function canPieceAttackSquare(string $pieceType, string $color, int $fromRank, int $fromFile, int $toRank, int $toFile): bool
+    {
+        $dr = $toRank - $fromRank;
+        $df = $toFile - $fromFile;
+        
+        // 先手は上方向(rank-1)が前、後手は下方向(rank+1)が前
+        $forward = ($color === 'sente') ? -1 : 1;
+        
+        switch ($pieceType) {
+            case 'fu':
+                return $dr === $forward && $df === 0;
+            case 'kin':
+            case 'tokin':
+            case 'nkyosha':
+            case 'nkeima':
+            case 'ngin':
+                // 金と同じ動き: 前3マス + 横 + 後
+                $goldMoves = [[$forward, 0], [$forward, -1], [$forward, 1], [0, -1], [0, 1], [-$forward, 0]];
+                foreach ($goldMoves as [$gr, $gf]) {
+                    if ($dr === $gr && $df === $gf) return true;
+                }
+                return false;
+            case 'gin':
+                // 銀: 前3マス + 後ろ斜め2マス
+                $ginMoves = [[$forward, 0], [$forward, -1], [$forward, 1], [-$forward, -1], [-$forward, 1]];
+                foreach ($ginMoves as [$gr, $gf]) {
+                    if ($dr === $gr && $df === $gf) return true;
+                }
+                return false;
+            case 'gyoku':
+            case 'ou':
+                // 全方向1マス
+                return abs($dr) <= 1 && abs($df) <= 1 && ($dr !== 0 || $df !== 0);
+            case 'ryu':
+                // 龍: 飛車の動き + 斜め1マス（ただし隣接のみチェック）
+                if (abs($dr) <= 1 && abs($df) <= 1) return true;
+                return false; // 遠距離は上のスライドチェックで処理
+            case 'uma':
+                // 馬: 角の動き + 縦横1マス
+                if (abs($dr) <= 1 && abs($df) <= 1) return true;
+                return false;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * 敵の歩/と金が自陣に侵入しているペナルティを計算
+     */
+    private function evaluateEnemyPawnInvasion(array $boardState, string $color): int
+    {
+        $penalty = 0;
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        $board = $boardState['board'];
+        
+        // 自陣の範囲（sente: 7-9段、gote: 1-3段）
+        $dangerZoneStart = ($color === 'gote') ? 7 : 1;
+        $dangerZoneEnd = ($color === 'gote') ? 9 : 3;
+        
+        // 玉の位置を取得
+        $kingPos = $this->findKingPosition($board, $color);
+        
+        for ($rank = $dangerZoneStart; $rank <= $dangerZoneEnd; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if (!$piece || $piece['color'] !== $enemyColor) continue;
+                
+                if (in_array($piece['type'], ['fu', 'tokin'])) {
+                    // 自陣に敵の歩/と金がいる
+                    $penalty += 300;
+                    
+                    // 玉と同じ筋の場合は特に危険
+                    if ($kingPos && $file === $kingPos['file']) {
+                        $penalty += 800;
+                    }
+                    
+                    // 玉に近いほど危険
+                    if ($kingPos) {
+                        $dist = abs($file - $kingPos['file']) + abs($rank - $kingPos['rank']);
+                        if ($dist <= 2) {
+                            $penalty += 1000;
+                        }
+                    }
+                    
+                    // と金は歩より遥かに危険
+                    if ($piece['type'] === 'tokin') {
+                        $penalty += 500;
+                    }
+                }
+            }
+        }
+        
+        // 自陣の手前（sente: 5-6段、gote: 4-5段）にいる歩も警戒
+        $approachStart = ($color === 'gote') ? 5 : 4;
+        $approachEnd = ($color === 'gote') ? 6 : 5;
+        
+        for ($rank = $approachStart; $rank <= $approachEnd; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if (!$piece || $piece['color'] !== $enemyColor) continue;
+                
+                if ($piece['type'] === 'fu') {
+                    // 玉と同じ筋の歩が迫っている場合
+                    if ($kingPos && $file === $kingPos['file']) {
+                        $penalty += 400;
+                    } else {
+                        $penalty += 100;
+                    }
+                }
+            }
+        }
+        
+        return $penalty;
+    }
+
+    /**
+     * 自軍の大駒が敵の直線攻撃ラインに晒されているか評価
+     */
+    private function evaluateExposedMajorPieces(array $boardState, string $color): int
+    {
+        $penalty = 0;
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        $board = $boardState['board'];
+
+        for ($rank = 1; $rank <= 9; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if (!$piece || $piece['color'] !== $color) continue;
+
+                if (in_array($piece['type'], ['hisha', 'kaku', 'ryu', 'uma'], true)) {
+                    if ($this->isSquareOnEnemySlidingAttack($board, $rank, $file, $enemyColor)) {
+                        $penalty += 2000;
+                    }
+                }
+            }
+        }
+
+        return $penalty;
     }
 
     /**
@@ -720,6 +1509,32 @@ class AIService
     private function getPositionBonus(string $type, int $rank, int $file, string $color): int
     {
         $bonus = 0;
+        
+        // 玉は初期位置に留まるべき（前進すると大幅マイナス）
+        if (in_array($type, ['gyoku', 'ou'])) {
+            if ($color === 'sente') {
+                // 先手玉は1段目にいるべき
+                if ($rank === 1) {
+                    $bonus += 1000;
+                } else if ($rank === 2) {
+                    $bonus -= 500;  // 2段目でもマイナス
+                } else {
+                    // 3段目以降は超大幅マイナス
+                    $bonus -= ($rank - 1) * 1000;
+                }
+            } else {
+                // 後手玉は9段目にいるべき
+                if ($rank === 9) {
+                    $bonus += 1000;
+                } else if ($rank === 8) {
+                    $bonus -= 500;  // 8段目でもマイナス
+                } else {
+                    // 7段目以前は超大幅マイナス
+                    $bonus -= (10 - $rank) * 1000;
+                }
+            }
+            return $bonus;
+        }
         
         // 中央制御
         $centerDist = abs($file - 5);
@@ -858,6 +1673,11 @@ class AIService
     private function quickEvaluateMove(array $move, array $boardState, string $color): int
     {
         $score = 0;
+        
+        // 玉が駒を取る手は超危険
+        if (in_array($move['piece_type'], ['gyoku', 'ou']) && ($move['capture'] ?? false)) {
+            $score -= 5000;
+        }
 
         $pieceValues = [
             'gyoku' => 1000,
@@ -894,6 +1714,19 @@ class AIService
             $score += 40;
         }
 
+        // 移動先が敵に取られるリスクを簡易チェック
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        $boardAfterMove = $this->simulateMove($boardState, $move, $color);
+        $enemyMoves = $this->getPossibleMoves($boardAfterMove, $enemyColor);
+        foreach ($enemyMoves as $em) {
+            if ($em['to_rank'] === $move['to_rank'] && $em['to_file'] === $move['to_file']) {
+                // 高価値の駒ほど大きなペナルティ
+                $myPieceValue = $pieceValues[$move['piece_type']] ?? 100;
+                $score -= $myPieceValue;
+                break;
+            }
+        }
+
         return $score;
     }
 
@@ -903,6 +1736,12 @@ class AIService
     private function evaluateMove(array $move, array $boardState, string $color): int
     {
         $score = 0;
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        
+        // 玉が駒を取る手は超危険（詰まされかけを除いて避ける）
+        if (in_array($move['piece_type'], ['gyoku', 'ou']) && ($move['capture'] ?? false)) {
+            $score -= 5000;  // 大幅なマイナス
+        }
 
         // 駒の価値
         $pieceValues = [
@@ -937,6 +1776,7 @@ class AIService
         }
 
         // ========== 2. 駒を取る手（高い優先度） ==========
+        $capturedValue = 0;
         if ($move['capture']) {
             $targetRank = $move['to_rank'];
             $targetFile = $move['to_file'];
@@ -944,8 +1784,107 @@ class AIService
             
             if ($targetPiece) {
                 $captureValue = $pieceValues[$targetPiece['type']] ?? 0;
-                $score += $captureValue * 3; // 駒を取る手を強く優先
+                $capturedValue = $captureValue;
+
+                // 金・銀・玉で敵の龍/馬を取る手は最優先
+                if (in_array($targetPiece['type'], ['ryu', 'uma'], true) && in_array($move['piece_type'], ['kin', 'gin', 'gyoku', 'ou'], true)) {
+                    return 900000;
+                }
+                
+                // 龍・馬・飛車・角を取る手は特に高評価
+                if (in_array($targetPiece['type'], ['ryu', 'uma', 'hisha', 'kaku'])) {
+                    $score += $captureValue * 10; // 大駒を取る手は超優先
+                } else {
+                    $score += $captureValue * 3; // 駒を取る手を強く優先
+                }
+                
+                // 自陣に侵入してきた敵の歩/と金を取る手は高評価（安全な場合）
+                if (in_array($targetPiece['type'], ['fu', 'tokin'])) {
+                    $inMyTerritory = ($color === 'gote') ? ($move['to_rank'] >= 7) : ($move['to_rank'] <= 3);
+                    $approaching = ($color === 'gote') ? ($move['to_rank'] >= 5) : ($move['to_rank'] <= 5);
+                    if ($inMyTerritory) {
+                        $score += 500; // 自陣の敵歩を取るのは重要
+                    } elseif ($approaching) {
+                        $score += 200; // 迫ってくる歩を取るのも重要
+                    }
+                }
             }
+        }
+        
+        // ========== 2.5 敵の大駒に隣接している位置には置かない（敵に取られるリスク） ==========
+        // 自分の大駒（飛車・角）が敵の龍・馬に隣接する位置に移動する場合はペナルティ
+        if (!($move['is_drop'] ?? false)) {
+            $pieceType = $boardState['board'][$move['from_rank']][$move['from_file']]['type'] ?? null;
+            
+            if (in_array($pieceType, ['hisha', 'kaku'])) {  // 飛車・角のみ
+                // 移動先が敵の龍・馬に隣接しているかチェック
+                for ($dr = -1; $dr <= 1; $dr++) {
+                    for ($df = -1; $df <= 1; $df++) {
+                        if ($dr === 0 && $df === 0) continue;
+                        $r = $move['to_rank'] + $dr;
+                        $f = $move['to_file'] + $df;
+                        if ($r < 1 || $r > 9 || $f < 1 || $f > 9) continue;
+                        
+                        $adjacentPiece = $boardState['board'][$r][$f] ?? null;
+                        if ($adjacentPiece && $adjacentPiece['color'] === $enemyColor) {
+                            if (in_array($adjacentPiece['type'], ['ryu', 'uma'])) {
+                                $score -= 300; // 敵の龍・馬に隣接するのは危険
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ========== 2.6 直線攻撃ライン（飛・角）に入る手の危険度 ==========
+        $movedPieceType = $move['piece_type'] ?? null;
+        $boardAfter = $boardState['board'];
+        if (!($move['is_drop'] ?? false)) {
+            $movedPiece = $boardState['board'][$move['from_rank']][$move['from_file']] ?? null;
+            $movedPieceType = $movedPiece['type'] ?? $movedPieceType;
+            if ($movedPiece) {
+                $boardAfter[$move['from_rank']][$move['from_file']] = null;
+                $boardAfter[$move['to_rank']][$move['to_file']] = $movedPiece;
+            }
+        } else {
+            $boardAfter[$move['to_rank']][$move['to_file']] = [
+                'type' => $movedPieceType,
+                'color' => $color,
+            ];
+        }
+
+        $isOnAttackLine = false;
+        if ($movedPieceType && $this->isSquareOnEnemySlidingAttack($boardAfter, $move['to_rank'], $move['to_file'], $enemyColor)) {
+            $isOnAttackLine = true;
+            $movedValue = $pieceValues[$movedPieceType] ?? 0;
+            if (in_array($movedPieceType, ['hisha', 'kaku', 'ryu', 'uma'])) {
+                $score -= max(5000, $movedValue * 15); // 大駒が一直線の攻撃ラインに入るのは致命的
+            } elseif (in_array($movedPieceType, ['kin', 'gin'])) {
+                $score -= 1200; // 金銀も危険
+            } else {
+                $score -= 400; // 小駒は控えめに減点
+            }
+
+            // 低価値の駒を取るために大駒を晒す手はさらに大幅減点
+            if (in_array($movedPieceType, ['hisha', 'kaku', 'ryu', 'uma']) && $capturedValue > 0) {
+                if ($capturedValue <= 200) {
+                    $score -= 20000; // と金・歩のために大駒を晒す手は原則禁止
+                } elseif ($capturedValue <= 300) {
+                    $score -= 8000;
+                }
+            }
+        }
+        
+        // 5-8への移動をログ
+        if (($move['to_rank'] ?? null) == 8 && ($move['to_file'] ?? null) == 5 && in_array($movedPieceType, ['hisha', 'ryu'])) {
+            \Log::info('[AIService::evaluateMove] 5-8への飛車/龍の移動を評価', [
+                'from' => ($move['is_drop'] ?? false) ? 'drop' : "{$move['from_file']}-{$move['from_rank']}",
+                'piece' => $movedPieceType,
+                'capture' => ($move['capture'] ?? false) ? 'yes' : 'no',
+                'capturedValue' => $capturedValue,
+                'isOnAttackLine' => $isOnAttackLine,
+                'currentScore' => $score,
+            ]);
         }
 
         // ========== 3. 敵陣への進出と攻撃性 ==========
@@ -1001,25 +1940,24 @@ class AIService
             if (in_array($pieceType, ['kin', 'gin'])) {
                 $kingPos = $this->findKing($boardState['board'], $color);
                 if ($kingPos) {
-                    $distToKing = abs($move['to_rank'] - $kingPos['rank']) + abs($move['to_file'] - $kingPos['file']);
-                    if ($distToKing <= 2) {
-                        $score += 100; // 玉の近くにいれば守備力UP
+                    $fromDistToKing = abs($move['from_rank'] - $kingPos['rank']) + abs($move['from_file'] - $kingPos['file']);
+                    $toDistToKing = abs($move['to_rank'] - $kingPos['rank']) + abs($move['to_file'] - $kingPos['file']);
+                    
+                    // 玉の近くにいれば守備力UP
+                    if ($toDistToKing <= 2) {
+                        $score += 150;
+                    }
+                    
+                    // 玉から離れる手はペナルティ
+                    if ($toDistToKing > $fromDistToKing) {
+                        $score -= 200; // 守備駒が玉から離れるのは危険
                     }
                 }
             }
         }
 
-        // ========== 7. 敵玉への攻撃（重要度大幅UP） ==========
+        // ========== 7. 敵陣への進出評価 ==========
         $enemyColor = $color === 'sente' ? 'gote' : 'sente';
-        $enemyKingPos = $this->findKing($boardState['board'], $enemyColor);
-        if ($enemyKingPos) {
-            $distToEnemyKing = abs($move['to_rank'] - $enemyKingPos['rank']) + abs($move['to_file'] - $enemyKingPos['file']);
-            if ($distToEnemyKing <= 2) {
-                $score += 200; // 敵玉2マス以内なら大幅ボーナス
-            } elseif ($distToEnemyKing <= 4) {
-                $score += 100; // 敵玉4マス以内でもボーナス
-            }
-        }
         if ($enemyTerritory) {
             $score += 150;
             
@@ -1043,11 +1981,15 @@ class AIService
         }
 
         // ========== 6. 敵王への圧力 ==========
-        // 敵の王の周辺マスに進出
-        $enemyKingRank = $color === 'sente' ? 1 : 9; // 敵王は通常ここ付近
-        $distanceToEnemyKing = abs($move['to_rank'] - $enemyKingRank);
-        if ($distanceToEnemyKing <= 3) {
-            $score += 100 - ($distanceToEnemyKing * 20);
+        // 敵の王の位置を取得して正確な距離を測る
+        $enemyKingPos = $this->findKing($boardState['board'], $enemyColor);
+        if ($enemyKingPos) {
+            $distanceToEnemyKing = abs($move['to_rank'] - $enemyKingPos['rank']) + abs($move['to_file'] - $enemyKingPos['file']);
+            if ($distanceToEnemyKing <= 2) {
+                $score += 150; // 敵王2マス以内は脅威
+            } elseif ($distanceToEnemyKing <= 4) {
+                $score += 80; // 敵王4マス以内も評価
+            }
         }
 
         // ========== 7. 自分の王の防御 ==========
@@ -1066,7 +2008,181 @@ class AIService
         // ========== 8. ランダム性（強さの微調整） ==========
         $score += rand(-5, 15); // 小さなランダム要素で自然な戦い
 
+        // 5-8への移動の最終スコアをログ
+        if (($move['to_rank'] ?? null) == 8 && ($move['to_file'] ?? null) == 5 && in_array($movedPieceType, ['hisha', 'ryu'])) {
+            \Log::info('[AIService::evaluateMove] 5-8への飛車/龍の最終スコア', [
+                'from' => ($move['is_drop'] ?? false) ? 'drop' : "{$move['from_file']}-{$move['from_rank']}",
+                'piece' => $movedPieceType,
+                'finalScore' => $score,
+            ]);
+        }
+
         return $score;
+    }
+
+    /**
+     * 指定マスが敵の飛・角（および成り）による直線攻撃ライン上か判定
+     */
+    private function isSquareOnEnemySlidingAttack(array $board, int $rank, int $file, string $enemyColor): bool
+    {
+        $rookDirections = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        $bishopDirections = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+        foreach ($rookDirections as [$dr, $df]) {
+            $r = $rank + $dr;
+            $f = $file + $df;
+            while ($r >= 1 && $r <= 9 && $f >= 1 && $f <= 9) {
+                $piece = $board[$r][$f] ?? null;
+                if ($piece) {
+                    if ($piece['color'] === $enemyColor && in_array($piece['type'], ['hisha', 'ryu'])) {
+                        return true;
+                    }
+                    break; // ブロックされた
+                }
+                $r += $dr;
+                $f += $df;
+            }
+        }
+
+        foreach ($bishopDirections as [$dr, $df]) {
+            $r = $rank + $dr;
+            $f = $file + $df;
+            while ($r >= 1 && $r <= 9 && $f >= 1 && $f <= 9) {
+                $piece = $board[$r][$f] ?? null;
+                if ($piece) {
+                    if ($piece['color'] === $enemyColor && in_array($piece['type'], ['kaku', 'uma'])) {
+                        return true;
+                    }
+                    break; // ブロックされた
+                }
+                $r += $dr;
+                $f += $df;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 指定マスと敵の大駒の間のライン上（反対側）に自分の玉がいるか判定
+     * 例：敵の飛車が5-2、自分の駒が5-8、自分の玉が5-9 → true
+     */
+    private function isKingBehindOnLine(array $board, int $rank, int $file, string $myColor, string $enemyColor): bool
+    {
+        $rookDirections = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        $bishopDirections = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+        
+        // 各方向について敵の大駒を探し、反対方向に自分の玉があるか確認
+        foreach ($rookDirections as [$dr, $df]) {
+            // この方向に敵の飛車/龍がいるか
+            $r = $rank + $dr;
+            $f = $file + $df;
+            $foundEnemy = false;
+            while ($r >= 1 && $r <= 9 && $f >= 1 && $f <= 9) {
+                $piece = $board[$r][$f] ?? null;
+                if ($piece) {
+                    if ($piece['color'] === $enemyColor && in_array($piece['type'], ['hisha', 'ryu'])) {
+                        $foundEnemy = true;
+                    }
+                    break;
+                }
+                $r += $dr;
+                $f += $df;
+            }
+            
+            if ($foundEnemy) {
+                // 反対方向に自分の玉がいるか（1マス先を確認）
+                $r = $rank - $dr;
+                $f = $file - $df;
+                while ($r >= 1 && $r <= 9 && $f >= 1 && $f <= 9) {
+                    $piece = $board[$r][$f] ?? null;
+                    if ($piece) {
+                        if ($piece['color'] === $myColor && in_array($piece['type'], ['gyoku', 'ou'])) {
+                            return true;
+                        }
+                        break;
+                    }
+                    $r -= $dr;
+                    $f -= $df;
+                }
+            }
+        }
+        
+        foreach ($bishopDirections as [$dr, $df]) {
+            $r = $rank + $dr;
+            $f = $file + $df;
+            $foundEnemy = false;
+            while ($r >= 1 && $r <= 9 && $f >= 1 && $f <= 9) {
+                $piece = $board[$r][$f] ?? null;
+                if ($piece) {
+                    if ($piece['color'] === $enemyColor && in_array($piece['type'], ['kaku', 'uma'])) {
+                        $foundEnemy = true;
+                    }
+                    break;
+                }
+                $r += $dr;
+                $f += $df;
+            }
+            
+            if ($foundEnemy) {
+                $r = $rank - $dr;
+                $f = $file - $df;
+                while ($r >= 1 && $r <= 9 && $f >= 1 && $f <= 9) {
+                    $piece = $board[$r][$f] ?? null;
+                    if ($piece) {
+                        if ($piece['color'] === $myColor && in_array($piece['type'], ['gyoku', 'ou'])) {
+                            return true;
+                        }
+                        break;
+                    }
+                    $r -= $dr;
+                    $f -= $df;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * 指定色の玉の位置を取得
+     */
+    private function findKingPosition(array $board, string $color): ?array
+    {
+        for ($rank = 1; $rank <= 9; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if ($piece && $piece['color'] === $color && in_array($piece['type'], ['gyoku', 'ou'])) {
+                    return ['rank' => $rank, 'file' => $file];
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 駒の価値を取得
+     */
+    private function getPieceValue(string $pieceType): int
+    {
+        $pieceValues = [
+            'gyoku' => 1000,
+            'ou' => 1000,
+            'hisha' => 500,
+            'kaku' => 450,
+            'kin' => 300,
+            'gin' => 250,
+            'keima' => 200,
+            'kyosha' => 150,
+            'fu' => 100,
+            'ryu' => 600,
+            'uma' => 500,
+            'tokin' => 150,
+            'nkyosha' => 160,
+            'nkeima' => 210,
+            'ngin' => 260,
+        ];
+        return $pieceValues[$pieceType] ?? 0;
     }
 
     /**
@@ -1117,12 +2233,32 @@ class AIService
                 if ($piece && $piece['color'] === $color) {
                     $defenders++;
                     if (in_array($piece['type'], ['kin', 'gin'])) {
-                        $safety += 150;
+                        $safety += 300;  // 金銀の守りを重視（150→300）
                     } else {
                         $safety += 80;
                     }
                 }
             }
+        }
+
+        // 玉の隣に敵の龍・馬がいるのは即死級
+        $enemyColor = $color === 'sente' ? 'gote' : 'sente';
+        for ($dr = -1; $dr <= 1; $dr++) {
+            for ($df = -1; $df <= 1; $df++) {
+                if ($dr === 0 && $df === 0) continue;
+                $r = $rank + $dr;
+                $f = $file + $df;
+                if ($r < 1 || $r > 9 || $f < 1 || $f > 9) continue;
+                $piece = $board[$r][$f] ?? null;
+                if ($piece && $piece['color'] === $enemyColor && in_array($piece['type'], ['ryu', 'uma'], true)) {
+                    $safety -= 5000;
+                }
+            }
+        }
+        
+        // 守備駒が少ない場合は大幅マイナス
+        if ($defenders < 2) {
+            $safety -= 500;  // 守備駒2枚未満は危険
         }
 
         // 玉の位置ボーナス（端にいると危険）
@@ -1131,9 +2267,9 @@ class AIService
             $edgePenalty += 100;
         }
         if ($color === 'sente' && $rank <= 2) {
-            $safety += 200;
+            $safety += 300;  // 初期位置付近にいるボーナス（200→300）
         } elseif ($color === 'gote' && $rank >= 8) {
-            $safety += 200;
+            $safety += 300;  // 初期位置付近にいるボーナス（200→300）
         }
 
         $safety -= $edgePenalty;
@@ -1153,8 +2289,70 @@ class AIService
             }
         }
         $safety += $escapeCells * 30;
+        
+        // 敵の大駒（龍・馬・飛車・角）の脅威を評価
+        for ($r = 1; $r <= 9; $r++) {
+            for ($f = 1; $f <= 9; $f++) {
+                $piece = $board[$r][$f] ?? null;
+                if (!$piece || $piece['color'] !== $enemyColor) continue;
+                
+                if (in_array($piece['type'], ['hisha', 'ryu', 'kaku', 'uma'])) {
+                    $distance = abs($r - $rank) + abs($f - $file);
+                    if ($distance <= 3) {
+                        $safety -= 400;  // 大駒が近い
+                    } elseif ($distance <= 5) {
+                        $safety -= 200;  // 大駒がやや近い
+                    }
+                }
+            }
+        }
 
         return $safety;
+    }
+
+    /**
+     * 敵の大駒が玉に接近する脅威を検出
+     */
+    private function evaluateEnemyMajorPieceThreat(array $boardState, string $myColor): int
+    {
+        $board = $boardState['board'];
+        $enemyColor = $myColor === 'sente' ? 'gote' : 'sente';
+        $threat = 0;
+        
+        // 自分の玉の位置
+        $myKingPos = $this->findKing($board, $myColor);
+        if (!$myKingPos) {
+            return 0;
+        }
+        
+        // 敵の大駒を検索
+        for ($rank = 1; $rank <= 9; $rank++) {
+            for ($file = 1; $file <= 9; $file++) {
+                $piece = $board[$rank][$file] ?? null;
+                if (!$piece || $piece['color'] !== $enemyColor) continue;
+                
+                // 龍・馬・飛車・角のみチェック
+                if (in_array($piece['type'], ['ryu', 'uma', 'hisha', 'kaku'])) {
+                    $distance = abs($rank - $myKingPos['rank']) + abs($file - $myKingPos['file']);
+                    
+                    // 玉との距離に応じて脅威度を評価
+                    if ($distance <= 2) {
+                        $threat += 600; // 非常に危険
+                    } elseif ($distance <= 4) {
+                        $threat += 300; // 危険
+                    } elseif ($distance <= 6) {
+                        $threat += 100; // やや危険
+                    }
+                    
+                    // 龍と馬は特に危険
+                    if (in_array($piece['type'], ['ryu', 'uma'])) {
+                        $threat += 100;
+                    }
+                }
+            }
+        }
+        
+        return $threat;
     }
 
     /**

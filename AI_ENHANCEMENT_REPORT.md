@@ -226,3 +226,71 @@ PHP AIは「本質的に弱くない」ことが確認できました。ただ�
 **テスト環境**: Debian 13 (Trixie), PHP 8.3.27, Laravel 12.48.1
 **総ゲーム数**: 35+ games
 **最後更新**: 2026年2月5日
+
+---
+
+## フェーズ6: AI成り（プロモーション）完全対応 + エンジンバトル基盤整備
+
+### 発見されたバグ
+
+#### 1. AI成り（プロモーション）未対応（クリティカル）
+AIに成りの概念が一切なかった。以下の4箇所すべてで成り処理が欠落：
+
+| コンポーネント | 問題 | 影響 |
+|---|---|---|
+| `getPossibleMoves()` | 成り手(promote:true/false)を生成しない | AIが成れない |
+| `getMovementPatterns()` | ryu/uma/nkyosha/nkeima/ngin の case が未定義 → `default: return []` | 成駒が一切動けない |
+| `simulateMove()` | promote フラグを無視 | 探索中の成り駒が正しく評価されない |
+| `GameController::executeMove()` | AI の成り手を盤面に反映しない | AIが成れない |
+
+#### 2. 強制成り判定の段が逆（バグ）
+`getPossibleMoves` の強制成り判定で先手/後手の段条件が逆転していた：
+- 誤: 先手 `toRank <= 1`、後手 `toRank >= 9`
+- 正: 先手 `toRank >= 9`、後手 `toRank <= 1`
+  
+（先手の前方=rank増加方向、最奥段=rank 9）
+
+#### 3. USI座標変換の反転不足
+EngineBattleの `usiToMove` で rank のみ反転していたが、file も反転が必要だった：
+- 正: `app_value = 10 - usi_value`（rank, file 両方）
+
+#### 4. applyMove の無言失敗
+エンジンバトル内の `applyMove` で、駒が null の場合に手番切替をスキップして return するためボード状態が同期しなくなるバグ。
+
+### 修正内容
+
+#### AIService.php
+- **`getMovementPatterns()`**: ryu（飛車+斜め1マス）、uma（角+縦横1マス）、nkyosha/nkeima/ngin（金将と同じ6方向）の移動パターンを追加
+- **`getPossibleMoves()`**: 敵陣進入・離脱時に promote:true/false の両候補を生成。強制成り（歩/香の最奥段、桂の最奥2段）は promote:true のみ。強制成りの段判定を修正
+- **`simulateMove()`**: `if (!empty($move['promote']))` で `promotePiece()` を呼び出し駒タイプを変更
+- **`minimax()` 内の move ordering**: top-10 → top-15 に拡大、成り手 +500、駒取り +1000、ryu/uma +300 のスコアリング追加
+
+#### GameController.php
+- **`executeMove()`**: `if (!empty($move['promote']))` で AI 成り処理を追加。`promotePiece()` で盤面上の駒タイプを更新
+
+#### EngineBattle.php (新規 artisan コマンド: `battle`)
+- `usiToMove()` / `moveToUSI()`: rank, file の両方に `10 - x` 変換を適用
+- `applyMove()`: 駒 null 時のエラーログ出力と手番切替の保証
+- 先後交代対局、表示改善（[SF]/[AI] ラベル）
+
+### テスト追加
+
+| テストファイル | テスト数 | カバー範囲 |
+|---|---|---|
+| `PromotionTest.php` | 29 | 成り手生成(8)、強制成り(7)、成駒移動パターン(6)、simulateMove成り処理(8) |
+| `AIPromotionIntegrationTest.php` | 6 | AI成り選択統合テスト |
+| `USICoordinateTest.php` | 8 | USI座標変換の双方向一致テスト |
+
+### エンジンバトル結果
+
+| 対戦 | 勝率 | 結果 |
+|---|---|---|
+| vs SF Lv1 (5局) | 80% | 4勝1敗 |
+| vs SF Lv3 (5局) | 80% | 4勝1敗 |
+| vs SF Lv5 (5局) | 40% | 2勝3敗 |
+
+### テスト結果
+- **全127テスト合格** (572 assertions)
+- 16スキップ（AI Benchmark テスト、RUN_SLOW_TESTS 環境変数ゲート）
+
+**最後更新**: 2026年2月6日
