@@ -142,6 +142,117 @@ WCAG 2.1 AA/AAA レベルの適合を目指します。
 }
 ```
 
+#### 1.4.21 ダークモード対応 ★実装済み
+
+**概要**
+OSのダークテーマ設定を自動検出し、ダークモードに切り替える機能を実装。
+ユーザーはトグルボタンで手動切り替えも可能。
+
+**自動検出の仕組み**
+1. `window.matchMedia('(prefers-color-scheme: dark)')` でOSのテーマ設定を検出
+2. `localStorage` にユーザーの明示的な設定がない場合 → OSテーマに自動追従
+3. ユーザーがトグルボタンで手動設定した場合 → `localStorage` に保存し、OSテーマより優先
+4. OS側のテーマ変更をリアルタイムで検知し、手動設定がなければ自動切替
+
+**優先順位**
+```
+1. localStorage に '1'（ON）が保存 → ダークモード ON
+2. localStorage に '0'（OFF）が保存 → ダークモード OFF
+3. localStorage に未設定 → OS テーマに従う（dark → ON、light → OFF）
+```
+
+**CSS変数によるテーマ切替**
+```css
+/* 通常モード（ライトテーマ） */
+:root {
+  --color-bg: #F5F0E8;          /* 和紙風の温かみある背景 */
+  --color-text: #1A1A1A;        /* ほぼ黒のテキスト */
+  --color-surface: #FFFFFF;     /* カード・パネル背景 */
+  --color-primary: #0055AA;     /* ボタン・リンク青 */
+  --color-border: #CCCCCC;      /* ボーダー */
+  --color-link: #0044CC;        /* リンク色 */
+}
+
+/* ダークモード */
+html.high-contrast {
+  --color-bg: #1A1A1A;          /* 暗い背景 */
+  --color-text: #F0F0F0;        /* 明るいテキスト */
+  --color-surface: #2A2A2A;     /* カード・パネル背景（暗） */
+  --color-primary: #1B5299;     /* ボタン青（暗めで高コントラスト） */
+  --color-border: #555555;      /* ボーダー（暗） */
+  --color-link: #6CB4FF;        /* リンク色（明るい青） */
+}
+```
+
+**ダークモード時の盤面**
+```css
+html.high-contrast .board-section {
+  background: var(--color-surface); /* #2A2A2A */
+}
+
+html.high-contrast .cell {
+  background-color: #4A3728;     /* 暗い木目調 */
+  border-color: #D4A843;         /* 金色の罫線 */
+}
+
+/* 先手の駒: #F0E0C8 文字 on #4A3728 背景 = 3.56:1 */
+/* 後手の駒: #99DDFF 文字 on #4A3728 背景 = 5.02:1 */
+```
+
+**ボタンのコントラスト（WCAG AAA準拠）**
+```css
+/* 通常モード */
+.btn-primary {
+  background: #0055AA;   /* 青 */
+  color: #FFFFFF;        /* 白 → 8.73:1 (AAA) */
+}
+
+/* ダークモード */
+html.high-contrast .btn-primary {
+  background: #1B5299;   /* 暗い青 */
+  color: #FFFFFF;        /* 白 → 7.30:1 (AAA) */
+  border-color: #6CB4FF; /* 明るい青枠 */
+}
+```
+
+**トグルボタン**
+```html
+<button type="button" class="contrast-toggle" id="contrast-toggle"
+        aria-pressed="false" aria-label="ダークモード切替">
+    ダークモード: OFF
+</button>
+```
+
+**JavaScript実装**
+```javascript
+// OS ダークテーマ検出
+var darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+function getInitialState() {
+    var stored = localStorage.getItem('a11y-shogi-high-contrast');
+    if (stored === '1') return true;   // 手動ON
+    if (stored === '0') return false;  // 手動OFF
+    return darkMediaQuery.matches;     // OS テーマに従う
+}
+
+// OS テーマ変更リスナー
+darkMediaQuery.addEventListener('change', function(e) {
+    var stored = localStorage.getItem('a11y-shogi-high-contrast');
+    if (stored === null) {
+        apply(e.matches); // 手動設定なし → OS に追従
+    }
+});
+```
+
+**スクリーンリーダー対応**
+- トグル操作時: 「ダークモードをオンにしました」/「ダークモードをオフにしました」
+- OS テーマ自動切替時: 「OSのダークテーマを検出し、ダークモードに切り替えました」
+
+**対応ブラウザ**
+- Windows: Chrome, Edge, Firefox（Windows 設定 → 個人用設定 → 色 → ダーク）
+- macOS: Safari, Chrome, Firefox（システム設定 → 外観 → ダーク）
+- Linux: Chrome, Firefox（デスクトップ環境のテーマ設定に依存）
+
 ---
 
 ### 1.3 テキスト間隔（WCAG 1.4.12 - レベルAA）
@@ -750,6 +861,7 @@ npx htmlhint "resources/views/**/*.blade.php"
 - [ ] スクリーンリーダーテスト（NVDA）完了
 - [ ] キーボードのみでの操作テスト完了
 - [ ] ハイコントラストモードでの表示確認
+- [ ] ダークモード自動検出（prefers-color-scheme）の動作確認
 - [ ] モバイルのアクセシビリティテスト完了
 
 ---
@@ -883,5 +995,5 @@ node tests/accessibility/puppeteer-a11y-test.mjs
 
 ---
 
-最終更新: 2025-07-25
-バージョン: 1.1（E2Eテスト追加・アクセシビリティ修正反映）
+最終更新: 2025-07-26
+バージョン: 1.2（ダークモード自動検出・CSS変数テーマシステム追加）

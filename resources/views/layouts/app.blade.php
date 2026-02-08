@@ -343,8 +343,36 @@
                 }
             }
 
+            // OS のダークテーマ検出
+            var darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+            function getInitialState() {
+                var stored = localStorage.getItem(key);
+                // ユーザーが明示的に設定済み → その設定を優先
+                if (stored === '1') return true;
+                if (stored === '0') return false;
+                // 未設定 → OS のダークテーマに従う
+                return darkMediaQuery.matches;
+            }
+
             // 初期化
-            apply(localStorage.getItem(key) === '1');
+            apply(getInitialState());
+
+            // OS テーマ変更を検知して自動切替（ユーザーが手動設定していない場合）
+            darkMediaQuery.addEventListener('change', function(e) {
+                var stored = localStorage.getItem(key);
+                // ユーザーが手動で設定していない場合のみ OS テーマに追従
+                if (stored === null) {
+                    apply(e.matches);
+                    // スクリーンリーダーへ通知
+                    var sr = document.getElementById('sr-announcements');
+                    if (sr) {
+                        sr.textContent = e.matches
+                            ? 'OSのダークテーマを検出し、ダークモードに切り替えました'
+                            : 'OSのライトテーマを検出し、通常モードに切り替えました';
+                    }
+                }
+            });
 
             btn.addEventListener('click', function() {
                 var on = !html.classList.contains('high-contrast');
