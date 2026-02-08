@@ -120,22 +120,30 @@
         transform: rotate(180deg);
     }
 
-    /* ハイコントラストモード */
+    /* ダークモード */
     html.high-contrast .shogi-board {
-        --color-board-border: #000000;
-        --color-board-bg: #CCCCCC;
+        --color-board-border: #AA8855;
+        --color-board-bg: #3D2B1F;
     }
     html.high-contrast .cell {
-        --color-cell-bg: #FFFFFF;
-        --color-cell-focus: #CCCCCC;
-        border-width: 2px;
+        --color-cell-bg: #4A3728;
+        --color-cell-focus: #5C4433;
+        border-color: #D4A843;
+    }
+    html.high-contrast .piece-sente {
+        color: #F0E0C8;
     }
     html.high-contrast .piece-gote {
-        --color-gote: #0000CC;
+        color: #99DDFF;
     }
     html.high-contrast .cell[data-selected="true"] {
-        background: #FFAA00;
-        box-shadow: inset 0 0 0 3px #000, 0 0 0 3px #000;
+        background: #7A5A00;
+        box-shadow: inset 0 0 0 3px #FF8C00, 0 0 0 3px #FF8C00;
+    }
+    html.high-contrast .cell:hover,
+    html.high-contrast .cell:focus {
+        background: #5C4433;
+        outline-color: #FF8C00;
     }
     
     .hand-pieces {
@@ -165,15 +173,24 @@
         box-shadow: inset 0 0 0 3px var(--color-focus);
     }
 
+    html.high-contrast .hand-piece:hover,
+    html.high-contrast .hand-piece:focus {
+        background: #3A3A3A;
+    }
+
     .hand-piece[data-selected="true"] {
         background: #FFD700;
         box-shadow: inset 0 0 0 2px #FF8C00, 0 0 0 3px #FF8C00;
+    }
+
+    html.high-contrast .hand-piece[data-selected="true"] {
+        background: #7A5A00;
     }
     
     .move-history {
         max-height: 300px;
         overflow-y: auto;
-        background: #FFF;
+        background: var(--color-bg);
         border: 1px solid var(--color-border);
         padding: 12px;
         margin-top: 12px;
@@ -218,6 +235,14 @@
     #ranking-registration-dialog[style*="display: flex"] {
         display: flex !important;
     }
+
+    html.high-contrast .pause-banner {
+        background: #3D3520 !important;
+        border-color: #AA8855 !important;
+    }
+    html.high-contrast .pause-banner p {
+        color: #F0E0C8 !important;
+    }
 </style>
 @endpush
 
@@ -227,7 +252,7 @@
     
     {{-- ゲーム状態を表示 --}}
     @if($game->status === 'paused')
-        <div style="background: #FFF3CD; border: 2px solid #B8860B; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+        <div class="pause-banner" style="background: #FFF3CD; border: 2px solid #B8860B; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
             <p style="margin: 0; color: #664D03;"><strong>一時停止中</strong>：このゲームは一度中断されています。再開するか、ホームに戻るかを選択できます。</p>
         </div>
     @endif
@@ -330,7 +355,7 @@
         
         {{-- ランキング登録ダイアログ --}}
         <div id="ranking-registration-dialog" role="dialog" aria-modal="true" aria-labelledby="ranking-dialog-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center; z-index: 2000;">
-            <div style="background: #FFF; border: 4px solid #333; border-radius: 8px; padding: 32px; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);">
+            <div style="background: var(--color-bg); border: 4px solid var(--color-border); border-radius: 8px; padding: 32px; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); color: var(--color-text);">
                 <h2 id="ranking-dialog-title" style="margin-top: 0; margin-bottom: 16px; font-size: 1.5rem;">🎉 ランキングに登録しますか？</h2>
                 
                 <p id="ranking-dialog-message" style="margin-bottom: 24px; font-size: 1.1rem; line-height: 1.6;">
@@ -347,7 +372,7 @@
                         id="ranking-nickname-input" 
                         placeholder="例: 将棋マスター"
                         maxlength="15"
-                        style="width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #CCC; border-radius: 4px; box-sizing: border-box;"
+                        style="width: 100%; padding: 12px; font-size: 1rem; border: 2px solid var(--color-border); border-radius: 4px; box-sizing: border-box; background: var(--color-bg); color: var(--color-text);"
                     >
                     <small style="display: block; margin-top: 4px; color: var(--color-text-secondary);">3〜15文字で入力してください</small>
                 </div>
@@ -1329,18 +1354,19 @@
                 }
                 
                 .promotion-modal {
-                    background: #FFF;
-                    border: 4px solid #333;
+                    background: var(--color-bg, #FFF);
+                    border: 4px solid var(--color-border, #333);
                     border-radius: 8px;
                     padding: 24px;
                     min-width: 300px;
                     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+                    color: var(--color-text, #1A1A1A);
                 }
                 
                 .promotion-content h3 {
                     margin: 0 0 12px 0;
                     font-size: 18px;
-                    color: #1A1A1A;
+                    color: var(--color-text, #1A1A1A);
                 }
                 
                 .promotion-content p {
@@ -1358,17 +1384,17 @@
                     padding: 12px 16px;
                     font-size: 14px;
                     font-weight: bold;
-                    border: 2px solid #333;
-                    background: #E6F3FF;
+                    border: 2px solid var(--color-border, #333);
+                    background: var(--color-surface, #E6F3FF);
                     border-radius: 4px;
                     cursor: pointer;
                     transition: background-color 0.2s, box-shadow 0.2s;
-                    color: #1A1A1A;
+                    color: var(--color-text, #1A1A1A);
                 }
                 
                 .btn-promote:hover, .btn-promote:focus {
-                    background: #D0E8FF;
-                    outline: 4px solid #FFD700;
+                    background: var(--color-bg, #D0E8FF);
+                    outline: 4px solid var(--color-focus, #FFD700);
                     outline-offset: 2px;
                 }
             `;

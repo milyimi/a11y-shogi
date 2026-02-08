@@ -101,13 +101,13 @@ function checkContrast(name, fgColor, bgColor, level = 'AA', isLargeText = false
         assert('切替ボタンの存在', !!toggleBtn);
 
         const btnText = await page.$eval('#contrast-toggle', el => el.textContent.trim());
-        assert('初期状態はOFF', btnText === '高コントラスト: OFF');
+        assert('初期状態はOFF', btnText === 'ダークモード: OFF');
 
         const ariaPressed = await page.$eval('#contrast-toggle', el => el.getAttribute('aria-pressed'));
         assert('aria-pressed初期値', ariaPressed === 'false');
 
         const ariaLabel = await page.$eval('#contrast-toggle', el => el.getAttribute('aria-label'));
-        assert('aria-label設定', ariaLabel === 'ハイコントラストモード切替');
+        assert('aria-label設定', ariaLabel === 'ダークモード切替');
 
         // 通常モードのコントラスト測定
         console.log('\n  📐 通常モードのコントラスト比:');
@@ -157,7 +157,7 @@ function checkContrast(name, fgColor, bgColor, level = 'AA', isLargeText = false
         await page.waitForFunction(() => document.documentElement.classList.contains('high-contrast'));
 
         const newBtnText = await page.$eval('#contrast-toggle', el => el.textContent.trim());
-        assert('切替後はON', newBtnText === '高コントラスト: ON');
+        assert('切替後はON', newBtnText === 'ダークモード: ON');
 
         const newAriaPressed = await page.$eval('#contrast-toggle', el => el.getAttribute('aria-pressed'));
         assert('aria-pressed切替後', newAriaPressed === 'true');
@@ -167,7 +167,7 @@ function checkContrast(name, fgColor, bgColor, level = 'AA', isLargeText = false
 
         // スクリーンリーダーアナウンス確認
         const announcement = await page.$eval('#sr-announcements', el => el.textContent);
-        assert('スクリーンリーダーアナウンス', announcement.includes('ハイコントラストモード'));
+        assert('スクリーンリーダーアナウンス', announcement.includes('ダークモード'));
 
         // ハイコントラストモードのコントラスト測定
         console.log('\n  📐 ハイコントラストモードのコントラスト比:');
@@ -215,7 +215,7 @@ function checkContrast(name, fgColor, bgColor, level = 'AA', isLargeText = false
         assert('リロード後も保持', afterReload);
 
         const afterReloadBtn = await page.$eval('#contrast-toggle', el => el.textContent.trim());
-        assert('リロード後のボタンテキスト', afterReloadBtn === '高コントラスト: ON');
+        assert('リロード後のボタンテキスト', afterReloadBtn === 'ダークモード: ON');
 
         // OFF に戻す
         await page.click('#contrast-toggle');

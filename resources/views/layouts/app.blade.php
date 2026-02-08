@@ -26,17 +26,17 @@
         }
 
         html.high-contrast {
-            --color-text: #000000;
-            --color-bg: #FFFFFF;
-            --color-text-secondary: #333333;
-            --color-link: #0000EE;
-            --color-link-visited: #440088;
+            --color-text: #F0F0F0;
+            --color-bg: #1A1A1A;
+            --color-text-secondary: #CCCCCC;
+            --color-link: #6CB4FF;
+            --color-link-visited: #C8A2FF;
             --color-focus: #FF8C00;
-            --color-border: #000000;
-            --color-error: #AA0000;
-            --color-success: #006600;
-            --color-surface: #EEEEEE;
-            --color-table-border: #000000;
+            --color-border: #888888;
+            --color-error: #FF6666;
+            --color-success: #66DD66;
+            --color-surface: #2A2A2A;
+            --color-table-border: #666666;
         }
         
         * {
@@ -202,6 +202,19 @@
             background: #003D7A;
             border-color: #003D7A;
         }
+
+        html.high-contrast .btn-primary {
+            background: #4A9AE6;
+            color: #000000;
+            border-color: #4A9AE6;
+        }
+
+        html.high-contrast .btn-primary:hover,
+        html.high-contrast .btn-primary:focus {
+            background: #6CB4FF;
+            border-color: #6CB4FF;
+            color: #000000;
+        }
         
         .sr-only {
             position: absolute;
@@ -231,6 +244,14 @@
             background: #E6FFE6;
             border-color: var(--color-success);
             color: var(--color-success);
+        }
+
+        html.high-contrast .alert-error {
+            background: #3A1A1A;
+        }
+
+        html.high-contrast .alert-success {
+            background: #1A3A1A;
         }
         
         @media (max-width: 767px) {
@@ -274,8 +295,8 @@
                 </nav>
             </div>
             <button type="button" class="contrast-toggle" id="contrast-toggle"
-                    aria-pressed="false" aria-label="ハイコントラストモード切替">
-                高コントラスト: OFF
+                    aria-pressed="false" aria-label="ダークモード切替">
+                ダークモード: OFF
             </button>
         </div>
     </header>
@@ -312,11 +333,11 @@
             function apply(on) {
                 if (on) {
                     html.classList.add('high-contrast');
-                    btn.textContent = '高コントラスト: ON';
+                    btn.textContent = 'ダークモード: ON';
                     btn.setAttribute('aria-pressed', 'true');
                 } else {
                     html.classList.remove('high-contrast');
-                    btn.textContent = '高コントラスト: OFF';
+                    btn.textContent = 'ダークモード: OFF';
                     btn.setAttribute('aria-pressed', 'false');
                 }
             }
@@ -331,7 +352,7 @@
                 // スクリーンリーダーへ通知
                 var sr = document.getElementById('sr-announcements');
                 if (sr) {
-                    sr.textContent = on ? 'ハイコントラストモードをオンにしました' : 'ハイコントラストモードをオフにしました';
+                    sr.textContent = on ? 'ダークモードをオンにしました' : 'ダークモードをオフにしました';
                 }
             });
         })();
