@@ -39,21 +39,21 @@
                             <input type="radio" name="difficulty" value="easy" required checked
                                    style="width: 20px; height: 20px;">
                             <span style="font-weight: 500;">初級</span>
-                            <span style="color: #666;">- 基本的な手を指すAI</span>
+                            <span style="color: var(--color-text-secondary);">- 基本的な手を指すAI</span>
                         </label>
                         
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="difficulty" value="medium" required
                                    style="width: 20px; height: 20px;">
                             <span style="font-weight: 500;">中級</span>
-                            <span style="color: #666;">- 戦略的な手を考えるAI</span>
+                            <span style="color: var(--color-text-secondary);">- 戦略的な手を考えるAI</span>
                         </label>
                         
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="difficulty" value="hard" required
                                    style="width: 20px; height: 20px;">
                             <span style="font-weight: 500;">上級</span>
-                            <span style="color: #666;">- 高度な読みを行うAI</span>
+                            <span style="color: var(--color-text-secondary);">- 高度な読みを行うAI</span>
                         </label>
                     </div>
                 </fieldset>
@@ -68,14 +68,14 @@
                             <input type="radio" name="color" value="sente" checked
                                    style="width: 20px; height: 20px;">
                             <span style="font-weight: 500;">先手（下側）</span>
-                            <span style="color: #666;">- 先に指す</span>
+                            <span style="color: var(--color-text-secondary);">- 先に指す</span>
                         </label>
                         
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="color" value="gote"
                                    style="width: 20px; height: 20px;">
                             <span style="font-weight: 500;">後手（上側）</span>
-                            <span style="color: #666;">- AIの手の後に指す</span>
+                            <span style="color: var(--color-text-secondary);">- AIの手の後に指す</span>
                         </label>
                     </div>
                 </fieldset>

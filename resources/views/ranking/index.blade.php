@@ -33,7 +33,7 @@
                     <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
                         <caption class="sr-only">{{ $name }}ランキング</caption>
                         <thead>
-                            <tr style="border-bottom: 2px solid var(--color-border); background: #F5F5F5;">
+                            <tr style="border-bottom: 2px solid var(--color-border); background: var(--color-surface);">
                                 <th scope="col" style="padding: 12px 8px; text-align: left;">順位</th>
                                 <th scope="col" style="padding: 12px 8px; text-align: left;">ニックネーム</th>
                                 <th scope="col" style="padding: 12px 8px; text-align: right;">スコア</th>
@@ -43,7 +43,7 @@
                         </thead>
                         <tbody>
                             @foreach($rankings as $index => $ranking)
-                                <tr style="border-bottom: 1px solid #E0E0E0;">
+                                <tr style="border-bottom: 1px solid var(--color-table-border);">
                                     <td style="padding: 12px 8px; font-weight: bold;">
                                         {{ $index + 1 }}位
                                     </td>
@@ -69,7 +69,7 @@
                         <a href="{{ route('ranking.difficulty', ['difficulty' => $diff]) }}" class="btn">{{ $name }}の一覧を見る</a>
                     </div>
                 @else
-                    <p style="margin-top: 16px; padding: 16px; background: #F5F5F5; text-align: center;">
+                    <p style="margin-top: 16px; padding: 16px; background: var(--color-surface); text-align: center;">
                         {{ $name }}のランキングデータがまだありません。
                     </p>
                 @endif
@@ -85,7 +85,7 @@
                         {{ $difficulties[$currentDifficulty] ?? '' }}ランキング
                     </caption>
                     <thead>
-                        <tr style="border-bottom: 2px solid var(--color-border); background: #F5F5F5;">
+                        <tr style="border-bottom: 2px solid var(--color-border); background: var(--color-surface);">
                             <th scope="col" style="padding: 12px 8px; text-align: left;">順位</th>
                             <th scope="col" style="padding: 12px 8px; text-align: left;">ニックネーム</th>
                             <th scope="col" style="padding: 12px 8px; text-align: right;">スコア</th>
@@ -95,7 +95,7 @@
                     </thead>
                     <tbody>
                         @foreach($rankings as $index => $ranking)
-                            <tr style="border-bottom: 1px solid #E0E0E0;">
+                            <tr style="border-bottom: 1px solid var(--color-table-border);">
                                 <td style="padding: 12px 8px; font-weight: bold;">
                                     {{ $rankings->firstItem() + $index }}位
                                 </td>
@@ -125,7 +125,7 @@
                 @endif
             </section>
         @else
-            <p style="margin-top: 24px; padding: 24px; background: #F5F5F5; text-align: center;">
+            <p style="margin-top: 24px; padding: 24px; background: var(--color-surface); text-align: center;">
                 {{ $difficulties[$currentDifficulty] ?? '' }}のランキングデータがまだありません。
             </p>
         @endif
@@ -135,7 +135,7 @@
         <h3 id="score-calc-heading">スコア計算方法</h3>
         <p>
             スコア = 10,000 - (手数 × 50) - (経過秒数 ÷ 10)<br>
-            <small style="color: #666;">※少ない手数と短い時間でクリアするほど高スコアになります</small>
+            <small style="color: var(--color-text-secondary);">※少ない手数と短い時間でクリアするほど高スコアになります</small>
         </p>
     </section>
     

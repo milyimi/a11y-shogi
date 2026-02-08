@@ -37,7 +37,7 @@
     <section style="margin-top: 48px;" aria-labelledby="keyboard-shortcuts-heading">
         <h3 id="keyboard-shortcuts-heading">キーボードショートカット</h3>
         <p>
-            <small style="color: #666;">
+            <small style="color: var(--color-text-secondary);">
                 ※ショートカットは入力フィールドにフォーカスがない時のみ有効です
             </small>
         </p>

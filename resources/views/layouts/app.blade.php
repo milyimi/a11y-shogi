@@ -14,12 +14,29 @@
         :root {
             --color-text: #1A1A1A;
             --color-bg: #FFFFFF;
-            --color-link: #0066CC;
+            --color-text-secondary: #545454;
+            --color-link: #0055AA;
             --color-link-visited: #551A8B;
             --color-focus: #FFD700;
-            --color-border: #CCCCCC;
+            --color-border: #999999;
             --color-error: #CC0000;
             --color-success: #008800;
+            --color-surface: #F5F5F5;
+            --color-table-border: #BBBBBB;
+        }
+
+        html.high-contrast {
+            --color-text: #000000;
+            --color-bg: #FFFFFF;
+            --color-text-secondary: #333333;
+            --color-link: #0000EE;
+            --color-link-visited: #440088;
+            --color-focus: #FF8C00;
+            --color-border: #000000;
+            --color-error: #AA0000;
+            --color-success: #006600;
+            --color-surface: #EEEEEE;
+            --color-table-border: #000000;
         }
         
         * {
@@ -83,10 +100,23 @@
         }
         
         .header {
-            background: #F5F5F5;
+            background: var(--color-surface);
             border-bottom: 2px solid var(--color-border);
             padding: 16px 0;
             margin-bottom: 24px;
+        }
+        
+        .header .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
         }
         
         .header h1 {
@@ -106,13 +136,37 @@
         .nav-links a {
             font-weight: 500;
         }
+
+        .contrast-toggle {
+            padding: 8px 16px;
+            min-height: 44px;
+            min-width: 44px;
+            border: 2px solid var(--color-text);
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .contrast-toggle:hover,
+        .contrast-toggle:focus {
+            background: var(--color-text);
+            color: var(--color-bg);
+        }
+
+        html.high-contrast .contrast-toggle {
+            border-width: 3px;
+        }
         
         .main-content {
             min-height: 60vh;
         }
         
         .footer {
-            background: #F5F5F5;
+            background: var(--color-surface);
             border-top: 2px solid var(--color-border);
             padding: 24px 0;
             margin-top: 48px;
@@ -145,8 +199,8 @@
         }
         
         .btn-primary:hover, .btn-primary:focus {
-            background: #004C99;
-            border-color: #004C99;
+            background: #003D7A;
+            border-color: #003D7A;
         }
         
         .sr-only {
@@ -205,18 +259,24 @@
     {{-- Header --}}
     <header class="header" role="banner">
         <div class="container">
-            <h1>
-                <a href="{{ route('home') }}" style="text-decoration: none; color: inherit;">
-                    アクセシブル将棋
-                </a>
-            </h1>
-            <nav id="navigation" aria-label="メインナビゲーション">
-                <ul class="nav-links">
-                    <li><a href="{{ route('home') }}">ホーム</a></li>
-                    <li><a href="{{ route('ranking.index') }}">ランキング</a></li>
-                    <li><a href="{{ route('help') }}">ヘルプ</a></li>
-                </ul>
-            </nav>
+            <div class="header-left">
+                <h1>
+                    <a href="{{ route('home') }}" style="text-decoration: none; color: inherit;">
+                        アクセシブル将棋
+                    </a>
+                </h1>
+                <nav id="navigation" aria-label="メインナビゲーション">
+                    <ul class="nav-links">
+                        <li><a href="{{ route('home') }}">ホーム</a></li>
+                        <li><a href="{{ route('ranking.index') }}">ランキング</a></li>
+                        <li><a href="{{ route('help') }}">ヘルプ</a></li>
+                    </ul>
+                </nav>
+            </div>
+            <button type="button" class="contrast-toggle" id="contrast-toggle"
+                    aria-pressed="false" aria-label="ハイコントラストモード切替">
+                高コントラスト: OFF
+            </button>
         </div>
     </header>
     
@@ -243,6 +303,40 @@
         </div>
     </footer>
     
+    <script>
+        (function() {
+            var btn = document.getElementById('contrast-toggle');
+            var html = document.documentElement;
+            var key = 'a11y-shogi-high-contrast';
+
+            function apply(on) {
+                if (on) {
+                    html.classList.add('high-contrast');
+                    btn.textContent = '高コントラスト: ON';
+                    btn.setAttribute('aria-pressed', 'true');
+                } else {
+                    html.classList.remove('high-contrast');
+                    btn.textContent = '高コントラスト: OFF';
+                    btn.setAttribute('aria-pressed', 'false');
+                }
+            }
+
+            // 初期化
+            apply(localStorage.getItem(key) === '1');
+
+            btn.addEventListener('click', function() {
+                var on = !html.classList.contains('high-contrast');
+                localStorage.setItem(key, on ? '1' : '0');
+                apply(on);
+                // スクリーンリーダーへ通知
+                var sr = document.getElementById('sr-announcements');
+                if (sr) {
+                    sr.textContent = on ? 'ハイコントラストモードをオンにしました' : 'ハイコントラストモードをオフにしました';
+                }
+            });
+        })();
+    </script>
+
     @stack('scripts')
 </body>
 </html>

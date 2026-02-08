@@ -34,7 +34,7 @@
     }
     
     .komadai, .info-panel {
-        background: #F9F9F9;
+        background: var(--color-surface);
         border: 2px solid var(--color-border);
         padding: 16px;
         border-radius: 8px;
@@ -70,8 +70,8 @@
         grid-template-rows: repeat(9, 1fr);
         max-width: 540px;
         margin: 0 auto;
-        border: 3px solid #8B4513;
-        background: #DEB887;
+        border: 3px solid var(--color-board-border, #8B4513);
+        background: var(--color-board-bg, #DEB887);
     }
 
     .shogi-board > [role="row"] {
@@ -80,27 +80,34 @@
     
     .cell {
         aspect-ratio: 1;
-        border: 1px solid #8B4513;
+        border: 1px solid var(--color-board-border, #8B4513);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 24px;
         font-weight: bold;
-        background: #E6D2B5;
+        background: var(--color-cell-bg, #E6D2B5);
         cursor: pointer;
         transition: background-color 0.2s, box-shadow 0.2s;
-        color: #1A1A1A;
+        color: var(--color-text);
     }
     
     .cell:hover, .cell:focus {
-        background: #D4BFA3;
-        outline: 4px solid #FFD700;
+        background: var(--color-cell-focus, #C8AD8A);
+        outline: 4px solid var(--color-focus);
         outline-offset: -4px;
-        box-shadow: inset 0 0 0 8px rgba(255, 215, 0, 0.3);
+        box-shadow: inset 0 0 0 6px rgba(255, 140, 0, 0.4);
+    }
+    
+    html.high-contrast .cell:hover,
+    html.high-contrast .cell:focus {
+        background: #BBBBBB;
+        outline: 4px solid #FF8C00;
+        box-shadow: inset 0 0 0 6px rgba(255, 140, 0, 0.5);
     }
     
     .cell[data-selected="true"] {
-        background: #FFD700;
+        background: var(--color-focus);
         box-shadow: inset 0 0 0 2px #FF8C00, 0 0 0 3px #FF8C00;
     }
     
@@ -109,8 +116,26 @@
     }
     
     .piece-gote {
-        color: #CC0000;
+        color: var(--color-gote, #CC0000);
         transform: rotate(180deg);
+    }
+
+    /* ハイコントラストモード */
+    html.high-contrast .shogi-board {
+        --color-board-border: #000000;
+        --color-board-bg: #CCCCCC;
+    }
+    html.high-contrast .cell {
+        --color-cell-bg: #FFFFFF;
+        --color-cell-focus: #CCCCCC;
+        border-width: 2px;
+    }
+    html.high-contrast .piece-gote {
+        --color-gote: #0000CC;
+    }
+    html.high-contrast .cell[data-selected="true"] {
+        background: #FFAA00;
+        box-shadow: inset 0 0 0 3px #000, 0 0 0 3px #000;
     }
     
     .hand-pieces {
@@ -123,12 +148,12 @@
     
     .hand-piece {
         padding: 8px 12px;
-        background: #FFFFFF;
-        border: 2px solid #333333;
+        background: var(--color-bg);
+        border: 2px solid var(--color-text);
         border-radius: 4px;
         font-weight: bold;
         cursor: pointer;
-        color: #1A1A1A;
+        color: var(--color-text);
         min-height: 40px;
         display: flex;
         align-items: center;
@@ -202,8 +227,8 @@
     
     {{-- ゲーム状態を表示 --}}
     @if($game->status === 'paused')
-        <div style="background: #FFF3CD; border: 1px solid #FFC107; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-            <p style="margin: 0; color: #856404;"><strong>一時停止中</strong>：このゲームは一度中断されています。再開するか、ホームに戻るかを選択できます。</p>
+        <div style="background: #FFF3CD; border: 2px solid #B8860B; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <p style="margin: 0; color: #664D03;"><strong>一時停止中</strong>：このゲームは一度中断されています。再開するか、ホームに戻るかを選択できます。</p>
         </div>
     @endif
     
@@ -240,7 +265,7 @@
                         </button>
                     @endforeach
                 @else
-                    <p style="color: #666;">持ち駒なし</p>
+                    <p style="color: var(--color-text-secondary);">持ち駒なし</p>
                 @endif
             </div>
         </aside>
@@ -324,7 +349,7 @@
                         maxlength="15"
                         style="width: 100%; padding: 12px; font-size: 1rem; border: 2px solid #CCC; border-radius: 4px; box-sizing: border-box;"
                     >
-                    <small style="display: block; margin-top: 4px; color: #666;">3〜15文字で入力してください</small>
+                    <small style="display: block; margin-top: 4px; color: var(--color-text-secondary);">3〜15文字で入力してください</small>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -429,7 +454,7 @@
                             @endforeach
                         </ol>
                     @else
-                        <p style="color: #666;">まだ指し手がありません</p>
+                        <p style="color: var(--color-text-secondary);">まだ指し手がありません</p>
                     @endif
                 </div>
             </section>
@@ -463,7 +488,7 @@
                         </button>
                     @endforeach
                 @else
-                    <p style="color: #666;">持ち駒なし</p>
+                    <p style="color: var(--color-text-secondary);">持ち駒なし</p>
                 @endif
             </div>
         </aside>
@@ -1149,7 +1174,7 @@
                 const entries = Object.entries(items).filter(([, count]) => count > 0);
 
                 if (entries.length === 0) {
-                    element.innerHTML = '<p style="color: #666;">持ち駒なし</p>';
+                    element.innerHTML = '<p style="color: var(--color-text-secondary);">持ち駒なし</p>';
                     return;
                 }
 
@@ -1320,7 +1345,7 @@
                 
                 .promotion-content p {
                     margin: 0 0 20px 0;
-                    color: #666;
+                    color: var(--color-text-secondary);
                 }
                 
                 .promotion-options {
