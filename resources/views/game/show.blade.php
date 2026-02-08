@@ -73,6 +73,10 @@
         border: 3px solid #8B4513;
         background: #DEB887;
     }
+
+    .shogi-board > [role="row"] {
+        display: contents;
+    }
     
     .cell {
         aspect-ratio: 1;
@@ -247,6 +251,7 @@
             
             <div role="grid" aria-label="将棋盤 9×9マス" class="shogi-board" id="shogi-board">
                 @for($rank = 9; $rank >= 1; $rank--)
+                    <div role="row" aria-label="{{ $rank }}段目">
                     @for($file = 9; $file >= 1; $file--)
                         @php
                             $cell = $gameState['boardState']['board'][$rank][$file] ?? null;
@@ -286,12 +291,14 @@
                         <button
                             type="button"
                             class="cell {{ $pieceClass }}"
+                            role="gridcell"
                             data-rank="{{ $rank }}"
                             data-file="{{ $file }}"
                             aria-label="{{ $ariaLabel }}"
                             tabindex="{{ ($rank === 9 && $file === 9) ? 0 : -1 }}"
                         ><span class="piece-text">{{ $pieceText }}</span></button>
                     @endfor
+                    </div>
                 @endfor
             </div>
         </main>
@@ -473,8 +480,8 @@
     console.log('[INIT] game.human_color:', @json($game->human_color));
 
     
-    // フォーカス管理
-    let focusedCell = { rank: 9, file: 9 };
+    // フォーカス管理（グローバルアクセス可能にする）
+    window.focusedCell = { rank: 9, file: 9 };
     let selectedCell = null;
     
     function updateFocus() {
@@ -483,7 +490,7 @@
             const rank = parseInt(cell.dataset.rank);
             const file = parseInt(cell.dataset.file);
             
-            if (rank === focusedCell.rank && file === focusedCell.file) {
+            if (rank === window.focusedCell.rank && file === window.focusedCell.file) {
                 cell.tabIndex = 0;
                 cell.focus();
             } else {
@@ -586,10 +593,7 @@
         const humanColor = @json($game->human_color);
         let currentPlayer = window.gameData.currentPlayer || 'human';
         
-        // === デバッグ：currentPlayer を強制的に human に設定 ===
-        console.log('[Init] 初期 currentPlayer:', currentPlayer);
-        currentPlayer = 'human';
-        console.log('[Init] 修正後 currentPlayer:', currentPlayer, 'humanColor:', humanColor);
+        console.log('[Init] currentPlayer:', currentPlayer, 'humanColor:', humanColor);
         
         let fromCell = null; // 移動元の駒
         let selectedHandPiece = null;
@@ -781,6 +785,16 @@
         
         cells.forEach(cell => {
             cell.addEventListener('click', function() {
+                // クリック時に focusedCell を同期（矢印キーナビゲーションとの整合性）
+                const clickedRank = parseInt(this.dataset.rank);
+                const clickedFile = parseInt(this.dataset.file);
+                window.focusedCell.rank = clickedRank;
+                window.focusedCell.file = clickedFile;
+                // tabIndex を更新
+                cells.forEach(c => {
+                    c.tabIndex = -1;
+                });
+                this.tabIndex = 0;
                 handleCellSelect(this);
             });
             
@@ -826,7 +840,8 @@
                 if (handled) {
                     e.preventDefault();
                     if (newRank !== rank || newFile !== file) {
-                        window.focusedCell = { rank: newRank, file: newFile };
+                        window.focusedCell.rank = newRank;
+                        window.focusedCell.file = newFile;
                         updateFocus();
                         
                         const newCell = document.querySelector(
@@ -881,10 +896,27 @@
 
             if (!fromCell) {
                 // 移動元を選択
+                // 空マスや相手の駒を選択しようとした場合はフィードバック
+                if (!piece) {
+                    document.getElementById('game-announcements').textContent = 
+                        `${file}の${rank}は空です。駒のあるマスを選択してください`;
+                    return;
+                }
+                if (piece.color !== humanColor) {
+                    document.getElementById('game-announcements').textContent = 
+                        `${file}の${rank}は相手の駒です。自分の駒を選択してください`;
+                    return;
+                }
                 fromCell = cell;
                 cell.setAttribute('data-selected', 'true');
+                const pieceName = {
+                    'fu': '歩', 'kyosha': '香', 'keima': '桂', 'gin': '銀',
+                    'kin': '金', 'kaku': '角', 'hisha': '飛', 'gyoku': '玉', 'ou': '王',
+                    'tokin': 'と金', 'nkyosha': '成香', 'nkeima': '成桂', 'ngin': '成銀',
+                    'uma': '馬', 'ryu': '龍'
+                }[piece.type] || piece.type;
                 document.getElementById('game-announcements').textContent = 
-                    `${file}の${rank}から移動を開始します`;
+                    `${file}の${rank}の${pieceName}を選択しました。移動先を選んでください`;
             } else {
                 // 移動先を選択
                 const toRank = rank;
@@ -898,10 +930,25 @@
                     fromCell = null;
                     document.getElementById('game-announcements').textContent = '選択をキャンセルしました';
                 } else {
-                    // 駒を移動
-                    makeMove(fromFile, fromRank, toFile, toRank);
-                    fromCell.removeAttribute('data-selected');
-                    fromCell = null;
+                    // 移動先に自分の駒がある場合は、選択を切り替え
+                    if (piece && piece.color === humanColor) {
+                        fromCell.removeAttribute('data-selected');
+                        fromCell = cell;
+                        cell.setAttribute('data-selected', 'true');
+                        const pieceName = {
+                            'fu': '歩', 'kyosha': '香', 'keima': '桂', 'gin': '銀',
+                            'kin': '金', 'kaku': '角', 'hisha': '飛', 'gyoku': '玉', 'ou': '王',
+                            'tokin': 'と金', 'nkyosha': '成香', 'nkeima': '成桂', 'ngin': '成銀',
+                            'uma': '馬', 'ryu': '龍'
+                        }[piece.type] || piece.type;
+                        document.getElementById('game-announcements').textContent = 
+                            `${file}の${rank}の${pieceName}に選択を切り替えました。移動先を選んでください`;
+                    } else {
+                        // 駒を移動
+                        makeMove(fromFile, fromRank, toFile, toRank);
+                        fromCell.removeAttribute('data-selected');
+                        fromCell = null;
+                    }
                 }
             }
         }
@@ -1203,8 +1250,8 @@
             }
         }
         
-        // 成りダイアログを表示
-        function showPromotionDialog(piece, boardState) {
+        // 成りダイアログを表示（テストからもアクセス可能にグローバル公開）
+        window.showPromotionDialog = function showPromotionDialog(piece, boardState) {
             const pieceName = {
                 'fu': '歩', 'kyosha': '香', 'keima': '桂', 'gin': '銀',
                 'kaku': '角', 'hisha': '飛'
@@ -1217,22 +1264,26 @@
             
             const dialog = document.createElement('div');
             dialog.id = 'promotion-dialog';
+            dialog.setAttribute('role', 'dialog');
+            dialog.setAttribute('aria-modal', 'true');
+            dialog.setAttribute('aria-labelledby', 'promotion-dialog-title');
             dialog.innerHTML = `
                 <div class="promotion-modal">
                     <div class="promotion-content">
-                        <h3>${pieceName}が敵陣に到達しました</h3>
-                        <p>成りますか？</p>
-                        <div class="promotion-options">
-                            <button id="btn-promote-yes" class="btn-promote">
+                        <h3 id="promotion-dialog-title">${pieceName}が敵陣に到達しました</h3>
+                        <p id="promotion-dialog-desc">成りますか？${promotedName}に成るか、${pieceName}のままにするか選択してください。</p>
+                        <div class="promotion-options" role="group" aria-label="成り選択">
+                            <button id="btn-promote-yes" class="btn-promote" aria-describedby="promotion-dialog-desc">
                                 成る (${promotedName})
                             </button>
-                            <button id="btn-promote-no" class="btn-promote">
-                                成らない
+                            <button id="btn-promote-no" class="btn-promote" aria-describedby="promotion-dialog-desc">
+                                成らない (${pieceName}のまま)
                             </button>
                         </div>
                     </div>
                 </div>
             `;
+            dialog.setAttribute('aria-describedby', 'promotion-dialog-desc');
             
             document.body.appendChild(dialog);
             
@@ -1308,6 +1359,38 @@
                 handlePromotion(false);
                 dialog.remove();
             });
+
+            // フォーカストラップとキーボードサポート
+            const focusableButtons = dialog.querySelectorAll('button');
+            dialog.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    // Escape で「成らない」を選択
+                    e.preventDefault();
+                    handlePromotion(false);
+                    dialog.remove();
+                    return;
+                }
+                if (e.key === 'Tab') {
+                    // ダイアログ内でフォーカスをトラップ
+                    const first = focusableButtons[0];
+                    const last = focusableButtons[focusableButtons.length - 1];
+                    if (e.shiftKey && document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    } else if (!e.shiftKey && document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
+            });
+
+            // 「成る」ボタンにフォーカスを移動
+            setTimeout(() => {
+                const promoteYes = document.getElementById('btn-promote-yes');
+                if (promoteYes) promoteYes.focus();
+                document.getElementById('game-announcements').textContent = 
+                    `${pieceName}を${promotedName}に成るかどうかを選択してください`;
+            }, 100);
         }
         
         // 成りを確定

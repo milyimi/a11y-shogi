@@ -780,7 +780,92 @@ npx htmlhint "resources/views/**/*.blade.php"
 
 ---
 
-## 9. 継続的改善
+## 9. E2Eアクセシビリティテスト（Puppeteer）
+
+### 概要
+
+Puppeteer を用いた自動化されたアクセシビリティ E2E テストスイートを実装。
+視覚障害者がキーボードのみでゲームを操作できるかを検証する。
+
+**テストスクリプト**: `tests/accessibility/puppeteer-a11y-test.mjs`
+
+### テスト項目（58テスト）
+
+| カテゴリ | テスト数 | 内容 |
+|----------|----------|------|
+| ホーム画面 | 9 | スキップリンク、ランドマーク、フォーム構造、Tab順序 |
+| ゲーム開始 | 1 | フォーム送信→ゲーム画面遷移 |
+| 構造テスト | 12 | role="grid"、aria-label、ライブリージョン、駒台、操作ボタン |
+| キーボードナビ | 9 | 矢印キー移動、focusedCell同期、端チェック、ライブリージョン更新 |
+| 駒の選択・移動 | 5 | 選択アナウンス、移動アナウンス、aria-label更新、手数更新 |
+| キャンセル | 1 | Escape による選択解除とアナウンス |
+| ショートカット | 2 | B（盤面読み上げ）、S（状態読み上げ） |
+| 成りダイアログ | 4 | role="dialog"、aria-modal、aria-labelledby、フォーカス管理 |
+| フォーカス管理 | 3 | Tab でボード外移動、Enter/Space で選択 |
+| ツリー検査 | 5 | navigation、grid、banner、contentinfo ロール |
+| 視覚的 | 3 | フォーカス表示、セルサイズ (≥44px)、ボタンサイズ |
+| エッジケース | 2 | 空マス選択フィードバック、Escape 安全性 |
+| ヘルプ | 2 | ページタイトル、見出し構造 |
+
+### 発見・修正した問題
+
+#### 問題1: クリック時の focusedCell 未同期（重大）
+- **症状**: セルをクリックしても内部の `focusedCell` 変数が更新されず、矢印キーが古い位置から計算される
+- **原因**: `click` イベントハンドラで `focusedCell` を更新していなかった
+- **修正**: クリック時に `window.focusedCell.rank/file` を更新し、tabIndex も同期
+
+#### 問題2: focusedCell のスコープ問題（重大）
+- **症状**: `focusedCell` が `let` で宣言され window オブジェクトに公開されない
+- **原因**: `let` 変数はグローバルスコープでも `window` のプロパティにならない
+- **修正**: `window.focusedCell = { rank: 9, file: 9 }` に変更し、全参照を `window.focusedCell` に統一
+
+#### 問題3: 成りダイアログの ARIA 属性不足（重大）
+- **症状**: スクリーンリーダーがダイアログとして認識しない
+- **原因**: 動的生成される成りダイアログに `role="dialog"` 等が無かった
+- **修正**:
+  - `role="dialog"` 追加
+  - `aria-modal="true"` 追加
+  - `aria-labelledby="promotion-dialog-title"` 追加
+  - `aria-describedby="promotion-dialog-desc"` 追加
+  - フォーカストラップ（Tab キーでダイアログ内に閉じ込め）
+  - Escape キーで「成らない」を選択して閉じる
+  - 表示時に「成る」ボタンへ自動フォーカス
+
+#### 問題4: 盤面のグリッド構造不足
+- **症状**: アクセシビリティツリーで `role="grid"` が正しく認識されない
+- **原因**: 81個のセルがフラットに配置され、`role="row"` が無かった
+- **修正**:
+  - 各段を `<div role="row" aria-label="N段目">` で囲む
+  - 各セルに `role="gridcell"` を追加
+  - `display: contents` で CSS Grid レイアウトを維持
+
+#### 問題5: humanColor が gameData に含まれない
+- **症状**: JS 側で人間の手番色を判定できない
+- **原因**: `GameService::getGameState()` の返り値に `humanColor` が含まれていなかった
+- **修正**: `getGameState()` に `'humanColor' => $game->human_color` を追加
+
+#### 問題6: 空マス・相手駒の選択時フィードバック不足
+- **症状**: 空マスや相手の駒を選択しても「移動を開始します」と表示
+- **修正**:
+  - 空マス: 「空です。駒のあるマスを選択してください」
+  - 相手の駒: 「相手の駒です。自分の駒を選択してください」
+  - 選択切り替え: 移動先に自駒がある場合は選択を切り替え
+
+#### 問題7: デバッグコードの残存
+- **症状**: `currentPlayer = 'human'` がハードコーディングされていた
+- **修正**: デバッグ用のハードコーディングを削除
+
+### 実行方法
+
+```bash
+# テスト実行（Laravel サーバーが起動している必要あり）
+php artisan serve --host=0.0.0.0 --port=8000 &
+node tests/accessibility/puppeteer-a11y-test.mjs
+```
+
+---
+
+## 10. 継続的改善
 
 ### アクセシビリティ監視
 
@@ -798,5 +883,5 @@ npx htmlhint "resources/views/**/*.blade.php"
 
 ---
 
-最終更新: 2025-01-28
-バージョン: 1.0
+最終更新: 2025-07-25
+バージョン: 1.1（E2Eテスト追加・アクセシビリティ修正反映）

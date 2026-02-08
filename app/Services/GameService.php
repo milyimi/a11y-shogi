@@ -74,6 +74,7 @@ class GameService
             'sessionId' => $game->session_id,
             'status' => $game->status,
             'difficulty' => $game->difficulty,
+            'humanColor' => $game->human_color,
             'currentPlayer' => $currentPlayer,
             'boardState' => $game->getBoardPosition(),
             'moveHistory' => $moveHistory,
