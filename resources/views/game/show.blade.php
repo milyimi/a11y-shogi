@@ -58,7 +58,7 @@
     }
     
     .board-section {
-        background: #FFF;
+        background: var(--color-surface);
         border: 2px solid var(--color-border);
         padding: 16px;
         border-radius: 8px;

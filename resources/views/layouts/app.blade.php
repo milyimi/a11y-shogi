@@ -179,8 +179,8 @@
             min-height: 44px;
             min-width: 44px;
             border: 2px solid var(--color-text);
-            background: var(--color-bg);
-            color: var(--color-text);
+            background: var(--color-bg) !important;
+            color: var(--color-text) !important;
             text-decoration: none;
             font-weight: bold;
             cursor: pointer;
@@ -188,32 +188,33 @@
         }
         
         .btn:hover, .btn:focus {
-            background: var(--color-text);
-            color: var(--color-bg);
+            background: var(--color-text) !important;
+            color: var(--color-bg) !important;
         }
         
         .btn-primary {
-            background: var(--color-link);
-            color: var(--color-bg);
+            background: var(--color-link) !important;
+            color: #FFFFFF !important;
             border-color: var(--color-link);
         }
         
         .btn-primary:hover, .btn-primary:focus {
-            background: #003D7A;
+            background: #003D7A !important;
             border-color: #003D7A;
+            color: #FFFFFF !important;
         }
 
         html.high-contrast .btn-primary {
-            background: #4A9AE6;
-            color: #000000;
-            border-color: #4A9AE6;
+            background: #1B5299 !important;
+            color: #FFFFFF !important;
+            border-color: #6CB4FF !important;
         }
 
         html.high-contrast .btn-primary:hover,
         html.high-contrast .btn-primary:focus {
-            background: #6CB4FF;
-            border-color: #6CB4FF;
-            color: #000000;
+            background: #2563EB !important;
+            border-color: #93C5FD !important;
+            color: #FFFFFF !important;
         }
         
         .sr-only {
