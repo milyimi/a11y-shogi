@@ -92,6 +92,8 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 
 ## テスト実行
 
+### ユニット・機能テスト
+
 ```bash
 # 全テスト実行
 vendor/bin/pest
@@ -102,6 +104,41 @@ RUN_SLOW_TESTS=true vendor/bin/pest
 # ブラウザビルド確認
 npm run build
 ```
+
+### アクセシビリティ E2E テスト（Puppeteer）
+
+#### 基本的なアクセシビリティ検証（58項目）
+
+```bash
+node tests/accessibility/puppeteer-a11y-test.mjs
+```
+
+**検証項目:**
+- ホーム画面: 言語属性、スキップリンク、ランドマーク
+- ゲーム画面: 盤面の ARIA ラベル、キーボードナビゲーション、ライブリージョン
+- 成りダイアログ: role/aria 属性、フォーカストラップ
+- ランキング登録: ダイアログ操作、フォーム入力
+- アクセシビリティツリー: 階層構造、ロール検証
+- 視覚的アクセシビリティ: フォーカス表示（44×44px 以上）、コントラスト
+
+#### 視覚障害者 AI による実対局テスト
+
+```bash
+node tests/accessibility/blind-player-test.mjs
+```
+
+**テスト内容:**
+- ホームページでゲーム開始（中級・先手選択）
+- **aria-label / aria-live のみ**を頼りに盤面状態を把握
+- 矢印キー + Enter による駒の選択・移動（実際の対局）
+- 成りダイアログのキーボード操作
+- ランキング登録ダイアログの操作
+- ランキングページで登録内容の確認
+
+**結果:**
+✅ 全操作がキーボードのみで完了
+✅ aria-live アナウンスが全アクションで発行
+✅ ランキング登録成功
 
 ## ドキュメント
 
