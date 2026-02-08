@@ -11,8 +11,16 @@ a11y-shogiは、視覚障害者を含むすべてのユーザーが楽しめる�
 - **対人対局**: PHP AI エンジンとの対局（3段階の難易度設定）
 - **外部AI対局**: python-shogi / USIエンジンとの対局テスト
 - **ランキング機能**: 難易度別スコア記録
-- **アクセシビリティ**: スクリーンリーダー完全対応、キーボード操作
 - **棋譜機能**: 対局履歴の保存と再生
+- **アクセシビリティ**:
+  - WCAG 2.1 AAA レベル準拠
+  - スクリーンリーダー完全対応（NVDA / JAWS / VoiceOver）
+  - キーボードのみで全操作可能
+  - コントラスト比 7:1 以上（AAA基準）
+  - **ダークモード**: OS設定自動検出（`prefers-color-scheme`）+ 手動切替
+    - Windows/macOS/Linuxのダークテーマを自動検出
+    - ユーザー設定（localStorage）優先
+    - リアルタイムOS設定変更検知
 
 ## 技術スタック
 
@@ -20,7 +28,7 @@ a11y-shogiは、視覚障害者を含むすべてのユーザーが楽しめる�
 - **Frontend**: Vite 7.3.1, Vanilla JavaScript
 - **AI Engine**: Minimax + Alpha-Beta Pruning (Depth 4)
 - **External AI**: python-shogi 1.1.1, Fairy-Stockfish 11.1
-- **Testing**: Pest (84/100 tests passing)
+- **Testing**: Pest (127 tests), Puppeteer (58 E2E + 30 contrast tests)
 
 ## セットアップ
 
