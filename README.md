@@ -24,10 +24,11 @@ a11y-shogiは、視覚障害者を含むすべてのユーザーが楽しめる�
 
 ## セットアップ
 
+### 初回セットアップ（開発環境構築）
+
 ```bash
 # 依存関係インストール
 composer install
-npm install
 
 # 環境設定
 cp .env.example .env
@@ -35,10 +36,14 @@ php artisan key:generate
 
 # データベースマイグレーション
 php artisan migrate
+```
 
-# 開発サーバー起動
-php artisan serve &
-npm run dev
+### 開発サーバー起動
+
+ビルド済みフロントエンドファイルがGit管理対象のため、以下で起動します：
+
+```bash
+php artisan serve
 ```
 
 ## AI 対局テスト
