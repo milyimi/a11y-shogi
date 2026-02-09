@@ -266,6 +266,17 @@ class GameController extends Controller
 
                 $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
 
+                // 棋譜に記録
+                $dropPieceName = $this->shogiService->getPieceName($pieceType);
+                $dropColorName = $currentTurn === 'sente' ? '先手' : '後手';
+                $dropMoveDesc = "{$dropColorName}: {$toFile}の{$toRank}に{$dropPieceName}打";
+                $moveHistory = $session->move_history;
+                if (!is_array($moveHistory)) {
+                    $moveHistory = is_string($moveHistory) ? (json_decode($moveHistory, true) ?? []) : [];
+                }
+                $moveHistory[] = $dropMoveDesc;
+                $session->move_history = $moveHistory;
+
                 $session->updateBoardPosition($boardState);
                 $session->increment('total_moves');
 
@@ -303,6 +314,7 @@ class GameController extends Controller
                         'type' => $pieceType,
                         'color' => $currentTurn,
                     ],
+                    'moveHistory' => $moveHistory,
                 ];
 
                 $isAITurn = $this->isAITurn($session, $boardState);
@@ -351,12 +363,26 @@ class GameController extends Controller
 
                         $session->save();
 
+                        // AIの棋譜を記録
+                        $aiPiece = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+                        $aiPieceName = $aiPiece ? $this->shogiService->getPieceName($aiPiece['type']) : '駒';
+                        $aiColorName = ($boardState['turn'] === 'sente') ? '先手' : '後手';
+                        $aiMoveDesc = "{$aiColorName}: {$aiMove['to_file']}の{$aiMove['to_rank']}に{$aiPieceName}";
+                        if ($aiCapturedPiece) {
+                            $aiCapName = $this->shogiService->getPieceName($aiCapturedPiece['type']);
+                            $aiMoveDesc .= "（{$aiCapName}取り）";
+                        }
+                        $moveHistory[] = $aiMoveDesc;
+                        $session->move_history = $moveHistory;
+                        $session->save();
+
                         $response['aiMove'] = $aiMove;
                         $response['aiCapturedPiece'] = $aiCapturedPiece ? $aiCapturedPiece['type'] : null;
                         $response['boardState'] = $aiBoard;
                         $response['moveCount'] = $session->total_moves;
                         $response['currentPlayer'] = 'human';
                         $response['elapsedSeconds'] = $session->elapsed_seconds;
+                        $response['moveHistory'] = $moveHistory;
                         $response['aiMoveDescription'] = sprintf(
                             '%dの%dから%dの%dに移動',
                             $aiMove['from_file'],
@@ -425,6 +451,21 @@ class GameController extends Controller
                 $boardState['turn'] = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
             }
             
+            // 棋譜に記録
+            $pieceName = $this->shogiService->getPieceName($piece['type']);
+            $colorName = $piece['color'] === 'sente' ? '先手' : '後手';
+            $moveDesc = "{$colorName}: {$validated['to_file']}の{$validated['to_rank']}に{$pieceName}";
+            if ($capturedPiece) {
+                $capName = $this->shogiService->getPieceName($capturedPiece['type']);
+                $moveDesc .= "（{$capName}取り）";
+            }
+            $moveHistory = $session->move_history;
+            if (!is_array($moveHistory)) {
+                $moveHistory = is_string($moveHistory) ? (json_decode($moveHistory, true) ?? []) : [];
+            }
+            $moveHistory[] = $moveDesc;
+            $session->move_history = $moveHistory;
+
             // ゲームセッションを更新
             $session->updateBoardPosition($boardState);
             $session->increment('total_moves');
@@ -470,6 +511,7 @@ class GameController extends Controller
                     'rank' => $validated['to_rank'],
                     'file' => $validated['to_file'],
                 ],
+                'moveHistory' => $moveHistory,
             ];
 
             // AIの手番かチェック（ゲーム終了時はスキップ）
@@ -539,6 +581,19 @@ class GameController extends Controller
                     
                     $session->save();
                     
+                    // AI の棋譜を記録
+                    $aiPiece = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+                    $aiPieceName = $aiPiece ? $this->shogiService->getPieceName($aiPiece['type']) : '駒';
+                    $aiColorName = ($boardState['turn'] === 'sente') ? '先手' : '後手';
+                    $aiMoveDesc = "{$aiColorName}: {$aiMove['to_file']}の{$aiMove['to_rank']}に{$aiPieceName}";
+                    if ($aiCapturedPiece) {
+                        $aiCapName = $this->shogiService->getPieceName($aiCapturedPiece['type']);
+                        $aiMoveDesc .= "（{$aiCapName}取り）";
+                    }
+                    $moveHistory[] = $aiMoveDesc;
+                    $session->move_history = $moveHistory;
+                    $session->save();
+
                     // AI の指し手を記録
                     $response['aiMove'] = $aiMove;
                     $response['aiCapturedPiece'] = $aiCapturedPiece ? $aiCapturedPiece['type'] : null;
@@ -546,6 +601,7 @@ class GameController extends Controller
                     $response['moveCount'] = $session->total_moves;
                     $response['currentPlayer'] = 'human'; // 人間のターンに戻す
                     $response['elapsedSeconds'] = $session->elapsed_seconds;
+                    $response['moveHistory'] = $moveHistory;
                     $response['aiMoveDescription'] = sprintf(
                         '%dの%dから%dの%dに移動',
                         $aiMove['from_file'],
@@ -679,6 +735,16 @@ class GameController extends Controller
                 $boardState = json_decode($previousBoardState->position_json, true);
             }
 
+            // 棋譜から最後のエントリを削除
+            $moveHistory = $session->move_history;
+            if (!is_array($moveHistory)) {
+                $moveHistory = is_string($moveHistory) ? (json_decode($moveHistory, true) ?? []) : [];
+            }
+            if (!empty($moveHistory)) {
+                array_pop($moveHistory);
+            }
+            $session->move_history = $moveHistory;
+
             // ゲームセッションを更新
             $session->updateBoardPosition($boardState);
             $session->total_moves = max(0, $session->total_moves - 1);
@@ -749,6 +815,7 @@ class GameController extends Controller
             $session->started_at = now();
             $session->status = 'in_progress';
             $session->winner = null;
+            $session->move_history = [];
             $session->save();
 
             // 指し手の履歴を削除
@@ -830,6 +897,18 @@ class GameController extends Controller
 
             // ボード状態を更新
             $session->updateBoardPosition($boardState);
+
+            // 棋譜に成り情報を追加
+            $moveHistory = $session->move_history;
+            if (!is_array($moveHistory)) {
+                $moveHistory = is_string($moveHistory) ? (json_decode($moveHistory, true) ?? []) : [];
+            }
+            // 最後の棋譜エントリを更新（成り情報を追記）
+            if (!empty($moveHistory) && $validated['promote']) {
+                $lastIdx = count($moveHistory) - 1;
+                $moveHistory[$lastIdx] .= '（成）';
+            }
+            $session->move_history = $moveHistory;
             $session->save();
 
             // AIの手番になった場合、AIに指させる
@@ -883,6 +962,20 @@ class GameController extends Controller
                     }
 
                     $session->save();
+
+                    // AIの棋譜を記録
+                    $aiPieceAfter = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+                    $aiPieceName = $aiPieceAfter ? $this->shogiService->getPieceName($aiPieceAfter['type']) : '駒';
+                    $aiColorName = ($boardState['turn'] !== $session->human_color) ? ($session->human_color === 'sente' ? '後手' : '先手') : ($session->human_color === 'sente' ? '先手' : '後手');
+                    $aiMoveDesc = "{$aiColorName}: {$aiMove['to_file']}の{$aiMove['to_rank']}に{$aiPieceName}";
+                    if ($aiCapturedPiece) {
+                        $aiCapName = $this->shogiService->getPieceName($aiCapturedPiece['type']);
+                        $aiMoveDesc .= "（{$aiCapName}取り）";
+                    }
+                    $moveHistory[] = $aiMoveDesc;
+                    $session->move_history = $moveHistory;
+                    $session->save();
+
                     $boardState = $aiBoard;
                 }
             }
@@ -900,6 +993,7 @@ class GameController extends Controller
                 'humanColor' => $session->human_color,
                 'status' => $gameState['status'],
                 'winner' => $gameState['winner'],
+                'moveHistory' => $session->move_history ?? [],
             ]);
         } catch (\Exception $e) {
             \Log::error('Promote error: ' . $e->getMessage());

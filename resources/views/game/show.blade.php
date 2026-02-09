@@ -458,7 +458,7 @@
             <section aria-labelledby="actions-heading" style="margin-top: 24px;">
                 <h3 id="actions-heading">操作</h3>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button type="button" class="btn" id="btn-undo" disabled>
+                    <button type="button" class="btn" id="btn-undo" {{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : 'disabled' }}>
                         待ったをする
                     </button>
                     <button type="button" class="btn" id="btn-resign">
@@ -1381,6 +1381,23 @@
             startTimer();
         }
 
+        function updateMoveHistory(moveHistory) {
+            const container = document.getElementById('move-history');
+            if (!container) return;
+            if (!Array.isArray(moveHistory) || moveHistory.length === 0) {
+                container.innerHTML = '<p style="color: var(--color-text-secondary);">まだ指し手がありません</p>';
+                return;
+            }
+            const ol = document.createElement('ol');
+            moveHistory.forEach(move => {
+                const li = document.createElement('li');
+                li.textContent = move;
+                ol.appendChild(li);
+            });
+            container.innerHTML = '';
+            container.appendChild(ol);
+        }
+
         function updateGameInfo(data) {
             if (data.moveCount !== undefined) {
         document.getElementById('move-count').textContent = data.moveCount + '手';
@@ -1390,6 +1407,21 @@
                 const colorText = data.humanColor === 'sente' ? '先手' : '後手';
                 document.getElementById('current-player').textContent = `${playerText}(${colorText})`;
                 currentPlayer = data.currentPlayer;
+            }
+
+            // 棋譜を更新
+            if (data.moveHistory !== undefined) {
+                updateMoveHistory(data.moveHistory);
+            }
+
+            // 待ったボタンの有効/無効
+            const undoBtn = document.getElementById('btn-undo');
+            if (undoBtn) {
+                if (data.moveCount !== undefined && data.moveCount > 0 && (!data.status || data.status === 'in_progress')) {
+                    undoBtn.removeAttribute('disabled');
+                } else if (data.status && data.status !== 'in_progress') {
+                    undoBtn.setAttribute('disabled', '');
+                }
             }
 
             // タイマー同期
