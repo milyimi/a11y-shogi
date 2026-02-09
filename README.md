@@ -11,16 +11,14 @@ a11y-shogiは、視覚障害者を含むすべてのユーザーが楽しめる�
 - **対人対局**: PHP AI エンジンとの対局（3段階の難易度設定）
 - **外部AI対局**: python-shogi / USIエンジンとの対局テスト
 - **ランキング機能**: 難易度別スコア記録
-- **棋譜機能**: 対局履歴の保存と再生
+- **棋譜機能**: 対局中の指し手を日本語で記録・リアルタイム表示（`aria-live` 対応）
 - **アクセシビリティ**:
   - WCAG 2.1 AAA レベル準拠
   - スクリーンリーダー完全対応（NVDA / JAWS / VoiceOver）
   - キーボードのみで全操作可能
   - コントラスト比 7:1 以上（AAA基準）
   - **ダークモード**: OS設定自動検出（`prefers-color-scheme`）+ 手動切替
-    - Windows/macOS/Linuxのダークテーマを自動検出
-    - ユーザー設定（localStorage）優先
-    - リアルタイムOS設定変更検知
+  - **セッション期限切れ対応**: CSRFトークン期限切れ時にアクセシブルなダイアログで通知
 
 ## 技術スタック
 
@@ -28,7 +26,7 @@ a11y-shogiは、視覚障害者を含むすべてのユーザーが楽しめる�
 - **Frontend**: Vite 7.3.1, Vanilla JavaScript
 - **AI Engine**: Minimax + Alpha-Beta Pruning (Depth 4)
 - **External AI**: python-shogi 1.1.1, Fairy-Stockfish 11.1
-- **Testing**: Pest (127 tests), Puppeteer (58 E2E + 30 contrast tests)
+- **Testing**: Pest (127 tests), Puppeteer (58 E2E + 30 contrast + 74 blind user playtest)
 
 ## セットアップ
 
@@ -134,24 +132,46 @@ node tests/accessibility/puppeteer-a11y-test.mjs
 - アクセシビリティツリー: 階層構造、ロール検証
 - 視覚的アクセシビリティ: フォーカス表示（44×44px 以上）、コントラスト
 
-#### 視覚障害者 AI による実対局テスト
+#### コントラスト検証（30項目）
 
 ```bash
-node tests/accessibility/blind-player-test.mjs
+node tests/accessibility/contrast-test.mjs
 ```
 
-**テスト内容:**
-- ホームページでゲーム開始（中級・先手選択）
-- **aria-label / aria-live のみ**を頼りに盤面状態を把握
-- 矢印キー + Enter による駒の選択・移動（実際の対局）
-- 成りダイアログのキーボード操作
-- ランキング登録ダイアログの操作
-- ランキングページで登録内容の確認
+**検証項目:**
+- 通常モード / ダークモード / ハイコントラストモードの配色
+- WCAG AAA コントラスト比（7:1以上）
+- フォーカスインジケータの可視性
+- ボタンのタッチターゲットサイズ（44×44px以上）
+- ランキング画面のハイコントラスト維持
 
-**結果:**
-✅ 全操作がキーボードのみで完了
-✅ aria-live アナウンスが全アクションで発行
-✅ ランキング登録成功
+#### 全盲ユーザー対局テスト（74項目）
+
+```bash
+node tests/accessibility/blind-user-playtest.mjs
+```
+
+**テスト内容（22フェーズ）:**
+- ホーム画面の構造とフォーム操作
+- ゲーム開始・盤面構造・ARIA属性
+- キーボードナビゲーション（矢印キー移動）
+- 駒の選択・移動・持ち駒打ち
+- ショートカットキー（B: 盤面読み上げ、S: 状態読み上げ）
+- 待った・投了・リセット・中断ダイアログ
+- タイマー・棋譜・情報パネル
+- フォーカス管理・エラーフィードバック
+- ヘルプページ・境界チェック
+- **CSRFトークン期限切れ時のダイアログ表示**
+
+### テスト結果サマリー
+
+| テストスイート | テスト数 | 内容 |
+|---|---|---|
+| PHP (Pest) | 127 | ルール検証、AI評価、成り、ボード境界、エラーハンドリング等 |
+| E2E アクセシビリティ | 58 | ARIA属性、キーボード操作、フォーカス管理 |
+| コントラスト | 30 | WCAG AAA配色、ダーク/ハイコントラストモード |
+| 全盲ユーザー対局 | 74 | 実際の対局シミュレーション（22フェーズ） |
+| **合計** | **289** | |
 
 ## ドキュメント
 
@@ -162,8 +182,6 @@ node tests/accessibility/blind-player-test.mjs
 - [API仕様](docs/design/04_API_SPECIFICATION.md)
 - [ワイヤーフレーム](docs/design/05_WIREFRAMES.md)
 - [アクセシビリティガイドライン](docs/design/06_ACCESSIBILITY_GUIDELINES.md)
-- [AI強化レポート](AI_ENHANCEMENT_REPORT.md)
-- [ランキング実装レポート](RANKING_IMPLEMENTATION_REPORT.md)
 
 ## ライセンス
 

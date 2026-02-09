@@ -204,6 +204,7 @@ difficulty=medium&color=sente
       "hand": {...},
       "turn": "gote"
     },
+    "moveHistory": ["先手: 7の4に歩"],
     "legalMoves": ["3d", "3e", "2d", ...],
     "status": "in_progress",
     "currentPlayer": "ai"
@@ -645,6 +646,7 @@ AI応答がある場合:
 | game_already_ended | 400 | ゲームが終了している |
 | session_not_found | 404 | セッションが見つからない |
 | session_expired | 410 | セッションが期限切れ |
+| csrf_token_mismatch | 419 | CSRFトークン期限切れ（フロントで専用ダイアログ表示） |
 | session_extension_failed | 400 | セッション延長失敗 |
 | cannot_undo | 400 | 棋譜を戻せない状態 |
 | invalid_difficulty | 400 | 難易度が不正 |
@@ -664,6 +666,7 @@ AI応答がある場合:
 | 400 Bad Request | クライアントエラー（パラメータ不正など） |
 | 404 Not Found | リソースが見つからない |
 | 410 Gone | セッション期限切れ |
+| 419 | CSRFトークン期限切れ（セッションタイムアウト） |
 | 500 Internal Server Error | サーバーエラー |
 
 ---
@@ -677,6 +680,7 @@ AI応答がある場合:
 ## セキュリティ
 
 - CSRF保護: `@csrf` ディレクティブで自動実装
-- セッション: Laravel 標準セッション管理
+- CSRF期限切れ対応: 419レスポンス検出時に`role="alertdialog"`で日本語ダイアログを表示、ページ再読み込みを促す
+- セッション: Laravel 標準セッション管理（有効期限: 120分）
 - 入力検証: バックエンド側で座標・難易度の検証
 - SQLインジェクション対策: Eloquent ORM + バインドパラメータ

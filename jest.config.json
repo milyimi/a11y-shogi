@@ -1,8 +1,0 @@
-{
-  "testEnvironment": "node",
-  "testTimeout": 60000,
-  "verbose": true,
-  "testMatch": [
-    "**/tests/browser/**/*.test.js"
-  ]
-}
