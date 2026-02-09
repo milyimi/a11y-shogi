@@ -835,11 +835,31 @@ class GameController extends Controller
                 ]);
             }
 
-            // 一つ前のボード状態を取得
-            $previousBoardState = BoardState::where('game_session_id', $session->id)
-                ->where('move_number', '<', $lastMove->move_number)
-                ->orderBy('move_number', 'desc')
-                ->first();
+            // 対AI戦では、AIの手＋人間の手をセットで戻す
+            // 最後の手がAIの手なら、その前の人間の手も一緒に戻す
+            $movesToUndo = 1;
+            $secondLastMove = null;
+            if ($lastMove->move_by === 'ai') {
+                $secondLastMove = GameMove::where('game_session_id', $session->id)
+                    ->where('move_number', '<', $lastMove->move_number)
+                    ->orderBy('move_number', 'desc')
+                    ->first();
+                if ($secondLastMove && $secondLastMove->move_by === 'human') {
+                    $movesToUndo = 2;
+                }
+            }
+
+            // 戻す先のmove_number を決定
+            $targetMoveNumber = $lastMove->move_number - $movesToUndo;
+
+            // 戻す先のボード状態を取得
+            $previousBoardState = null;
+            if ($targetMoveNumber > 0) {
+                $previousBoardState = BoardState::where('game_session_id', $session->id)
+                    ->where('move_number', '<=', $targetMoveNumber)
+                    ->orderBy('move_number', 'desc')
+                    ->first();
+            }
 
             if (!$previousBoardState) {
                 // 初期状態に戻す
@@ -850,32 +870,38 @@ class GameController extends Controller
                 $boardState = json_decode($previousBoardState->board_position, true);
             }
 
-            // 棋譜から最後のエントリを削除
+            // 棋譜から戻す手数分のエントリを削除
             $moveHistory = $session->move_history;
             if (!is_array($moveHistory)) {
                 $moveHistory = is_string($moveHistory) ? (json_decode($moveHistory, true) ?? []) : [];
             }
-            if (!empty($moveHistory)) {
-                array_pop($moveHistory);
+            for ($i = 0; $i < $movesToUndo; $i++) {
+                if (!empty($moveHistory)) {
+                    array_pop($moveHistory);
+                }
             }
             $session->move_history = $moveHistory;
 
             // ゲームセッションを更新
             $session->updateBoardPosition($boardState);
-            $session->total_moves = max(0, $session->total_moves - 1);
+            $session->total_moves = max(0, $session->total_moves - $movesToUndo);
             $session->save();
 
-            // 最後の指し手を削除
-            $lastMove->delete();
+            // 指し手を削除（戻す手数分）
+            GameMove::where('game_session_id', $session->id)
+                ->where('move_number', '>', $targetMoveNumber)
+                ->delete();
 
             // ボード状態の履歴を削除
             BoardState::where('game_session_id', $session->id)
-                ->where('move_number', '>=', $lastMove->move_number)
+                ->where('move_number', '>', $targetMoveNumber)
                 ->delete();
+
+            $undoMessage = $movesToUndo === 2 ? '二手前に戻しました（AIの手＋あなたの手）' : '一手前に戻しました';
 
             return response()->json([
                 'success' => true,
-                'message' => '一手前に戻しました',
+                'message' => $undoMessage,
                 'boardState' => $boardState,
             ]);
         } catch (\Exception $e) {
