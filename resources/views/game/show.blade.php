@@ -261,11 +261,14 @@
     <div aria-live="assertive" aria-atomic="true" class="sr-only" id="game-announcements"></div>
     <div aria-live="polite" aria-atomic="true" class="sr-only" id="game-status"></div>
     
+    {{-- 盤面へのスキップリンク --}}
+    <a href="#shogi-board" class="skip-link">盤面へスキップ</a>
+    
     <div class="game-container">
         {{-- 駒台（後手） --}}
         <aside class="komadai" aria-labelledby="gote-komadai-heading">
             <h3 id="gote-komadai-heading">後手の駒台</h3>
-            <div class="hand-pieces" id="gote-hand" aria-label="後手の持ち駒">
+            <div class="hand-pieces" id="gote-hand" aria-label="後手の持ち駒" aria-live="polite" aria-relevant="additions removals">
                 @if(!empty($gameState['boardState']['hand']['gote']))
                     @php
                         $pieceNameMap = [
@@ -285,7 +288,8 @@
                         ];
                     @endphp
                     @foreach($gameState['boardState']['hand']['gote'] as $piece => $count)
-                        <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="gote">
+                        <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="gote"
+                                aria-label="後手の持ち駒 {{ $pieceNameMap[$piece] ?? $piece }} {{ $count }}枚">
                             {{ $pieceNameMap[$piece] ?? $piece }} × {{ $count }}
                         </button>
                     @endforeach
@@ -346,7 +350,7 @@
                             data-file="{{ $file }}"
                             aria-label="{{ $ariaLabel }}"
                             tabindex="{{ ($rank === 9 && $file === 9) ? 0 : -1 }}"
-                        ><span class="piece-text">{{ $pieceText }}</span></button>
+                        ><span class="piece-text" aria-hidden="true">{{ $pieceText }}</span></button>
                     @endfor
                     </div>
                 @endfor
@@ -419,13 +423,13 @@
         <aside class="info-panel" aria-labelledby="info-heading">
             <section aria-labelledby="game-info-heading">
                 <h3 id="game-info-heading">ゲーム情報</h3>
-                <dl style="line-height: 2;" role="list">
-                    <div role="listitem" style="margin-bottom: 8px;">
+                <dl style="line-height: 2;">
+                    <div style="margin-bottom: 8px;">
                         <dt style="font-weight: bold; display: inline;">難易度:</dt>
                         <dd style="display: inline; margin-left: 8px;">{{ $game->difficulty === 'easy' ? '初級' : ($game->difficulty === 'medium' ? '中級' : '上級') }}</dd>
                     </div>
                     
-                    <div role="listitem" style="margin-bottom: 8px;">
+                    <div style="margin-bottom: 8px;">
                         <dt style="font-weight: bold; display: inline;">現在の手番:</dt>
                         <dd style="display: inline; margin-left: 8px;" id="current-player">
                             {{ $gameState['currentPlayer'] === 'human' ? 'あなた' : 'AI' }}
@@ -433,12 +437,12 @@
                         </dd>
                     </div>
                     
-                    <div role="listitem" style="margin-bottom: 8px;">
+                    <div style="margin-bottom: 8px;">
                         <dt style="font-weight: bold; display: inline;">手数:</dt>
                         <dd style="display: inline; margin-left: 8px;" id="move-count">{{ $gameState['moveCount'] }}手</dd>
                     </div>
                     
-                    <div role="listitem">
+                    <div>
                         <dt style="font-weight: bold; display: inline;">経過時間:</dt>
                         <dd style="display: inline; margin-left: 8px;" id="elapsed-time">
                             @php
@@ -488,7 +492,7 @@
         {{-- 駒台（先手） --}}
         <aside class="komadai" aria-labelledby="sente-komadai-heading">
             <h3 id="sente-komadai-heading">先手の駒台</h3>
-            <div class="hand-pieces" id="sente-hand" aria-label="先手の持ち駒">
+            <div class="hand-pieces" id="sente-hand" aria-label="先手の持ち駒" aria-live="polite" aria-relevant="additions removals">
                 @if(!empty($gameState['boardState']['hand']['sente']))
                     @php
                         $pieceNameMap = [
@@ -508,7 +512,8 @@
                         ];
                     @endphp
                     @foreach($gameState['boardState']['hand']['sente'] as $piece => $count)
-                        <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="sente">
+                        <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="sente"
+                                aria-label="先手の持ち駒 {{ $pieceNameMap[$piece] ?? $piece }} {{ $count }}枚">
                             {{ $pieceNameMap[$piece] ?? $piece }} × {{ $count }}
                         </button>
                     @endforeach
@@ -771,7 +776,7 @@
 
         // 待った（undo）
         function handleUndo() {
-            if (confirm('一手前に戻しますか？')) {
+            showConfirmDialog('一手前に戻しますか？', '直前の指し手を取り消します。', function() {
                 fetchJson(`/game/{{ $game->id }}/undo`, {
                     method: 'POST',
                     headers: {
@@ -781,22 +786,22 @@
                 })
                 .then(data => {
                     if (data.success) {
+                        sessionStorage.setItem('a11y-shogi-announce', '一手前に戻しました');
                         location.reload();
-                        document.getElementById('game-announcements').textContent = '一手前に戻しました';
                     } else {
-                        alert(data.message || '待った処理に失敗しました');
+                        document.getElementById('game-announcements').textContent = data.message || '待った処理に失敗しました';
                     }
                 })
                 .catch(error => {
                     console.warn('Error:', error);
-                    alert('エラーが発生しました');
+                    document.getElementById('game-announcements').textContent = 'エラーが発生しました';
                 });
-            }
+            });
         }
         
         // リセット
         function handleReset() {
-            if (confirm('ゲームをリセットしますか？')) {
+            showConfirmDialog('ゲームをリセットしますか？', '初期状態に戻ります。この操作は取り消せません。', function() {
                 fetchJson(`/game/{{ $game->id }}/reset`, {
                     method: 'POST',
                     headers: {
@@ -806,17 +811,18 @@
                 })
                 .then(data => {
                     if (data.success) {
+                        // URLにパラメータを付けてリロードし、リロード後にアナウンス
+                        sessionStorage.setItem('a11y-shogi-announce', 'ゲームをリセットしました');
                         location.reload();
-                        document.getElementById('game-announcements').textContent = 'ゲームをリセットしました';
                     } else {
-                        alert(data.message || 'リセット処理に失敗しました');
+                        document.getElementById('game-announcements').textContent = data.message || 'リセット処理に失敗しました';
                     }
                 })
                 .catch(error => {
                     console.warn('Error:', error);
-                    alert('エラーが発生しました');
+                    document.getElementById('game-announcements').textContent = 'エラーが発生しました';
                 });
-            }
+            });
         }
         
         // 駒台の表示/非表示を切り替え
@@ -1031,20 +1037,33 @@
                     if (data.promotionTarget) {
                         window.promotionTarget = data.promotionTarget;
                     }
-                    document.getElementById('game-announcements').textContent = 
-                        `${fromFile}の${fromRank}から${toFile}の${toRank}に移動しました`;
+                    
+                    // アナウンス構築（取り駒・王手・詰み・手番含む）
+                    let announcement = buildMoveAnnouncement(
+                        fromFile, fromRank, toFile, toRank,
+                        data.capturedPiece, data.isCheck, data.status, data.winner
+                    );
+                    document.getElementById('game-announcements').textContent = announcement;
                     
                     // ボード更新
                     console.log('[makeMove] Calling updateBoard with:', data.boardState);
                     updateBoard(data.boardState);
                     updateGameInfo(data);
                     
+                    // 移動先セルにフォーカスを移動
+                    if (!data.canPromote) {
+                        focusCell(toRank, toFile);
+                    }
+                    
                     // AIが指し手を返した場合
                     if (data.aiMove) {
                         setTimeout(() => {
-                            document.getElementById('game-announcements').textContent = 
-                                `AIが${data.aiMove.from_file}の${data.aiMove.from_rank}から${data.aiMove.to_file}の${data.aiMove.to_rank}に移動しました`;
+                            let aiAnnouncement = buildAIMoveAnnouncement(data);
+                            document.getElementById('game-announcements').textContent = aiAnnouncement;
                         }, 500);
+                    } else if (data.status === 'in_progress') {
+                        // AIの手がないかつゲーム続行中
+                        // （手番変更は上の announcement に含めない）
                     }
                 } else {
                     console.warn('[makeMove] Move failed:', data.message);
@@ -1086,10 +1105,23 @@
                 console.log('[makeDrop] Response:', data);
                 if (data.success) {
                     console.log('[makeDrop] Drop succeeded, updating board');
-                    document.getElementById('game-announcements').textContent = 
-                        `${toFile}の${toRank}に持ち駒を打ちました`;
+                    let dropMsg = `${toFile}の${toRank}に持ち駒を打ちました`;
+                    if (data.isCheck) dropMsg += '。王手です';
+                    if (data.status === 'mate') {
+                        dropMsg += data.winner === 'human' ? '。詰みです！あなたの勝ちです' : '。詰みです。AIの勝ちです';
+                    }
+                    document.getElementById('game-announcements').textContent = dropMsg;
                     updateBoard(data.boardState);
                     updateGameInfo(data);
+                    focusCell(toRank, toFile);
+                    
+                    // AIが指し手を返した場合
+                    if (data.aiMove) {
+                        setTimeout(() => {
+                            let aiAnnouncement = buildAIMoveAnnouncement(data);
+                            document.getElementById('game-announcements').textContent = aiAnnouncement;
+                        }, 500);
+                    }
                 } else {
                     console.warn('[makeDrop] Drop failed:', data.message);
                     document.getElementById('game-announcements').textContent = 
@@ -1147,6 +1179,7 @@
                     const pieceName = pieceNameMap[piece.type] || piece.type;
                     const pieceTextSpan = document.createElement('span');
                     pieceTextSpan.className = 'piece-text';
+                    pieceTextSpan.setAttribute('aria-hidden', 'true');
                     pieceTextSpan.textContent = pieceName;
                     cell.appendChild(pieceTextSpan);
                     cell.classList.add('piece-' + piece.color);
@@ -1157,6 +1190,7 @@
                     // 空のセルにも空のspanを追加（一貫性のため）
                     const pieceTextSpan = document.createElement('span');
                     pieceTextSpan.className = 'piece-text';
+                    pieceTextSpan.setAttribute('aria-hidden', 'true');
                     cell.appendChild(pieceTextSpan);
                     cell.setAttribute('aria-label', `${file}の${rank} 空`);
                 }
@@ -1205,7 +1239,8 @@
 
                 element.innerHTML = entries.map(([piece, count]) => {
                     const name = pieceNameMap[piece] || piece;
-                    return `<button type="button" class="hand-piece" data-piece="${piece}" data-color="${color}">${name} × ${count}</button>`;
+                    const colorName = color === 'sente' ? '先手' : '後手';
+                    return `<button type="button" class="hand-piece" data-piece="${piece}" data-color="${color}" aria-label="${colorName}の持ち駒 ${name} ${count}枚">${name} × ${count}</button>`;
                 }).join('');
             };
 
@@ -1263,6 +1298,89 @@
             document.getElementById('game-announcements').textContent = '持ち駒を選択しました。打つ場所を選んでください。';
         }
         
+        // ピース名マップ（アナウンス用）
+        const globalPieceNameMap = {
+            'fu': '歩', 'kyosha': '香', 'keima': '桂', 'gin': '銀',
+            'kin': '金', 'kaku': '角', 'hisha': '飛', 'gyoku': '玉', 'ou': '王',
+            'tokin': 'と金', 'nkyosha': '成香', 'nkeima': '成桂', 'ngin': '成銀',
+            'uma': '馬', 'ryu': '龍',
+        };
+
+        // 指し手アナウンス構築
+        function buildMoveAnnouncement(fromFile, fromRank, toFile, toRank, capturedPiece, isCheck, status, winner) {
+            let msg = `${fromFile}の${fromRank}から${toFile}の${toRank}に移動しました`;
+            if (capturedPiece) {
+                const capName = globalPieceNameMap[capturedPiece] || capturedPiece;
+                msg += `。${capName}を取りました`;
+            }
+            if (status === 'mate') {
+                msg += winner === 'human' ? '。詰みです！あなたの勝ちです' : '。詰みです。AIの勝ちです';
+            } else if (isCheck) {
+                msg += '。王手です';
+            }
+            return msg;
+        }
+
+        // AIアナウンス構築
+        function buildAIMoveAnnouncement(data) {
+            let msg = `AIが${data.aiMove.from_file}の${data.aiMove.from_rank}から${data.aiMove.to_file}の${data.aiMove.to_rank}に移動しました`;
+            if (data.aiCapturedPiece) {
+                const capName = globalPieceNameMap[data.aiCapturedPiece] || data.aiCapturedPiece;
+                msg += `。${capName}を取られました`;
+            }
+            if (data.status === 'mate') {
+                msg += data.winner === 'human' ? '。詰みです！あなたの勝ちです' : '。詰みです。AIの勝ちです';
+            } else if (data.isCheck) {
+                msg += '。王手です';
+            } else {
+                msg += '。あなたの番です';
+            }
+            return msg;
+        }
+
+        // セルへフォーカス移動
+        function focusCell(rank, file) {
+            window.focusedCell.rank = rank;
+            window.focusedCell.file = file;
+            const targetCell = document.querySelector(`.cell[data-rank="${rank}"][data-file="${file}"]`);
+            if (targetCell) {
+                document.querySelectorAll('.cell').forEach(c => c.tabIndex = -1);
+                targetCell.tabIndex = 0;
+                targetCell.focus();
+            }
+        }
+
+        // クライアントタイマー
+        let timerInterval = null;
+        let timerStartedAt = Date.now();
+        let timerBaseSeconds = {{ $gameState['elapsedSeconds'] }};
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerStartedAt = Date.now();
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const elapsed = timerBaseSeconds + Math.floor((Date.now() - timerStartedAt) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('elapsed-time').textContent = `${minutes}分${seconds}秒`;
+        }
+
+        // ゲーム終了時はタイマー停止
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        // ゲームが進行中ならタイマー開始
+        if (window.gameData.status === 'in_progress') {
+            startTimer();
+        }
+
         function updateGameInfo(data) {
             if (data.moveCount !== undefined) {
         document.getElementById('move-count').textContent = data.moveCount + '手';
@@ -1272,6 +1390,13 @@
                 const colorText = data.humanColor === 'sente' ? '先手' : '後手';
                 document.getElementById('current-player').textContent = `${playerText}(${colorText})`;
                 currentPlayer = data.currentPlayer;
+            }
+
+            // タイマー同期
+            if (data.elapsedSeconds !== undefined) {
+                timerBaseSeconds = data.elapsedSeconds;
+                timerStartedAt = Date.now();
+                updateTimerDisplay();
             }
             
             // ゲーム状態を更新
@@ -1284,9 +1409,10 @@
             if (data.moveCount !== undefined) {
                 window.gameData.moveCount = data.moveCount;
             }
-            
-            // ゲーム終了時のランキング登録ダイアログを表示
+
+            // ゲーム終了時
             if (data.status && data.status !== 'in_progress') {
+                stopTimer();
                 console.log('[updateGameInfo] Game finished! Showing dialog');
                 // 少し遅延させてダイアログを表示（アニメーションのため）
                 setTimeout(() => {
@@ -1404,11 +1530,16 @@
             document.getElementById('btn-promote-yes')?.addEventListener('click', function() {
                 handlePromotion(true);
                 dialog.remove();
+                // 移動先セルにフォーカス復帰
+                const target = window.promotionTarget || window.lastMoveTarget;
+                if (target) focusCell(target.rank, target.file);
             });
             
             document.getElementById('btn-promote-no')?.addEventListener('click', function() {
                 handlePromotion(false);
                 dialog.remove();
+                const target = window.promotionTarget || window.lastMoveTarget;
+                if (target) focusCell(target.rank, target.file);
             });
 
             // フォーカストラップとキーボードサポート
@@ -1419,6 +1550,8 @@
                     e.preventDefault();
                     handlePromotion(false);
                     dialog.remove();
+                    const target = window.promotionTarget || window.lastMoveTarget;
+                    if (target) focusCell(target.rank, target.file);
                     return;
                 }
                 if (e.key === 'Tab') {
@@ -1498,7 +1631,7 @@
         });
         
         document.getElementById('btn-resign')?.addEventListener('click', function() {
-            if (confirm('投了しますか？')) {
+            showConfirmDialog('投了しますか？', '投了すると負けになります。', function() {
                 fetchJson(`/game/{{ $game->id }}/resign`, {
                     method: 'POST',
                     headers: {
@@ -1508,17 +1641,17 @@
                 })
                 .then(data => {
                     if (data.success) {
-                        document.getElementById('game-announcements').textContent = '投了しました';
+                        sessionStorage.setItem('a11y-shogi-announce', '投了しました');
                         location.reload();
                     } else {
-                        alert(data.message || '投了処理に失敗しました');
+                        document.getElementById('game-announcements').textContent = data.message || '投了処理に失敗しました';
                     }
                 })
                 .catch(error => {
                     console.warn('Error:', error);
-                    alert('エラーが発生しました');
+                    document.getElementById('game-announcements').textContent = 'エラーが発生しました';
                 });
-            }
+            });
         });
         
         document.getElementById('btn-reset')?.addEventListener('click', function() {
@@ -1526,9 +1659,9 @@
         });
         
         document.getElementById('btn-quit')?.addEventListener('click', function() {
-            if (confirm('ゲームをやめてホームに戻りますか？')) {
+            showConfirmDialog('ゲームをやめてホームに戻りますか？', 'ゲームは一時停止されます。', function() {
                 window.location.href = '/';
-            }
+            });
         });
         
         // ゲーム終了時のランキング登録ダイアログ処理
@@ -1539,12 +1672,14 @@
                 const nickname = document.getElementById('ranking-nickname-input').value.trim();
                 
                 if (!nickname) {
-                    alert('ニックネームを入力してください');
+                    document.getElementById('game-announcements').textContent = 'ニックネームを入力してください';
+                    document.getElementById('ranking-nickname-input')?.focus();
                     return;
                 }
                 
                 if (nickname.length < 3 || nickname.length > 15) {
-                    alert('ニックネームは3〜15文字で入力してください');
+                    document.getElementById('game-announcements').textContent = 'ニックネームは3〜15文字で入力してください';
+                    document.getElementById('ranking-nickname-input')?.focus();
                     return;
                 }
                 
@@ -1597,14 +1732,14 @@
                             }
                         }
                     } else {
-                        alert(data.message || 'ランキング登録に失敗しました');
+                        document.getElementById('game-announcements').textContent = data.message || 'ランキング登録に失敗しました';
                         // 失敗時は入力フィールドにフォーカスを戻す
                         document.getElementById('ranking-nickname-input')?.focus();
                     }
                 })
                 .catch(error => {
                     console.warn('Error:', error);
-                    alert('エラーが発生しました');
+                    document.getElementById('game-announcements').textContent = 'エラーが発生しました';
                     document.getElementById('ranking-nickname-input')?.focus();
                 });
             });
@@ -1626,6 +1761,74 @@
         
         // ページ読み込み時にゲーム終了状態を確認
         showRankingRegistrationDialog();
+
+        // リロード後のアナウンス（sessionStorage 経由）
+        const pendingAnnounce = sessionStorage.getItem('a11y-shogi-announce');
+        if (pendingAnnounce) {
+            sessionStorage.removeItem('a11y-shogi-announce');
+            setTimeout(() => {
+                document.getElementById('game-announcements').textContent = pendingAnnounce;
+            }, 300);
+        }
     });
+
+    // アクセシブルな確認ダイアログ（confirm() の代替）
+    function showConfirmDialog(title, description, onConfirm) {
+        const overlay = document.createElement('div');
+        overlay.id = 'confirm-dialog-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'confirm-dialog-title');
+        overlay.setAttribute('aria-describedby', 'confirm-dialog-desc');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:3000;';
+        overlay.innerHTML = `
+            <div style="background:var(--color-bg,#fff);border:4px solid var(--color-border,#333);border-radius:8px;padding:32px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3);color:var(--color-text,#1A1A1A);">
+                <h3 id="confirm-dialog-title" style="margin:0 0 12px 0;">${title}</h3>
+                <p id="confirm-dialog-desc" style="margin:0 0 24px 0;color:var(--color-text-secondary);">${description}</p>
+                <div style="display:flex;gap:12px;">
+                    <button id="confirm-dialog-yes" class="btn btn-primary" style="flex:1;padding:12px;font-size:1rem;cursor:pointer;">はい</button>
+                    <button id="confirm-dialog-no" class="btn" style="flex:1;padding:12px;font-size:1rem;cursor:pointer;">キャンセル</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const yesBtn = document.getElementById('confirm-dialog-yes');
+        const noBtn = document.getElementById('confirm-dialog-no');
+
+        function close() {
+            overlay.remove();
+        }
+
+        yesBtn.addEventListener('click', function() {
+            close();
+            onConfirm();
+        });
+
+        noBtn.addEventListener('click', function() {
+            close();
+            document.getElementById('game-announcements').textContent = 'キャンセルしました';
+        });
+
+        overlay.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                close();
+                document.getElementById('game-announcements').textContent = 'キャンセルしました';
+            }
+            if (e.key === 'Tab') {
+                const btns = [yesBtn, noBtn];
+                if (e.shiftKey && document.activeElement === btns[0]) {
+                    e.preventDefault();
+                    btns[1].focus();
+                } else if (!e.shiftKey && document.activeElement === btns[1]) {
+                    e.preventDefault();
+                    btns[0].focus();
+                }
+            }
+        });
+
+        setTimeout(() => yesBtn.focus(), 50);
+    }
 </script>
 @endpush

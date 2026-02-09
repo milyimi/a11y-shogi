@@ -281,6 +281,12 @@ class GameController extends Controller
 
                 $gameState = $this->gameService->getGameState($session);
 
+                // 王手判定
+                $dropIsCheck = false;
+                if ($session->status !== 'mate') {
+                    $dropIsCheck = $this->shogiService->isKingInCheck($boardState, $opponentColor);
+                }
+
                 $response = [
                     'success' => true,
                     'message' => '駒を打ちました',
@@ -291,6 +297,8 @@ class GameController extends Controller
                     'status' => $gameState['status'],
                     'winner' => $gameState['winner'],
                     'canPromote' => false,
+                    'isCheck' => $dropIsCheck,
+                    'elapsedSeconds' => $session->elapsed_seconds,
                     'piece' => [
                         'type' => $pieceType,
                         'color' => $currentTurn,
@@ -344,9 +352,11 @@ class GameController extends Controller
                         $session->save();
 
                         $response['aiMove'] = $aiMove;
+                        $response['aiCapturedPiece'] = $aiCapturedPiece ? $aiCapturedPiece['type'] : null;
                         $response['boardState'] = $aiBoard;
                         $response['moveCount'] = $session->total_moves;
                         $response['currentPlayer'] = 'human';
+                        $response['elapsedSeconds'] = $session->elapsed_seconds;
                         $response['aiMoveDescription'] = sprintf(
                             '%dの%dから%dの%dに移動',
                             $aiMove['from_file'],
@@ -354,6 +364,11 @@ class GameController extends Controller
                             $aiMove['to_file'],
                             $aiMove['to_rank']
                         );
+
+                        // AI移動後の王手判定
+                        if ($session->status !== 'mate') {
+                            $response['isCheck'] = $this->shogiService->isKingInCheck($aiBoard, $aiBoard['turn']);
+                        }
                     }
                 }
 
@@ -427,6 +442,16 @@ class GameController extends Controller
             
             $gameState = $this->gameService->getGameState($session);
             
+            // 王手判定（移動後の盤面で相手が王手状態か）
+            $isCheck = false;
+            if ($session->status !== 'mate') {
+                $checkTargetColor = $boardState['turn'] === 'sente' ? 'sente' : 'gote';
+                if ($canPromote) {
+                    $checkTargetColor = $piece['color'] === 'sente' ? 'gote' : 'sente';
+                }
+                $isCheck = $this->shogiService->isKingInCheck($boardState, $checkTargetColor);
+            }
+
             $response = [
                 'success' => true,
                 'message' => '駒を移動しました',
@@ -438,6 +463,9 @@ class GameController extends Controller
                 'winner' => $gameState['winner'],
                 'canPromote' => $canPromote,
                 'piece' => $piece,
+                'capturedPiece' => $capturedPiece ? $capturedPiece['type'] : null,
+                'isCheck' => $isCheck,
+                'elapsedSeconds' => $session->elapsed_seconds,
                 'promotionTarget' => [
                     'rank' => $validated['to_rank'],
                     'file' => $validated['to_file'],
@@ -513,9 +541,11 @@ class GameController extends Controller
                     
                     // AI の指し手を記録
                     $response['aiMove'] = $aiMove;
+                    $response['aiCapturedPiece'] = $aiCapturedPiece ? $aiCapturedPiece['type'] : null;
                     $response['boardState'] = $aiBoard;
                     $response['moveCount'] = $session->total_moves;
                     $response['currentPlayer'] = 'human'; // 人間のターンに戻す
+                    $response['elapsedSeconds'] = $session->elapsed_seconds;
                     $response['aiMoveDescription'] = sprintf(
                         '%dの%dから%dの%dに移動',
                         $aiMove['from_file'],
@@ -523,6 +553,11 @@ class GameController extends Controller
                         $aiMove['to_file'],
                         $aiMove['to_rank']
                     );
+
+                    // AI移動後の王手判定
+                    if ($session->status !== 'mate') {
+                        $response['isCheck'] = $this->shogiService->isKingInCheck($aiBoard, $aiBoard['turn']);
+                    }
                 }
             }
 
@@ -711,6 +746,7 @@ class GameController extends Controller
             $session->updateBoardPosition($boardState);
             $session->total_moves = 0;
             $session->elapsed_seconds = 0;
+            $session->started_at = now();
             $session->status = 'in_progress';
             $session->winner = null;
             $session->save();
