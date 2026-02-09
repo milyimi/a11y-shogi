@@ -280,6 +280,21 @@ class GameController extends Controller
                 $session->updateBoardPosition($boardState);
                 $session->increment('total_moves');
 
+                // 指し手と盤面状態を記録
+                $this->saveMoveRecord(
+                    $session,
+                    $session->total_moves,
+                    'human',
+                    $pieceType,
+                    $currentTurn,
+                    null,
+                    null,
+                    $toRank,
+                    $toFile,
+                    true
+                );
+                $this->saveBoardState($session, $boardState, $session->total_moves);
+
                 $opponentColor = $boardState['turn'];
                 if ($this->shogiService->isCheckmate($boardState, $opponentColor)) {
                     $session->status = 'mate';
@@ -346,6 +361,23 @@ class GameController extends Controller
 
                         $session->updateBoardPosition($aiBoard);
                         $session->increment('total_moves');
+
+                        // AIの指し手と盤面状態を記録（drop route）
+                        $aiPieceAfterDrop = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+                        $this->saveMoveRecord(
+                            $session,
+                            $session->total_moves,
+                            'ai',
+                            $aiPieceAfterDrop ? $aiPieceAfterDrop['type'] : 'unknown',
+                            $boardState['turn'],
+                            $aiMove['from_rank'],
+                            $aiMove['from_file'],
+                            $aiMove['to_rank'],
+                            $aiMove['to_file'],
+                            false,
+                            $aiCapturedPiece ? $aiCapturedPiece['type'] : null
+                        );
+                        $this->saveBoardState($session, $aiBoard, $session->total_moves);
 
                         if ($aiCapturedKing) {
                             $session->status = 'mate';
@@ -469,6 +501,24 @@ class GameController extends Controller
             // ゲームセッションを更新
             $session->updateBoardPosition($boardState);
             $session->increment('total_moves');
+
+            // 指し手と盤面状態を記録
+            $this->saveMoveRecord(
+                $session,
+                $session->total_moves,
+                'human',
+                $piece['type'],
+                $piece['color'],
+                $validated['from_rank'],
+                $validated['from_file'],
+                $validated['to_rank'],
+                $validated['to_file'],
+                false,
+                $capturedPiece ? $capturedPiece['type'] : null,
+                false,
+                $isCheck ?? false
+            );
+            $this->saveBoardState($session, $boardState, $session->total_moves);
             
             // 人間の指し手後、相手が詰みか確認（王を取っていない場合のみ、成り確認中はスキップ）
             $opponentColor = $boardState['turn'] === 'sente' ? 'gote' : 'sente';
@@ -561,6 +611,23 @@ class GameController extends Controller
                     // ゲームセッションを更新
                     $session->updateBoardPosition($aiBoard);
                     $session->increment('total_moves');
+
+                    // AIの指し手と盤面状態を記録
+                    $aiPieceAfterMove = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+                    $this->saveMoveRecord(
+                        $session,
+                        $session->total_moves,
+                        'ai',
+                        $aiPieceAfterMove ? $aiPieceAfterMove['type'] : 'unknown',
+                        $boardState['turn'],
+                        $aiMove['from_rank'],
+                        $aiMove['from_file'],
+                        $aiMove['to_rank'],
+                        $aiMove['to_file'],
+                        false,
+                        $aiCapturedPiece ? $aiCapturedPiece['type'] : null
+                    );
+                    $this->saveBoardState($session, $aiBoard, $session->total_moves);
                     
                     // AI の指し手後、人間が詰みか確認（王を取った場合は即終了）
                     if ($aiCapturedKing) {
@@ -636,6 +703,54 @@ class GameController extends Controller
         $humanColor = $session->human_color;
         
         return $currentTurn !== $humanColor;
+    }
+
+    /**
+     * 指し手を game_moves テーブルに記録
+     */
+    private function saveMoveRecord(
+        GameSession $session,
+        int $moveNumber,
+        string $moveBy,
+        string $pieceType,
+        string $pieceColor,
+        ?int $fromRank,
+        ?int $fromFile,
+        int $toRank,
+        int $toFile,
+        bool $isDrop = false,
+        ?string $capturedPieceType = null,
+        bool $isPromotion = false,
+        bool $isCheck = false
+    ): void {
+        GameMove::create([
+            'game_session_id' => $session->id,
+            'move_number' => $moveNumber,
+            'from_position' => $isDrop ? 'hand' : "{$fromFile}-{$fromRank}",
+            'to_position' => "{$toFile}-{$toRank}",
+            'piece_type' => $pieceType,
+            'piece_color' => $pieceColor,
+            'is_capture' => $capturedPieceType !== null,
+            'captured_piece_type' => $capturedPieceType,
+            'is_promotion' => $isPromotion,
+            'is_check' => $isCheck,
+            'move_by' => $moveBy,
+        ]);
+    }
+
+    /**
+     * 盤面状態を board_states テーブルに保存
+     */
+    private function saveBoardState(GameSession $session, array $boardState, int $moveNumber): void
+    {
+        BoardState::create([
+            'game_session_id' => $session->id,
+            'move_number' => $moveNumber,
+            'board_position' => json_encode($boardState),
+            'captured_pieces_sente' => $boardState['hand']['sente'] ?? [],
+            'captured_pieces_gote' => $boardState['hand']['gote'] ?? [],
+            'is_check' => $this->shogiService->isKingInCheck($boardState, $boardState['turn']),
+        ]);
     }
 
     /**
@@ -722,8 +837,8 @@ class GameController extends Controller
 
             // 一つ前のボード状態を取得
             $previousBoardState = BoardState::where('game_session_id', $session->id)
-                ->where('move_index', '<', $lastMove->move_number - 1)
-                ->orderBy('move_index', 'desc')
+                ->where('move_number', '<', $lastMove->move_number)
+                ->orderBy('move_number', 'desc')
                 ->first();
 
             if (!$previousBoardState) {
@@ -732,7 +847,7 @@ class GameController extends Controller
                 $boardState['turn'] = 'sente';
                 $boardState['hand'] = ['sente' => [], 'gote' => []];
             } else {
-                $boardState = json_decode($previousBoardState->position_json, true);
+                $boardState = json_decode($previousBoardState->board_position, true);
             }
 
             // 棋譜から最後のエントリを削除
@@ -755,7 +870,7 @@ class GameController extends Controller
 
             // ボード状態の履歴を削除
             BoardState::where('game_session_id', $session->id)
-                ->where('move_index', '>=', $lastMove->move_number)
+                ->where('move_number', '>=', $lastMove->move_number)
                 ->delete();
 
             return response()->json([
@@ -947,6 +1062,23 @@ class GameController extends Controller
                     $session->updateBoardPosition($aiBoard);
                     $session->increment('total_moves');
 
+                    // AIの指し手と盤面状態を記録（promote route）
+                    $aiPieceAfterPromote = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+                    $this->saveMoveRecord(
+                        $session,
+                        $session->total_moves,
+                        'ai',
+                        $aiPieceAfterPromote ? $aiPieceAfterPromote['type'] : 'unknown',
+                        $boardState['turn'],
+                        $aiMove['from_rank'],
+                        $aiMove['from_file'],
+                        $aiMove['to_rank'],
+                        $aiMove['to_file'],
+                        false,
+                        $aiCapturedPiece ? $aiCapturedPiece['type'] : null
+                    );
+                    $this->saveBoardState($session, $aiBoard, $session->total_moves);
+
                     if ($aiCapturedKing) {
                         $session->status = 'mate';
                         $aiColor = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
@@ -1009,14 +1141,14 @@ class GameController extends Controller
      */
     public function quit(GameSession $session)
     {
-        // ゲーム状態を「一時停止」に更新（後で再開可能）
-        $session->status = 'paused';
+        // 経過時間を保存（ステータスはin_progressのまま維持）
+        $this->gameService->updateElapsedTime($session);
         $session->save();
 
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'ゲームを一時停止しました',
+                'message' => 'ゲームを中断しました',
                 'redirect' => '/',
             ]);
         }
