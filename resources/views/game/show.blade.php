@@ -750,6 +750,12 @@
                 },
             });
 
+            // CSRFトークン期限切れ / セッション切れ
+            if (response.status === 419) {
+                showSessionExpiredDialog();
+                return { success: false, message: 'セッションの有効期限が切れました。ページを再読み込みしてください。', sessionExpired: true };
+            }
+
             const contentType = response.headers.get('content-type') || '';
             if (contentType.includes('application/json')) {
                 const data = await response.json();
@@ -768,6 +774,46 @@
                 success: false,
                 message: text ? text.slice(0, 200) : `HTTP ${response.status}`,
             };
+        }
+
+        function showSessionExpiredDialog() {
+            // まずスクリーンリーダーに即時通知
+            document.getElementById('game-announcements').textContent =
+                'セッションの有効期限が切れました。ページを再読み込みしてください。';
+
+            // ダイアログ表示（再読み込みを促す）
+            const overlay = document.createElement('div');
+            overlay.id = 'session-expired-overlay';
+            overlay.setAttribute('role', 'alertdialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.setAttribute('aria-labelledby', 'session-expired-title');
+            overlay.setAttribute('aria-describedby', 'session-expired-desc');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:3000;';
+            overlay.innerHTML = `
+                <div style="background:var(--color-bg,#fff);border:4px solid var(--color-border,#333);border-radius:8px;padding:32px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3);color:var(--color-text,#1A1A1A);">
+                    <h3 id="session-expired-title" style="margin:0 0 12px 0;">セッションの有効期限が切れました</h3>
+                    <p id="session-expired-desc" style="margin:0 0 24px 0;color:var(--color-text-secondary);">長時間操作がなかったため、セッションが切れました。ページを再読み込みして続行してください。</p>
+                    <button id="session-expired-reload" class="btn btn-primary" style="width:100%;padding:12px;font-size:1rem;cursor:pointer;">ページを再読み込み</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const reloadBtn = document.getElementById('session-expired-reload');
+            reloadBtn.addEventListener('click', () => location.reload());
+
+            // フォーカストラップ（ボタン1つのみ）
+            overlay.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    location.reload();
+                }
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    reloadBtn.focus();
+                }
+            });
+
+            setTimeout(() => reloadBtn.focus(), 50);
         }
 
         function isGameOver() {

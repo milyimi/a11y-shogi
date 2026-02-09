@@ -392,6 +392,58 @@ async function sleep(ms) {
         assert(await page.$eval('.cell[tabindex="0"]', el => el.dataset.file) === '9', '9列目ArrowRight不動');
 
         // ========================================
+        // フェーズ22: CSRFトークン期限切れ
+        // ========================================
+        console.log('\n🔒 フェーズ22: CSRFトークン期限切れ');
+
+        // CSRFトークンを無効化して駒を動かす
+        await page.evaluate(() => {
+            document.querySelector('meta[name="csrf-token"]').setAttribute('content', 'expired_token');
+        });
+        // 先手の歩を選択して移動を試みる
+        await page.click('.cell[data-rank="3"][data-file="1"]');
+        await sleep(300);
+        await page.click('.cell[data-rank="4"][data-file="1"]');
+        await sleep(1500);
+
+        // セッション期限切れダイアログが表示される
+        const expiredDialog = await page.$('#session-expired-overlay');
+        assert(expiredDialog !== null, 'CSRFエラーでセッション期限切れダイアログ表示');
+
+        if (expiredDialog) {
+            const dialogRole = await page.$eval('#session-expired-overlay', el => el.getAttribute('role'));
+            assert(dialogRole === 'alertdialog', 'ダイアログ role=alertdialog');
+
+            const dialogTitle = await page.$eval('#session-expired-title', el => el.textContent);
+            assert(dialogTitle.includes('有効期限'), 'ダイアログタイトルに有効期限');
+
+            const reloadBtn = await page.$('#session-expired-reload');
+            assert(reloadBtn !== null, '再読み込みボタン存在');
+
+            const focusedId = await page.evaluate(() => document.activeElement?.id);
+            assert(focusedId === 'session-expired-reload', 'フォーカスが再読み込みボタンに移動');
+
+            // aria-modal
+            const ariaModal = await page.$eval('#session-expired-overlay', el => el.getAttribute('aria-modal'));
+            assert(ariaModal === 'true', 'ダイアログ aria-modal="true"');
+
+            // クリーンアップ: ダイアログを閉じてトークンを復元
+            await page.evaluate(() => {
+                document.getElementById('session-expired-overlay')?.remove();
+            });
+        }
+
+        // CSRFトークンを復元
+        await page.evaluate(() => {
+            // ページのCSRFクッキーを使って復元（テスト継続のため）
+            // 実際にはリロードが必要だが、テスト続行のためにダミー処理
+        });
+
+        // アナウンスが日本語であることを確認
+        const announceText = await page.$eval('#game-announcements', el => el.textContent);
+        assert(announceText.includes('セッション') || announceText.includes('有効期限'), 'アナウンスが日本語');
+
+        // ========================================
         // サマリー
         // ========================================
         console.log('\n' + '='.repeat(60));
