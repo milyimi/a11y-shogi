@@ -16,9 +16,9 @@
 | GET | `/game/{sessionId}` | ゲーム画面表示 |
 | POST | `/game/{sessionId}/move` | 指し手送信 |
 | POST | `/game/{sessionId}/promote` | 成り確定 |
-| POST | `/game/{sessionId}/undo` | 棋譜1手戻す |
+| POST | `/game/{sessionId}/undo` | 棋譜を戻す（AI戦は2手） |
 | POST | `/game/{sessionId}/resign` | 投了 |
-| POST | `/game/{sessionId}/quit` | 一時停止 |
+| POST | `/game/{sessionId}/quit` | 対局中断（ステータスはin_progress維持） |
 | GET | `/game/{sessionId}/state` | ゲーム状態取得（JSON） |
 | POST | `/game/{sessionId}/reset` | 対局リセット |
 | POST | `/ranking/register` | ランキング登録 |
@@ -278,7 +278,7 @@ AI応答がある場合:
 
 ### 5. POST `/game/{sessionId}/undo` - 棋譜を戻す
 
-**説明**: 最後の1手を戻す（自分の手のみ）
+**説明**: 棋譜を戻す。AI対局時は最後のAIの手と人間の手を合わせて2手戻す（人間のターンに戻る）。人間の手だけの場合は1手戻す。
 
 **リクエストボディ**
 ```json

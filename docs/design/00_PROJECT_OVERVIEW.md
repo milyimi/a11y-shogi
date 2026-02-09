@@ -43,7 +43,7 @@
 - **AI エンジン**: 
   - PHP Minimax (depth=4, 500K transposition table)
   - 外部エンジン: python-shogi 1.1.1, Fairy-Stockfish 11.1 (USI)
-- **テスト**: Pest 4.3.1 (127 tests), Puppeteer E2E (58 + 30 + 74 = 162 tests)
+- **テスト**: Pest 4.3.1 (127 tests), Puppeteer E2E (58 + 30 + 74 + 59 = 221 tests)
 - **言語**: PHP 8.3.27, Python 3.11
 
 ## アクセシビリティ基準

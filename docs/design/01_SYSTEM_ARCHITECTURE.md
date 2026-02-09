@@ -60,13 +60,15 @@ app/Http/Controllers/
   │   ├── show()           - ゲーム画面表示
   │   ├── move()           - 指し手処理（移動/打ち）
   │   ├── promote()        - 成り確定
-  │   ├── undo()           - 棋譜戻る
+  │   ├── undo()           - 棋譜戻る（AI戦は2手戻し）
   │   ├── resign()         - 投了
-  │   ├── quit()           - 一時停止
+  │   ├── quit()           - 対局中断（ステータスはin_progress維持）
   │   ├── state()          - ゲーム状態取得（JSON）
   │   ├── reset()          - 対局リセット
   │   ├── sessionStatus()  - セッション状態取得
-  │   └── extendSession()  - セッション延長
+  │   ├── extendSession()  - セッション延長
+  │   ├── saveMoveRecord() - 棋譜レコード保存（private）
+  │   └── saveBoardState() - 盤面状態保存（private、undo復元用）
   │
   └── RankingController
       ├── index()          - ランキング一覧

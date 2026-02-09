@@ -4,7 +4,7 @@
 
 - `game_sessions` - ゲームセッション情報
 - `game_moves` - 指し手の履歴
-- `board_states` - 局面の履歴（オプション・キャッシュ用）
+- `board_states` - 局面の履歴（undo機能の復元に必須）
 - `rankings` - ランキング情報（勝利記録）
 
 ## 2. テーブル定義
@@ -89,7 +89,7 @@ CREATE TABLE game_moves (
 );
 ```
 
-### board_states (オプション)
+### board_states（undo復元用・必須）
 
 ```sql
 CREATE TABLE board_states (
@@ -228,8 +228,8 @@ Schema::create('game_moves', function (Blueprint $table) {
 ```
 1. GameSession の move_history を更新
 2. GameSession の total_moves をインクリメント
-3. GameMove レコード追加（ログ用）
-4. 必要に応じて board_states も追加
+3. GameMove レコード追加（saveMoveRecord）
+4. BoardState レコード追加（saveBoardState、undo復元用）
 ```
 
 ### 盤面取得

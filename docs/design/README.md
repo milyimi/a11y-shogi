@@ -159,7 +159,7 @@ UI/UX デザインとワイヤーフレーム
 1. **02_USER_FLOWS.md** でテストシナリオを作成
 2. **06_ACCESSIBILITY_GUIDELINES.md** でチェックリストを確認
 3. 各ドキュメントの詳細仕様を確認
-4. 自動テスト: PHP（Pest） + Puppeteer（アクセシビリティE2E + コントラスト + 全盲ユーザー対局）
+4. 自動テスト: PHP（Pest） + Puppeteer（アクセシビリティE2E + コントラスト + 全盲ユーザー対局 + 全機能E2E）
 
 ---
 
@@ -194,6 +194,7 @@ UI/UX デザインとワイヤーフレーム
 | 2025-01-28 | 1.0 | 初版作成 | Design Team |
 | 2026-02-02 | 1.1 | AI難易度/テスト/E2E反映 | Engineering |
 | 2026-02-09 | 1.2 | 棋譜記録・CSRF対策・全盲テスト・不要ファイル整理 | Engineering |
+| 2026-02-10 | 1.3 | undo 2手戻し・oard_states必須化・quit仕様・全機能E2Eテスト追加 | Engineering |
 
 ---
 
