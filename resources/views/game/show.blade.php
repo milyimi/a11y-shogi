@@ -656,6 +656,19 @@
         // 初期フォーカスを設定
         updateFocus();
         
+        // 初回ガイダンスをアナウンス（ゲーム開始時に1回だけ）
+        setTimeout(function() {
+            var guide = '対局を開始しました。';
+            if (currentPlayer === 'human') {
+                guide += 'あなたの手番です。';
+            } else {
+                guide += 'AIが先に指します。';
+            }
+            guide += '矢印キーで盤面を移動、Enterで駒を選択・移動します。';
+            guide += 'Bキーで盤面全体の読み上げ、Hキーでヘルプページを開きます。';
+            document.getElementById('game-announcements').textContent = guide;
+        }, 500);
+        
         // グローバルキーボードショートカット
         document.addEventListener('keydown', function(e) {
             // 成りダイアログが開いている場合はショートカット無効

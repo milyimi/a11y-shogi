@@ -116,9 +116,14 @@
             <li><strong>高コントラスト</strong> - 見やすい配色（コントラスト比 8:1以上）</li>
         </ul>
         
-        <p style="margin-top: 24px;">
-            <a href="{{ route('help') }}" class="btn">操作方法を見る</a>
-        </p>
+        <div style="margin-top: 24px; padding: 16px; background: var(--color-surface); border: 2px solid var(--color-primary); border-radius: 8px;">
+            <p style="margin: 0; font-weight: bold;">🎮 はじめての方へ</p>
+            <p style="margin: 8px 0 0 0;">キーボードだけで操作できます。矢印キーで盤面を移動し、Enterキーで駒を選択・移動します。<br>
+            対局中はBキーで盤面の読み上げ、Sキーでゲーム状態の確認ができます。</p>
+            <p style="margin: 12px 0 0 0;">
+                <a href="{{ route('help') }}" class="btn">詳しい操作方法を見る</a>
+            </p>
+        </div>
     </section>
 </div>
 @endsection
