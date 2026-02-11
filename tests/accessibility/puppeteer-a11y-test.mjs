@@ -299,8 +299,8 @@ async function getFocusInfo(page) {
   await page.keyboard.press('ArrowRight');
   await sleep(200);
   focusInfo = await getFocusInfo(page);
-  check(focusInfo.dataFile === '6',
-    `ArrowRight: 5→${focusInfo.dataFile} (期待: 6)`,
+  check(focusInfo.dataFile === '4',
+    `ArrowRight: 5→${focusInfo.dataFile} (期待: 4)`,
     '矢印キー右で正しく移動しない');
 
   // 4-5 ArrowLeft
@@ -308,7 +308,7 @@ async function getFocusInfo(page) {
   await sleep(200);
   focusInfo = await getFocusInfo(page);
   check(focusInfo.dataFile === '5',
-    `ArrowLeft: 6→${focusInfo.dataFile} (期待: 5)`,
+    `ArrowLeft: 4→${focusInfo.dataFile} (期待: 5)`,
     '矢印キー左で正しく移動しない');
 
   // 4-6 移動時に aria-live polite でセル情報が読み上げられる
@@ -334,12 +334,25 @@ async function getFocusInfo(page) {
     `端(rank=9)でArrowUp: ${focusInfo.dataRank} (期待: 9, 移動しない)`,
     '端で矢印キーが盤面外に移動する');
 
-  // 4-8 file=1 で ArrowLeft で止まる
-  await page.keyboard.press('ArrowLeft');
+  // 4-8 file=1 で ArrowRight で止まる
+  await page.keyboard.press('ArrowRight');
   await sleep(200);
   focusInfo = await getFocusInfo(page);
   check(focusInfo.dataFile === '1',
-    `端(file=1)でArrowLeft: ${focusInfo.dataFile} (期待: 1, 移動しない)`,
+    `端(file=1)でArrowRight: ${focusInfo.dataFile} (期待: 1, 移動しない)`,
+    '端で矢印キーが盤面外に移動する');
+
+  // 4-9 file=9 で ArrowLeft で止まる
+  await page.evaluate(() => {
+    window.focusedCell = { rank: 9, file: 9 };
+    updateFocus();
+  });
+  await sleep(200);
+  await page.keyboard.press('ArrowLeft');
+  await sleep(200);
+  focusInfo = await getFocusInfo(page);
+  check(focusInfo.dataFile === '9',
+    `端(file=9)でArrowLeft: ${focusInfo.dataFile} (期待: 9, 移動しない)`,
     '端で矢印キーが盤面外に移動する');
 
   // ───────────────────────────────────────────

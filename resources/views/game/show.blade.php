@@ -930,11 +930,11 @@
                         handled = true;
                         break;
                     case 'ArrowLeft':
-                        if (file > 1) newFile--;
+                        if (file < 9) newFile++;
                         handled = true;
                         break;
                     case 'ArrowRight':
-                        if (file < 9) newFile++;
+                        if (file > 1) newFile--;
                         handled = true;
                         break;
                     case 'Enter':

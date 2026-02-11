@@ -128,9 +128,9 @@ async function sleep(ms) {
         assert(initFocus === '9の9', `初期フォーカス: ${initFocus}`);
 
         await page.focus('.cell[data-rank="9"][data-file="9"]');
-        await page.keyboard.press('ArrowLeft');
+        await page.keyboard.press('ArrowRight');
         await sleep(100);
-        assert(await page.$eval('.cell[tabindex="0"]', el => el.dataset.file) === '8', 'ArrowLeft→8列目');
+        assert(await page.$eval('.cell[tabindex="0"]', el => el.dataset.file) === '8', 'ArrowRight→8列目');
 
         await page.keyboard.press('ArrowDown');
         await sleep(100);
@@ -387,9 +387,15 @@ async function sleep(ms) {
         await sleep(100);
         assert(await page.$eval('.cell[tabindex="0"]', el => el.dataset.rank) === '9', '9段目ArrowUp不動');
 
+        await page.keyboard.press('ArrowLeft');
+        await sleep(100);
+        assert(await page.$eval('.cell[tabindex="0"]', el => el.dataset.file) === '9', '9列目ArrowLeft不動');
+
+        await page.click('.cell[data-rank="9"][data-file="1"]');
+        await sleep(100);
         await page.keyboard.press('ArrowRight');
         await sleep(100);
-        assert(await page.$eval('.cell[tabindex="0"]', el => el.dataset.file) === '9', '9列目ArrowRight不動');
+        assert(await page.$eval('.cell[tabindex="0"]', el => el.dataset.file) === '1', '1列目ArrowRight不動');
 
         // ========================================
         // フェーズ22: CSRFトークン期限切れ

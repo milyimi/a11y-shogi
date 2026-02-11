@@ -326,14 +326,24 @@ function checkContrast(name, fgColor, bgColor, level = 'AA', isLargeText = false
         // ============================================================
         console.log('\n👆 テスト6: ボタンサイズ (44×44px以上)');
         const buttons = await page.$$eval('.btn, .contrast-toggle, .hand-piece', elements =>
-            elements.map(el => {
-                const rect = el.getBoundingClientRect();
-                return {
-                    text: el.textContent.trim().substring(0, 20),
-                    width: rect.width,
-                    height: rect.height,
-                };
-            })
+            elements
+                .map(el => {
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    const isVisible = style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && parseFloat(style.opacity || '1') !== 0
+                        && rect.width > 0
+                        && rect.height > 0
+                        && (el.offsetParent !== null || el.getClientRects().length > 0);
+                    return {
+                        text: el.textContent.trim().substring(0, 20),
+                        width: rect.width,
+                        height: rect.height,
+                        isVisible: isVisible,
+                    };
+                })
+                .filter(btn => btn.isVisible)
         );
         for (const btn of buttons) {
             const ok = btn.width >= 44 && btn.height >= 44;
