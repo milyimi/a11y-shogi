@@ -282,7 +282,9 @@ async function sleep(ms) {
 
         assert(await page.$eval('#game-info-heading', el => el.textContent) === 'ゲーム情報', '情報見出し');
         assert(await page.$eval('#actions-heading', el => el.textContent) === '操作', '操作見出し');
-        assert(await page.$eval('#history-heading', el => el.textContent) === '棋譜', '棋譜見出し');
+        assert(await page.$eval('#history-modal-title', el => el.textContent.includes('棋譜')), '棋譜モーダル見出し');
+        assert(await page.$eval('#history-modal', el => el.getAttribute('role')) === 'dialog', '棋譜モーダルrole=dialog');
+        assert(await page.$eval('#history-modal', el => el.getAttribute('aria-modal')) === 'true', '棋譜モーダルaria-modal');
         assert(await page.$eval('.info-panel dl', el => el.getAttribute('role')) === null, 'dl role');
 
         // ========================================

@@ -51,8 +51,8 @@
     }
     
     .komadai {
-        min-width: 80px;
-        max-width: 130px;
+        min-width: 140px;
+        max-width: 200px;
         overflow-y: auto;
     }
     
@@ -272,8 +272,8 @@
             grid-template-columns: 1fr minmax(220px, 280px);
         }
         .komadai {
-            min-width: 70px;
-            max-width: 110px;
+            min-width: 110px;
+            max-width: 160px;
             padding: 10px;
         }
     }
@@ -430,6 +430,62 @@
     }
     .font-gothic {
         font-family: 'BIZ UDゴシック', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    }
+
+    /* アクセシブルモーダルダイアログ */
+    .game-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1500;
+        align-items: center;
+        justify-content: center;
+    }
+    .game-modal-overlay.open {
+        display: flex;
+    }
+    .game-modal {
+        background: var(--color-bg);
+        color: var(--color-text);
+        border: 3px solid var(--color-border);
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 560px;
+        width: 90vw;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    .game-modal h2 {
+        margin: 0 0 16px 0;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .game-modal-close {
+        background: none;
+        border: 2px solid var(--color-border);
+        border-radius: 4px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 4px 10px;
+        color: var(--color-text);
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .game-modal-close:hover, .game-modal-close:focus {
+        background: var(--color-cell-focus, #C8AD8A);
+        outline: 3px solid var(--color-focus);
+    }
+    .btn-open-modal {
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     [data-tooltip] {
@@ -811,72 +867,28 @@
                     <span>— <kbd>Esc</kbd>で解除</span>
                 </div>
             </section>
-            
-            <section aria-labelledby="shortcuts-heading" style="margin-top: 24px;">
-                <h3 id="shortcuts-heading">
-                    <button type="button" class="panel-toggle" id="toggle-shortcuts" aria-expanded="true" aria-controls="shortcuts-content" style="background:none;border:none;font:inherit;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;color:inherit;">
-                        <span aria-hidden="true">▼</span> ショートカット
-                    </button>
-                </h3>
-                <div id="shortcuts-content">
-                    <dl style="line-height: 2; font-size: 0.85rem; color: var(--color-text-secondary);">
-                        <dt style="font-weight: bold; display: inline;">矢印 / WASD:</dt>
-                        <dd style="display: inline; margin-left: 4px;">盤面移動</dd><br>
-                        <dt style="font-weight: bold; display: inline;">B:</dt>
-                        <dd style="display: inline; margin-left: 4px;">盤面読み上げ</dd><br>
-                        <dt style="font-weight: bold; display: inline;">Shift+B:</dt>
-                        <dd style="display: inline; margin-left: 4px;">盤面差分読み上げ</dd><br>
-                        <dt style="font-weight: bold; display: inline;">S:</dt>
-                        <dd style="display: inline; margin-left: 4px;">ゲーム状態</dd><br>
-                        <dt style="font-weight: bold; display: inline;">K:</dt>
-                        <dd style="display: inline; margin-left: 4px;">棋譜<ruby>読<rt>よ</rt></ruby>み上げ</dd><br>
-                        <dt style="font-weight: bold; display: inline;">I:</dt>
-                        <dd style="display: inline; margin-left: 4px;">相手の<ruby>利<rt>き</rt></ruby>き<ruby>筋<rt>すじ</rt></ruby></dd><br>
-                        <dt style="font-weight: bold; display: inline;">1 / 2:</dt>
-                        <dd style="display: inline; margin-left: 4px;">先手 / 後手の<ruby>駒台<rt>こまだい</rt></ruby></dd><br>
-                        <dt style="font-weight: bold; display: inline;">H:</dt>
-                        <dd style="display: inline; margin-left: 4px;">ヘルプ</dd><br>
-                        <dt style="font-weight: bold; display: inline;">U:</dt>
-                        <dd style="display: inline; margin-left: 4px;"><ruby>待<rt>ま</rt></ruby>った</dd><br>
-                        <dt style="font-weight: bold; display: inline;">R:</dt>
-                        <dd style="display: inline; margin-left: 4px;">リセット</dd>
-                    </dl>
-                </div>
-            </section>
 
-            <section aria-labelledby="display-settings-heading" style="margin-top: 24px;">
-                <h3 id="display-settings-heading">表示設定</h3>
-                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" id="toggle-timer" checked style="width: 18px; height: 18px;">
-                        タイマー表示
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" id="toggle-toast" checked style="width: 18px; height: 18px;">
-                        トースト通知
-                    </label>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label for="piece-size-select">駒の文字サイズ:</label>
-                        <select id="piece-size-select" style="padding: 4px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);">
-                            <option value="20">小 (20px)</option>
-                            <option value="24" selected>標準 (24px)</option>
-                            <option value="30">大 (30px)</option>
-                            <option value="36">特大 (36px)</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label for="font-family-select">フォント:</label>
-                        <select id="font-family-select" style="padding: 4px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);">
-                            <option value="default">標準</option>
-                            <option value="ud-digital">UDデジタル教科書体</option>
-                            <option value="gothic">BIZ UDゴシック</option>
-                        </select>
-                    </div>
-                </div>
-            </section>
+            {{-- モーダルを開くボタン --}}
+            <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <button type="button" class="btn btn-open-modal" id="btn-open-history" aria-haspopup="dialog">
+                    📋 <ruby>棋譜<rt>きふ</rt></ruby>
+                </button>
+                <button type="button" class="btn btn-open-modal" id="btn-open-settings" aria-haspopup="dialog">
+                    ⚙ 表示設定
+                </button>
+                <button type="button" class="btn btn-open-modal" id="btn-open-shortcuts" aria-haspopup="dialog">
+                    ⌨ ショートカット
+                </button>
+            </div>
+        </aside>
 
-            <section aria-labelledby="history-heading" style="margin-top: 24px;">
-                <h3 id="history-heading">棋譜</h3>
+        {{-- 棋譜モーダル --}}
+        <div class="game-modal-overlay" id="history-modal-overlay">
+            <div class="game-modal" role="dialog" aria-modal="true" aria-labelledby="history-modal-title" id="history-modal">
+                <h2 id="history-modal-title">
+                    <ruby>棋譜<rt>きふ</rt></ruby>
+                    <button type="button" class="game-modal-close" data-modal-close aria-label="閉じる">✕</button>
+                </h2>
                 <div class="move-history" id="move-history" aria-live="polite">
                     @if(!empty($gameState['moveHistory']))
                         <ol>
@@ -888,8 +900,77 @@
                         <p style="color: var(--color-text-secondary);">まだ指し手がありません</p>
                     @endif
                 </div>
-            </section>
-        </aside>
+            </div>
+        </div>
+
+        {{-- 表示設定モーダル --}}
+        <div class="game-modal-overlay" id="settings-modal-overlay">
+            <div class="game-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" id="settings-modal">
+                <h2 id="settings-modal-title">
+                    表示設定
+                    <button type="button" class="game-modal-close" data-modal-close aria-label="閉じる">✕</button>
+                </h2>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 1rem;">
+                        <input type="checkbox" id="toggle-timer" checked style="width: 22px; height: 22px;">
+                        タイマー表示
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 1rem;">
+                        <input type="checkbox" id="toggle-toast" checked style="width: 22px; height: 22px;">
+                        トースト通知
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="piece-size-select" style="font-size: 1rem;">駒の文字サイズ:</label>
+                        <select id="piece-size-select" style="padding: 6px 10px; font-size: 1rem; border: 2px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);">
+                            <option value="20">小 (20px)</option>
+                            <option value="24" selected>標準 (24px)</option>
+                            <option value="30">大 (30px)</option>
+                            <option value="36">特大 (36px)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="font-family-select" style="font-size: 1rem;">フォント:</label>
+                        <select id="font-family-select" style="padding: 6px 10px; font-size: 1rem; border: 2px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);">
+                            <option value="default">標準</option>
+                            <option value="ud-digital">UDデジタル教科書体</option>
+                            <option value="gothic">BIZ UDゴシック</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ショートカットモーダル --}}
+        <div class="game-modal-overlay" id="shortcuts-modal-overlay">
+            <div class="game-modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-modal-title" id="shortcuts-modal">
+                <h2 id="shortcuts-modal-title">
+                    ショートカット
+                    <button type="button" class="game-modal-close" data-modal-close aria-label="閉じる">✕</button>
+                </h2>
+                <dl style="line-height: 2.2; font-size: 1rem;">
+                    <dt style="font-weight: bold; display: inline;">矢印 / WASD:</dt>
+                    <dd style="display: inline; margin-left: 4px;">盤面移動</dd><br>
+                    <dt style="font-weight: bold; display: inline;">B:</dt>
+                    <dd style="display: inline; margin-left: 4px;">盤面読み上げ</dd><br>
+                    <dt style="font-weight: bold; display: inline;">Shift+B:</dt>
+                    <dd style="display: inline; margin-left: 4px;">盤面差分読み上げ</dd><br>
+                    <dt style="font-weight: bold; display: inline;">S:</dt>
+                    <dd style="display: inline; margin-left: 4px;">ゲーム状態</dd><br>
+                    <dt style="font-weight: bold; display: inline;">K:</dt>
+                    <dd style="display: inline; margin-left: 4px;">棋譜<ruby>読<rt>よ</rt></ruby>み上げ</dd><br>
+                    <dt style="font-weight: bold; display: inline;">I:</dt>
+                    <dd style="display: inline; margin-left: 4px;">相手の<ruby>利<rt>き</rt></ruby>き<ruby>筋<rt>すじ</rt></ruby></dd><br>
+                    <dt style="font-weight: bold; display: inline;">1 / 2:</dt>
+                    <dd style="display: inline; margin-left: 4px;">先手 / 後手の<ruby>駒台<rt>こまだい</rt></ruby></dd><br>
+                    <dt style="font-weight: bold; display: inline;">H:</dt>
+                    <dd style="display: inline; margin-left: 4px;">ヘルプ</dd><br>
+                    <dt style="font-weight: bold; display: inline;">U:</dt>
+                    <dd style="display: inline; margin-left: 4px;"><ruby>待<rt>ま</rt></ruby>った</dd><br>
+                    <dt style="font-weight: bold; display: inline;">R:</dt>
+                    <dd style="display: inline; margin-left: 4px;">リセット</dd>
+                </dl>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2169,14 +2250,90 @@
             }
         });
 
-        // --- ショートカットセクション折りたたみ ---
-        document.getElementById('toggle-shortcuts')?.addEventListener('click', function() {
-            const content = document.getElementById('shortcuts-content');
-            const expanded = this.getAttribute('aria-expanded') === 'true';
-            this.setAttribute('aria-expanded', !expanded);
-            this.querySelector('span').textContent = expanded ? '▶' : '▼';
-            if (content) content.style.display = expanded ? 'none' : '';
+        // --- モーダルダイアログ制御 ---
+        function openGameModal(overlayId, triggerEl) {
+            const overlay = document.getElementById(overlayId);
+            if (!overlay) return;
+            overlay.classList.add('open');
+            overlay._triggerEl = triggerEl;
+            const modal = overlay.querySelector('.game-modal');
+            // フォーカスを閉じるボタンへ
+            const closeBtn = modal.querySelector('.game-modal-close');
+            if (closeBtn) closeBtn.focus();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeGameModal(overlayId) {
+            const overlay = document.getElementById(overlayId);
+            if (!overlay) return;
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+            // フォーカスを元のトリガーに戻す
+            if (overlay._triggerEl) {
+                overlay._triggerEl.focus();
+                overlay._triggerEl = null;
+            }
+        }
+
+        // 各モーダルの開くボタン
+        document.getElementById('btn-open-history')?.addEventListener('click', function() {
+            openGameModal('history-modal-overlay', this);
         });
+        document.getElementById('btn-open-settings')?.addEventListener('click', function() {
+            openGameModal('settings-modal-overlay', this);
+        });
+        document.getElementById('btn-open-shortcuts')?.addEventListener('click', function() {
+            openGameModal('shortcuts-modal-overlay', this);
+        });
+
+        // 閉じるボタン（各モーダル共通）
+        document.querySelectorAll('.game-modal-close').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const overlay = this.closest('.game-modal-overlay');
+                if (overlay) closeGameModal(overlay.id);
+            });
+        });
+
+        // オーバーレイ背景クリックで閉じる
+        document.querySelectorAll('.game-modal-overlay').forEach(function(overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) closeGameModal(this.id);
+            });
+        });
+
+        // Escキーでモーダルを閉じる（フォーカストラップ付き）
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var openModal = document.querySelector('.game-modal-overlay.open');
+                if (openModal) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeGameModal(openModal.id);
+                }
+            }
+            // フォーカストラップ
+            if (e.key === 'Tab') {
+                var openModal = document.querySelector('.game-modal-overlay.open');
+                if (openModal) {
+                    var modal = openModal.querySelector('.game-modal');
+                    var focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])');
+                    if (focusable.length === 0) return;
+                    var first = focusable[0];
+                    var last = focusable[focusable.length - 1];
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) {
+                            e.preventDefault();
+                            last.focus();
+                        }
+                    } else {
+                        if (document.activeElement === last) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    }
+                }
+            }
+        }, true);
 
         // --- 選択中状態バー更新 ---
         function updateSelectionStatus(text) {
