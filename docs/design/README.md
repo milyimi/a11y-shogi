@@ -201,6 +201,7 @@ UI/UX デザインとワイヤーフレーム
 | 2026-02-12 | 1.7 | 難易度補足・ふりがな・ガイダンス分割・片手操作(1/2キー)・駒台ボタンサイズ・トースト無効化・prefers-reduced-motion完全停止・選択状態バー・デバウンス・特大文字対応・持ち駒通知・フォント変更・ショートカット展開 | Engineering |
 | 2026-02-13 | 1.8 | レイアウト改善: 駒台を盤面の左右に配置（後手=左上・先手=右下）・駒台サイズ拡大(min140px/max200px)・棋譜/表示設定/ショートカットをモーダルダイアログ化・info-panel高さ圧縮・board-area flexラッパー追加・モーダルのフォーカストラップ/Escape閉じ/フォーカス復帰対応 | Engineering |
 | 2026-02-13 | 1.9 | 駒台再拡大(min180px/max240px,minH280px)・info-panel圧縮(操作ボタン/モーダルボタン3列grid横並び)・駒台内駒ボタン高さ修正(align-content:flex-startでstretch防止) | Engineering |
+| 2026-02-13 | 2.0 | forced-colorsツールチップ修正(forced-color-adjust:none+Canvas/CanvasText)・ボタンデザイン改善(border-radius:6px・box-shadow・transformアニメーション・btn-secondaryスタイル)・HCモードツールチップ/ボタンスタイル対応 | Engineering |
 
 ---
 

@@ -518,6 +518,13 @@
         display: flex !important;
     }
 
+    html.high-contrast [data-tooltip]:hover::after,
+    html.high-contrast [data-tooltip]:focus::after {
+        background: #1A1A1A;
+        color: #F0E0C8;
+        border: 2px solid #D4A843;
+    }
+
     html.high-contrast .pause-banner {
         background: #3D3520 !important;
         border-color: #AA8855 !important;
@@ -582,6 +589,33 @@
             outline-offset: -3px;
             background: Highlight;
             color: HighlightText;
+        }
+        [data-tooltip]:hover::after,
+        [data-tooltip]:focus::after {
+            forced-color-adjust: none;
+            background: Canvas;
+            color: CanvasText;
+            border: 2px solid CanvasText;
+        }
+        .btn {
+            forced-color-adjust: none;
+            background: ButtonFace !important;
+            color: ButtonText !important;
+            border: 2px solid ButtonText;
+        }
+        .btn:hover, .btn:focus {
+            background: Highlight !important;
+            color: HighlightText !important;
+            border-color: Highlight;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+        }
+        .game-modal-close {
+            forced-color-adjust: none;
+            background: ButtonFace;
+            color: ButtonText;
+            border: 2px solid ButtonText;
         }
     }
 </style>

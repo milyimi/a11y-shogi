@@ -178,36 +178,67 @@
             padding: 12px 24px;
             min-height: 44px;
             min-width: 44px;
-            border: 2px solid var(--color-text);
+            border: 2px solid var(--color-border);
+            border-radius: 6px;
             background: var(--color-bg) !important;
             color: var(--color-text) !important;
             text-decoration: none;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.2s, color 0.2s;
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            text-align: center;
         }
         
         .btn:hover, .btn:focus {
             background: var(--color-text) !important;
             color: var(--color-bg) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: transparent !important;
+            border-style: dashed;
+        }
+
+        .btn-secondary:hover, .btn-secondary:focus {
+            background: var(--color-surface) !important;
+            color: var(--color-text) !important;
+            border-style: solid;
         }
         
         .btn-primary {
             background: var(--color-link) !important;
             color: #FFFFFF !important;
             border-color: var(--color-link);
+            box-shadow: 0 2px 6px rgba(0, 78, 152, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         
         .btn-primary:hover, .btn-primary:focus {
             background: #003D7A !important;
             border-color: #003D7A;
             color: #FFFFFF !important;
+            box-shadow: 0 4px 10px rgba(0, 61, 122, 0.35);
         }
 
         html.high-contrast .btn-primary {
             background: #1B5299 !important;
             color: #FFFFFF !important;
             border-color: #6CB4FF !important;
+            box-shadow: 0 2px 6px rgba(27, 82, 153, 0.4);
         }
 
         html.high-contrast .btn-primary:hover,
@@ -215,6 +246,21 @@
             background: #2563EB !important;
             border-color: #93C5FD !important;
             color: #FFFFFF !important;
+        }
+
+        html.high-contrast .btn {
+            border-color: #D4A843;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        html.high-contrast .btn:hover,
+        html.high-contrast .btn:focus {
+            background: #F0E0C8 !important;
+            color: #1A1A1A !important;
+        }
+
+        html.high-contrast .btn-secondary {
+            border-color: #AA8855;
         }
         
         .sr-only {
