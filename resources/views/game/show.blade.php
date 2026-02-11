@@ -72,6 +72,7 @@
         margin: 0 auto;
         border: 3px solid var(--color-board-border, #8B4513);
         background: var(--color-board-bg, #DEB887);
+        min-width: calc(48px * 9);
     }
 
     .shogi-board > [role="row"] {
@@ -80,6 +81,8 @@
     
     .cell {
         aspect-ratio: 1;
+        min-width: 48px;
+        min-height: 48px;
         border: 1px solid var(--color-board-border, #8B4513);
         display: flex;
         align-items: center;
@@ -124,6 +127,9 @@
     .piece-gote {
         color: var(--color-gote, #CC0000);
         transform: rotate(180deg);
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 2px;
     }
 
     /* ダークモード */
@@ -738,7 +744,8 @@
                 guide += 'AIが先に指します。';
             }
             guide += '矢印キーで盤面を移動、Enterで駒を選択・移動します。';
-            guide += 'Bキーで盤面全体の読み上げ、Hキーでヘルプページを開きます。';
+            guide += 'Bキーで盤面全体の読み上げ、Kキーで棋譜の読み上げ、Hキーでヘルプページを開きます。';
+            guide += '持ち駒を打つにはShift+Tで先手駒台、Shift+Gで後手駒台へ移動できます。';
             document.getElementById('game-announcements').textContent = guide;
         }, 500);
         
@@ -772,6 +779,11 @@
                         e.preventDefault();
                         window.location.href = '/help';
                     }
+                    break;
+                case 'K':
+                    // 棋譜（手順）を読み上げ
+                    e.preventDefault();
+                    announceMoveHistory();
                     break;
                 case 'U':
                     // 待った（undo）
@@ -819,10 +831,36 @@
         
         // ゲーム状態を読み上げ
         function announceGameStatus() {
-            const difficulty = document.querySelector('.info-panel').textContent;
             const currentPlayer = document.getElementById('current-player').textContent;
             const moveCount = document.getElementById('move-count').textContent;
-            const announcement = `難易度: ${difficulty}。 現在の手番: ${currentPlayer}。 手数: ${moveCount}。`;
+            const elapsedTime = document.getElementById('elapsed-time').textContent;
+            let announcement = `現在の手番: ${currentPlayer}。手数: ${moveCount}。経過時間: ${elapsedTime}。`;
+            if (isGameOver()) {
+                const winner = window.gameData.winner;
+                announcement = winner === 'human' ? '対局終了: あなたの勝ちです。' : '対局終了: AIの勝ちです。';
+                announcement += `手数: ${moveCount}。経過時間: ${elapsedTime}。`;
+            }
+            document.getElementById('game-announcements').textContent = announcement;
+        }
+
+        // 棋譜（手順）を読み上げ
+        function announceMoveHistory() {
+            const container = document.getElementById('move-history');
+            if (!container) return;
+            const items = container.querySelectorAll('li');
+            if (items.length === 0) {
+                document.getElementById('game-announcements').textContent = 'まだ指し手がありません';
+                return;
+            }
+            let announcement = `棋譜: 全${items.length}手。`;
+            // 直近5手を読み上げ（全部だと長すぎる）
+            const start = Math.max(0, items.length - 5);
+            if (start > 0) {
+                announcement += `直近5手: `;
+            }
+            for (let i = start; i < items.length; i++) {
+                announcement += `${i + 1}手目 ${items[i].textContent}。`;
+            }
             document.getElementById('game-announcements').textContent = announcement;
         }
         
@@ -963,13 +1001,19 @@
             const hand = document.getElementById(handId);
             if (!hand) return;
 
-            const firstButton = hand.querySelector('button.hand-piece');
-            if (!firstButton) {
-                document.getElementById('game-announcements').textContent = '持ち駒がありません';
+            const buttons = hand.querySelectorAll('button.hand-piece');
+            if (buttons.length === 0) {
+                document.getElementById('game-announcements').textContent = '持ち駒がありません。Escapeで盤面に戻れます';
                 return;
             }
-            firstButton.focus({ preventScroll: true });
-            document.getElementById('game-announcements').textContent = `${color === 'sente' ? '先手' : '後手'}の駒台へ移動しました`;
+            // 概要を構築（例: 「歩×2, 角×1」）
+            const summary = Array.from(buttons).map(btn => {
+                const label = btn.getAttribute('aria-label') || btn.textContent.trim();
+                return label;
+            }).join('、');
+            const colorName = color === 'sente' ? '先手' : '後手';
+            buttons[0].focus({ preventScroll: true });
+            document.getElementById('game-announcements').textContent = `${colorName}の駒台: ${summary}。矢印キーで選択、Enterで決定、Escapeで盤面に戻れます`;
         }
         
         cells.forEach(cell => {
@@ -1259,7 +1303,7 @@
                     let dropMsg = `${toFile}の${toRank}に持ち駒を打ちました`;
                     if (data.isCheck) dropMsg += '。王手です';
                     if (data.status === 'mate') {
-                        dropMsg += data.winner === 'human' ? '。詰みです！あなたの勝ちです' : '。詰みです。AIの勝ちです';
+                        dropMsg += data.winner === 'human' ? '。詰みです！あなたの勝ちです。リセットで新しい対局、ホームに戻るで終了できます' : '。詰みです。AIの勝ちです。リセットで再挑戦、ホームに戻るで終了できます';
                     }
                     document.getElementById('game-announcements').textContent = dropMsg;
                     updateBoard(data.boardState);
@@ -1471,7 +1515,7 @@
                 msg += `。${capName}を取りました`;
             }
             if (status === 'mate') {
-                msg += winner === 'human' ? '。詰みです！あなたの勝ちです' : '。詰みです。AIの勝ちです';
+                msg += winner === 'human' ? '。詰みです！あなたの勝ちです。リセットで新しい対局、ホームに戻るで終了できます' : '。詰みです。AIの勝ちです。リセットで再挑戦、ホームに戻るで終了できます';
             } else if (isCheck) {
                 msg += '。王手です';
             }
@@ -1486,7 +1530,7 @@
                 msg += `。${capName}を取られました`;
             }
             if (data.status === 'mate') {
-                msg += data.winner === 'human' ? '。詰みです！あなたの勝ちです' : '。詰みです。AIの勝ちです';
+                msg += data.winner === 'human' ? '。詰みです！あなたの勝ちです。リセットで新しい対局、ホームに戻るで終了できます' : '。詰みです。AIの勝ちです。リセットで再挑戦、ホームに戻るで終了できます';
             } else if (data.isCheck) {
                 msg += '。王手です';
             } else {

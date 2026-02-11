@@ -67,7 +67,12 @@
             
             <dt style="font-weight: bold;">S</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                現在のゲーム状態（手番、手数）を読み上げます
+                現在のゲーム状態（手番、手数、経過時間）を読み上げます
+            </dd>
+            
+            <dt style="font-weight: bold;">K</dt>
+            <dd style="margin-left: 24px; margin-bottom: 12px;">
+                棋譜（直近5手）を読み上げます
             </dd>
             
             <dt style="font-weight: bold;">H</dt>
