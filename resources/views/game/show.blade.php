@@ -357,10 +357,12 @@
                         ];
                     @endphp
                     @foreach($gameState['boardState']['hand']['gote'] as $piece => $count)
+                        @if($count > 0)
                         <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="gote"
                                 aria-label="後手の持ち駒 {{ $pieceNameMap[$piece] ?? $piece }} {{ $count }}枚">
                             {{ $pieceNameMap[$piece] ?? $piece }} × {{ $count }}
                         </button>
+                        @endif
                     @endforeach
                 @else
                     <p style="color: var(--color-text-secondary);">持ち駒なし</p>
@@ -581,10 +583,12 @@
                         ];
                     @endphp
                     @foreach($gameState['boardState']['hand']['sente'] as $piece => $count)
+                        @if($count > 0)
                         <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="sente"
                                 aria-label="先手の持ち駒 {{ $pieceNameMap[$piece] ?? $piece }} {{ $count }}枚">
                             {{ $pieceNameMap[$piece] ?? $piece }} × {{ $count }}
                         </button>
+                        @endif
                     @endforeach
                 @else
                     <p style="color: var(--color-text-secondary);">持ち駒なし</p>
