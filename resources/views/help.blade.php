@@ -12,9 +12,9 @@
         
         <h4>盤面の操作</h4>
         <dl style="line-height: 2; margin-top: 16px;">
-            <dt style="font-weight: bold;">矢印キー (←↑↓→)</dt>
+            <dt style="font-weight: bold;">矢印キー (←↑↓→) / WASD</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                盤面上のマス目を移動します
+                盤面上のマス目を移動します（W=上、A=左、S=下、D=右）
             </dd>
             
             <dt style="font-weight: bold;">Enter / Space</dt>
@@ -24,7 +24,7 @@
             
             <dt style="font-weight: bold;">Escape</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                駒の選択をキャンセルします
+                駒の選択をキャンセルし、合法手ハイライトをクリアします
             </dd>
             
             <dt style="font-weight: bold;">Tab / Shift+Tab</dt>
@@ -33,6 +33,12 @@
             </dd>
         </dl>
         
+        <h4 style="margin-top: 32px;">合法手ハイライト</h4>
+        <p style="margin-top: 8px; line-height: 1.8;">
+            駒を選択すると、移動可能なマスに緑色のドットマーカーが表示されます。
+            ハイコントラストモードでも視認できるよう配慮されています。
+        </p>
+
         <h4 style="margin-top: 32px;">持ち駒を打つ方法</h4>
         <p style="margin-top: 8px; line-height: 1.8;">
             取った駒は駒台に並びます。持ち駒を盤面に打つには、次の3ステップで操作します。
@@ -40,7 +46,7 @@
         <ol style="margin-top: 12px; line-height: 2; padding-left: 24px;">
             <li><strong>Shift+T</strong>（先手の駒台）または <strong>Shift+G</strong>（後手の駒台）を押して、駒台へ移動します</li>
             <li><strong>Enter</strong> または <strong>Space</strong> で打ちたい駒を選びます（自動的に盤面へ戻ります）</li>
-            <li>矢印キーで打ちたい場所へ移動し、<strong>Enter</strong> で決定します</li>
+            <li>矢印キー（またはWASD）で打ちたい場所へ移動し、<strong>Enter</strong> で決定します</li>
         </ol>
         <p style="margin-top: 8px; line-height: 1.8;">
             <small style="color: var(--color-text-secondary);">
@@ -179,7 +185,11 @@
         <ul style="margin-top: 16px; line-height: 1.8;">
             <li><strong>WCAG 2.1 AAA準拠</strong> - 最高レベルのアクセシビリティ基準</li>
             <li><strong>高コントラスト</strong> - コントラスト比8:1以上で見やすい配色</li>
-            <li><strong>大きなクリックターゲット</strong> - 最小44×44ピクセル</li>
+            <li><strong>大きなクリックターゲット</strong> - 最小48×48ピクセル（WCAG 2.5.8準拠）</li>
+            <li><strong>合法手ハイライト</strong> - 駒選択時に移動可能なマスを緑色ドットで表示</li>
+            <li><strong>AIハイライト</strong> - AIの最終手を★マーカーで視覚的に表示</li>
+            <li><strong>WASD代替ナビゲーション</strong> - 矢印キーに加えWASDでも盤面移動可能</li>
+            <li><strong>ショートカットヒント</strong> - 画面内に主要ショートカットを常時表示</li>
             <li><strong>セッションタイムアウト警告</strong> - 期限切れ5分前に通知</li>
             <li><strong>ARIAラベル</strong> - スクリーンリーダーで正確な情報を提供</li>
             <li><strong>フォーカスインジケーター</strong> - 現在の位置が常に明確</li>

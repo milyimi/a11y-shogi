@@ -487,6 +487,10 @@ async function getFocusInfo(page) {
     'B キーで盤面読み上げが動作しない');
 
   // 7-2 S: ゲーム状態読み上げ
+  // セルにフォーカスがあると 's' は WASD ナビゲーション（下移動）になるため、
+  // いったんセルからフォーカスを外してからグローバルショートカットを実行する
+  await page.evaluate(() => document.activeElement?.blur());
+  await sleep(100);
   await page.keyboard.press('s');
   await sleep(400);
   announcement = await getLiveText(page, 'game-announcements');

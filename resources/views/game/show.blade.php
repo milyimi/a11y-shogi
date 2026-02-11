@@ -119,6 +119,27 @@
         background: #FFE0B2;
         box-shadow: inset 0 0 0 3px #E65100, 0 0 0 3px #E65100;
     }
+    .cell[data-ai-last-move="true"]::after {
+        content: "★";
+        position: absolute;
+        top: 0;
+        right: 1px;
+        font-size: 10px;
+        color: #E65100;
+        line-height: 1;
+        pointer-events: none;
+    }
+
+    .cell[data-legal-move="true"] {
+        background: rgba(76, 175, 80, 0.3);
+    }
+    .cell[data-legal-move="true"]::before {
+        content: "●";
+        position: absolute;
+        font-size: 12px;
+        color: rgba(76, 175, 80, 0.7);
+        pointer-events: none;
+    }
     
     .piece-sente {
         color: #000000;
@@ -155,6 +176,15 @@
     html.high-contrast .cell[data-ai-last-move="true"] {
         background: #8B4513;
         box-shadow: inset 0 0 0 3px #FF6600, 0 0 0 3px #FF6600;
+    }
+    html.high-contrast .cell[data-ai-last-move="true"]::after {
+        color: #FF6600;
+    }
+    html.high-contrast .cell[data-legal-move="true"] {
+        background: #2E5930;
+    }
+    html.high-contrast .cell[data-legal-move="true"]::before {
+        color: #66BB6A;
     }
     html.high-contrast .cell:hover,
     html.high-contrast .cell:focus {
@@ -550,6 +580,20 @@
                 </div>
             </section>
             
+            <section aria-labelledby="shortcuts-heading" style="margin-top: 24px;">
+                <h3 id="shortcuts-heading">ショートカット</h3>
+                <dl style="line-height: 1.8; font-size: 0.85rem; color: var(--color-text-secondary);">
+                    <dt style="font-weight: bold; display: inline;">移動:</dt>
+                    <dd style="display: inline; margin-left: 4px;">矢印 / WASD</dd><br>
+                    <dt style="font-weight: bold; display: inline;">情報:</dt>
+                    <dd style="display: inline; margin-left: 4px;">B=盤面 S=状態 K=棋譜</dd><br>
+                    <dt style="font-weight: bold; display: inline;">駒台:</dt>
+                    <dd style="display: inline; margin-left: 4px;">Shift+T/G</dd><br>
+                    <dt style="font-weight: bold; display: inline;">他:</dt>
+                    <dd style="display: inline; margin-left: 4px;">H=ヘルプ U=待った R=リセット</dd>
+                </dl>
+            </section>
+
             <section aria-labelledby="history-heading" style="margin-top: 24px;">
                 <h3 id="history-heading">棋譜</h3>
                 <div class="move-history" id="move-history" aria-live="polite">
@@ -1040,18 +1084,25 @@
                 
                 switch(e.key) {
                     case 'ArrowUp':
+                    case 'w':
+                    case 'W':
                         if (rank < 9) newRank++;
                         handled = true;
                         break;
                     case 'ArrowDown':
+                    case 's':
                         if (rank > 1) newRank--;
                         handled = true;
                         break;
                     case 'ArrowLeft':
+                    case 'a':
+                    case 'A':
                         if (file < 9) newFile++;
                         handled = true;
                         break;
                     case 'ArrowRight':
+                    case 'd':
+                    case 'D':
                         if (file > 1) newFile--;
                         handled = true;
                         break;
@@ -1064,6 +1115,7 @@
                         if (fromCell) {
                             fromCell.removeAttribute('data-selected');
                             fromCell = null;
+                            clearLegalMoves();
                             document.getElementById('game-announcements').textContent = '選択をキャンセルしました';
                             handled = true;
                         }
@@ -1072,6 +1124,7 @@
                 
                 if (handled) {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (newRank !== rank || newFile !== file) {
                         window.focusedCell.rank = newRank;
                         window.focusedCell.file = newFile;
@@ -1165,6 +1218,8 @@
                     'tokin': 'と金', 'nkyosha': '成香', 'nkeima': '成桂', 'ngin': '成銀',
                     'uma': '馬', 'ryu': '龍'
                 }[piece.type] || piece.type;
+                // 合法手ハイライト表示
+                showLegalMoves(piece, file, rank);
                 document.getElementById('game-announcements').textContent = 
                     `${file}の${rank}の${pieceName}を選択しました。移動先を選んでください`;
             } else {
@@ -1178,6 +1233,7 @@
                     // 同じマスをクリックした場合はキャンセル
                     fromCell.removeAttribute('data-selected');
                     fromCell = null;
+                    clearLegalMoves();
                     document.getElementById('game-announcements').textContent = '選択をキャンセルしました';
                 } else {
                     // 移動先に自分の駒がある場合は、選択を切り替え
@@ -1191,10 +1247,13 @@
                             'tokin': 'と金', 'nkyosha': '成香', 'nkeima': '成桂', 'ngin': '成銀',
                             'uma': '馬', 'ryu': '龍'
                         }[piece.type] || piece.type;
+                        // 切り替え先の合法手ハイライト更新
+                        showLegalMoves(piece, file, rank);
                         document.getElementById('game-announcements').textContent = 
                             `${file}の${rank}の${pieceName}に選択を切り替えました。移動先を選んでください`;
                     } else {
                         // 駒を移動
+                        clearLegalMoves();
                         makeMove(fromFile, fromRank, toFile, toRank);
                         fromCell.removeAttribute('data-selected');
                         fromCell = null;
@@ -1561,6 +1620,85 @@
             if (targetCell) {
                 targetCell.setAttribute('data-ai-last-move', 'true');
             }
+        }
+
+        // 合法手ハイライト表示
+        function showLegalMoves(piece, fromFile, fromRank) {
+            clearLegalMoves();
+            const board = window.gameData.boardState.board;
+            const moves = calcLegalMoves(piece, fromFile, fromRank, board, humanColor);
+            moves.forEach(([mFile, mRank]) => {
+                const cell = document.querySelector(`.cell[data-rank="${mRank}"][data-file="${mFile}"]`);
+                if (cell) cell.setAttribute('data-legal-move', 'true');
+            });
+        }
+
+        function clearLegalMoves() {
+            document.querySelectorAll('.cell[data-legal-move]').forEach(c => {
+                c.removeAttribute('data-legal-move');
+            });
+        }
+
+        // クライアント側簡易合法手計算（駒の動きルールに基づく）
+        function calcLegalMoves(piece, fromFile, fromRank, board, myColor) {
+            const moves = [];
+            const isSente = piece.color === 'sente';
+            const dir = isSente ? 1 : -1; // 先手: rankが増える方向が前
+
+            const moveDefs = {
+                'fu':     [[0, dir]],
+                'kyosha': Array.from({length: 8}, (_, i) => [0, dir * (i + 1)]),
+                'keima':  [[-1, dir * 2], [1, dir * 2]],
+                'gin':    [[-1, dir], [0, dir], [1, dir], [-1, -dir], [1, -dir]],
+                'kin':    [[-1, dir], [0, dir], [1, dir], [-1, 0], [1, 0], [0, -dir]],
+                'kaku':   [],
+                'hisha':  [],
+                'gyoku':  [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+                'ou':     [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+                'tokin':  [[-1, dir], [0, dir], [1, dir], [-1, 0], [1, 0], [0, -dir]],
+                'nkyosha':[[-1, dir], [0, dir], [1, dir], [-1, 0], [1, 0], [0, -dir]],
+                'nkeima': [[-1, dir], [0, dir], [1, dir], [-1, 0], [1, 0], [0, -dir]],
+                'ngin':   [[-1, dir], [0, dir], [1, dir], [-1, 0], [1, 0], [0, -dir]],
+                'uma':    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+                'ryu':    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+            };
+
+            const slidePieces = {
+                'kaku': [[-1,-1],[-1,1],[1,-1],[1,1]],
+                'hisha': [[-1,0],[1,0],[0,-1],[0,1]],
+                'kyosha': [[0, dir]],
+                'uma': [[-1,-1],[-1,1],[1,-1],[1,1]],
+                'ryu': [[-1,0],[1,0],[0,-1],[0,1]],
+            };
+
+            // ステップ移動
+            const steps = moveDefs[piece.type] || [];
+            for (const [df, dr] of steps) {
+                const nf = fromFile + df;
+                const nr = fromRank + dr;
+                if (nf < 1 || nf > 9 || nr < 1 || nr > 9) continue;
+                const target = board[nr]?.[nf];
+                if (target && target.color === myColor) continue;
+                moves.push([nf, nr]);
+            }
+
+            // スライド移動
+            const slides = slidePieces[piece.type];
+            if (slides) {
+                for (const [df, dr] of slides) {
+                    for (let i = 1; i <= 8; i++) {
+                        const nf = fromFile + df * i;
+                        const nr = fromRank + dr * i;
+                        if (nf < 1 || nf > 9 || nr < 1 || nr > 9) break;
+                        const target = board[nr]?.[nf];
+                        if (target && target.color === myColor) break;
+                        moves.push([nf, nr]);
+                        if (target) break; // 相手の駒を取れるがその先には行けない
+                    }
+                }
+            }
+
+            return moves;
         }
 
         // クライアントタイマー

@@ -303,6 +303,11 @@ document.addEventListener('keydown', (event) => {
     case 'ArrowDown':
     case 'ArrowLeft':
     case 'ArrowRight':
+    // WASD代替ナビゲーション（片手操作対応）
+    case 'w': case 'W':  // 上
+    case 'a': case 'A':  // 左
+    case 's':            // 下
+    case 'd': case 'D':  // 右
       event.preventDefault();
       handleCursorMove(event.key);
       break;
