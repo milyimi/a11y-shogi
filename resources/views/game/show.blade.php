@@ -50,9 +50,14 @@
         flex-direction: column;
     }
     
+    .info-panel {
+        padding: 12px;
+    }
+    
     .komadai {
-        min-width: 140px;
-        max-width: 200px;
+        min-width: 180px;
+        max-width: 240px;
+        min-height: 280px;
         overflow-y: auto;
     }
     
@@ -272,9 +277,10 @@
             grid-template-columns: 1fr minmax(220px, 280px);
         }
         .komadai {
-            min-width: 110px;
-            max-width: 160px;
-            padding: 10px;
+            min-width: 140px;
+            max-width: 200px;
+            min-height: 200px;
+            padding: 12px;
         }
     }
     
@@ -809,13 +815,13 @@
 
             <section aria-labelledby="game-info-heading">
                 <h3 id="game-info-heading">ゲーム情報</h3>
-                <dl style="line-height: 2;">
-                    <div style="margin-bottom: 8px;">
+                <dl style="line-height: 1.6;">
+                    <div style="margin-bottom: 4px;">
                         <dt style="font-weight: bold; display: inline;">難易度:</dt>
                         <dd style="display: inline; margin-left: 8px;">{{ $game->difficulty === 'easy' ? '初級' : ($game->difficulty === 'medium' ? '中級' : '上級') }}</dd>
                     </div>
                     
-                    <div style="margin-bottom: 8px;">
+                    <div style="margin-bottom: 4px;">
                         <dt style="font-weight: bold; display: inline;">現在の手番:</dt>
                         <dd style="display: inline; margin-left: 8px;" id="current-player">
                             <span class="turn-highlight">
@@ -825,7 +831,7 @@
                         </dd>
                     </div>
                     
-                    <div style="margin-bottom: 8px;">
+                    <div style="margin-bottom: 4px;">
                         <dt style="font-weight: bold; display: inline;">手数:</dt>
                         <dd style="display: inline; margin-left: 8px;" id="move-count">{{ $gameState['moveCount'] }}手</dd>
                     </div>
@@ -843,21 +849,21 @@
                 </dl>
             </section>
             
-            <section aria-labelledby="actions-heading" style="margin-top: 24px;">
+            <section aria-labelledby="actions-heading" style="margin-top: 12px;">
                 <h3 id="actions-heading">操作</h3>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button type="button" class="btn" id="btn-undo" data-tooltip="直前の手を取り消す" {{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : 'disabled' }}>
-                        <ruby>待<rt>ま</rt></ruby>ったをする
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                    <button type="button" class="btn" id="btn-undo" data-tooltip="直前の手を取り消す" style="font-size: 0.85rem; padding: 8px 4px;" {{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : 'disabled' }}>
+                        <ruby>待<rt>ま</rt></ruby>った
                     </button>
-                    <button type="button" class="btn" id="btn-reset" data-tooltip="初期状態に戻す">
+                    <button type="button" class="btn" id="btn-reset" data-tooltip="初期状態に戻す" style="font-size: 0.85rem; padding: 8px 4px;">
                         リセット
                     </button>
-                    <button type="button" class="btn btn-secondary" id="btn-quit">
-                        ホームに<ruby>戻<rt>もど</rt></ruby>る
+                    <button type="button" class="btn btn-secondary" id="btn-quit" style="font-size: 0.85rem; padding: 8px 4px;">
+                        ホームへ
                     </button>
                 </div>
-                <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border);">
-                    <button type="button" class="btn" id="btn-resign" style="width: 100%; background: #C62828; color: #fff; border-color: #B71C1C;" data-tooltip="負けを認める（確認あり）">
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn" id="btn-resign" style="width: 100%; background: #C62828; color: #fff; border-color: #B71C1C; font-size: 0.85rem; padding: 8px;" data-tooltip="負けを認める（確認あり）">
                         <ruby>投了<rt>とうりょう</rt></ruby>する（負けを認める）
                     </button>
                 </div>
@@ -869,15 +875,15 @@
             </section>
 
             {{-- モーダルを開くボタン --}}
-            <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
-                <button type="button" class="btn btn-open-modal" id="btn-open-history" aria-haspopup="dialog">
+            <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                <button type="button" class="btn btn-open-modal" id="btn-open-history" aria-haspopup="dialog" style="font-size: 0.8rem; padding: 8px 2px;">
                     📋 <ruby>棋譜<rt>きふ</rt></ruby>
                 </button>
-                <button type="button" class="btn btn-open-modal" id="btn-open-settings" aria-haspopup="dialog">
-                    ⚙ 表示設定
+                <button type="button" class="btn btn-open-modal" id="btn-open-settings" aria-haspopup="dialog" style="font-size: 0.8rem; padding: 8px 2px;">
+                    ⚙ 設定
                 </button>
-                <button type="button" class="btn btn-open-modal" id="btn-open-shortcuts" aria-haspopup="dialog">
-                    ⌨ ショートカット
+                <button type="button" class="btn btn-open-modal" id="btn-open-shortcuts" aria-haspopup="dialog" style="font-size: 0.8rem; padding: 8px 2px;">
+                    ⌨ キー
                 </button>
             </div>
         </aside>
