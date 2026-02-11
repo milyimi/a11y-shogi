@@ -71,6 +71,11 @@
                 盤面全体の状態を読み上げます
             </dd>
             
+            <dt style="font-weight: bold;">Shift+B</dt>
+            <dd style="margin-left: 24px; margin-bottom: 12px;">
+                盤面の差分読み上げ（前回からの変化のみ）
+            </dd>
+            
             <dt style="font-weight: bold;">S</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 現在のゲーム状態（手番、手数、経過時間）を読み上げます
@@ -79,6 +84,11 @@
             <dt style="font-weight: bold;">K</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 棋譜（直近5手）を読み上げます
+            </dd>
+            
+            <dt style="font-weight: bold;">I</dt>
+            <dd style="margin-left: 24px; margin-bottom: 12px;">
+                現在のマスを狙っている相手の駒（利き筋）を読み上げます
             </dd>
             
             <dt style="font-weight: bold;">H</dt>
@@ -190,6 +200,12 @@
             <li><strong>AIハイライト</strong> - AIの最終手を★マーカーで視覚的に表示</li>
             <li><strong>WASD代替ナビゲーション</strong> - 矢印キーに加えWASDでも盤面移動可能</li>
             <li><strong>ショートカットヒント</strong> - 画面内に主要ショートカットを常時表示</li>
+            <li><strong>AI思考中スピナー</strong> - AIが考え中のときスピナーで視覚的に通知</li>
+            <li><strong>トースト通知</strong> - 移動やエラーを画面上部に視覚的に通知</li>
+            <li><strong>盤面差分読み上げ</strong> - Shift+Bで前回からの変化だけ読み上げ</li>
+            <li><strong>利き筋情報</strong> - Iキーで現在マスを狙う相手の駒を読み上げ</li>
+            <li><strong>表示設定</strong> - 駒の文字サイズ変更・タイマー非表示オプション</li>
+            <li><strong>prefers-reduced-motion対応</strong> - OS設定に応じてアニメーションを無効化</li>
             <li><strong>セッションタイムアウト警告</strong> - 期限切れ5分前に通知</li>
             <li><strong>ARIAラベル</strong> - スクリーンリーダーで正確な情報を提供</li>
             <li><strong>フォーカスインジケーター</strong> - 現在の位置が常に明確</li>

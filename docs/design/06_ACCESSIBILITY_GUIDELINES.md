@@ -315,11 +315,17 @@ document.addEventListener('keydown', (event) => {
     case 'Enter':
       event.preventDefault();
       handleMove();
+      // 合法手のaria-live読み上げ + 視覚ハイライト
+      break;
+    
+    case 'i': case 'I':
+      event.preventDefault();
+      announceThreats(); // 相手の利き筋情報
       break;
     
     case ' ':
       event.preventDefault();
-      handlePieceInfo();
+      handleMove(); // Spaceも駒選択
       break;
     
     case 'h':

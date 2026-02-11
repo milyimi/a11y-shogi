@@ -99,6 +99,16 @@ async function confirmYes(page) {
   await sleep(1500);
 }
 
+/** 確認ダイアログの「はい」をクリックし、ナビゲーション完了を待つ */
+async function confirmYesAndNavigate(page) {
+  await sleep(400);
+  const btn = await page.$('#confirm-dialog-yes');
+  const navPromise = page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 15000 }).catch(() => {});
+  if (btn) await btn.click();
+  await navPromise;
+  await sleep(500);
+}
+
 /** 確認ダイアログの「キャンセル」をクリック */
 async function confirmNo(page) {
   await sleep(400);
@@ -210,10 +220,7 @@ async function confirmNo(page) {
 
     // 待った実行
     await page.click('#btn-undo');
-    await confirmYes(page);
-    // location.reload() されるので待つ
-    await page.waitForNavigation({ waitUntil: 'networkidle0' }).catch(() => {});
-    await sleep(1000);
+    await confirmYesAndNavigate(page);
 
     // 盤面が初期状態に戻っている（歩が3段目）
     if (movedFile) {
@@ -255,9 +262,7 @@ async function confirmNo(page) {
 
     // リセット実行
     await page.click('#btn-reset');
-    await confirmYes(page);
-    await page.waitForNavigation({ waitUntil: 'networkidle0' }).catch(() => {});
-    await sleep(1000);
+    await confirmYesAndNavigate(page);
 
     // 初期盤面に戻っている
     const resetLabel = await cellLabel(page, 3, 5);
@@ -319,9 +324,7 @@ async function confirmNo(page) {
 
     // ホームに戻る — 実行
     await page.click('#btn-quit');
-    await confirmYes(page);
-    await page.waitForNavigation({ waitUntil: 'networkidle0' }).catch(() => {});
-    await sleep(1000);
+    await confirmYesAndNavigate(page);
 
     // ホームに戻っている
     const afterQuitUrl = page.url();
@@ -413,9 +416,7 @@ async function confirmNo(page) {
 
     // 待った
     await page.click('#btn-undo');
-    await confirmYes(page);
-    await page.waitForNavigation({ waitUntil: 'networkidle0' }).catch(() => {});
-    await sleep(1000);
+    await confirmYesAndNavigate(page);
 
     const afterUndo1 = await page.$eval('#move-count', el => el.textContent);
     check(afterUndo1.includes('0'), `1回目待った後: ${afterUndo1}`);
@@ -426,9 +427,7 @@ async function confirmNo(page) {
 
     // もう1回待った
     await page.click('#btn-undo');
-    await confirmYes(page);
-    await page.waitForNavigation({ waitUntil: 'networkidle0' }).catch(() => {});
-    await sleep(1000);
+    await confirmYesAndNavigate(page);
 
     const afterUndo2 = await page.$eval('#move-count', el => el.textContent);
     check(afterUndo2.includes('0'), `2回目待った後: ${afterUndo2}`);
