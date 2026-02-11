@@ -6,37 +6,37 @@
 <style>
     .game-container {
         display: grid;
-        grid-template-columns: minmax(140px, 200px) 1fr minmax(250px, 300px);
-        grid-template-rows: auto 1fr auto;
-        gap: 16px;
-        max-width: 1400px;
-        margin: 24px auto;
+        grid-template-columns: auto auto auto minmax(250px, 1fr);
+        gap: 0 8px;
+        max-width: 1200px;
+        margin: 16px auto;
+        padding: 0 12px;
     }
     
-    /* 後手の駒台 - 盤面上部・右寄せ（伝統的配置） */
+    /* 後手の駒台 - 盤面の左・上寄せ（後手から見て右側） */
     .komadai:first-of-type {
-        grid-column: 2;
+        grid-column: 1;
         grid-row: 1;
-        justify-self: end;
+        align-self: start;
     }
     
     /* 盤面 - 中央 */
     .board-section {
-        grid-column: 1 / 3;
-        grid-row: 2;
-        justify-self: center;
+        grid-column: 2;
+        grid-row: 1;
     }
     
-    /* 情報パネル - 右側全行 */
+    /* 情報パネル - 右側 */
     .info-panel {
-        grid-column: 3;
-        grid-row: 1 / 4;
+        grid-column: 4;
+        grid-row: 1;
     }
     
-    /* 先手の駒台 - 盤面下部・左寄せ（伝統的配置） */
+    /* 先手の駒台 - 盤面の右・下寄せ（先手から見て右側） */
     .komadai:last-of-type {
-        grid-column: 1;
-        grid-row: 3;
+        grid-column: 3;
+        grid-row: 1;
+        align-self: end;
     }
     
     .komadai, .info-panel {
@@ -49,10 +49,10 @@
     }
     
     .komadai {
-        max-height: none;
-        overflow-y: visible;
-        min-width: 140px;
-        max-width: 220px;
+        min-width: 80px;
+        max-width: 140px;
+        overflow-y: auto;
+        max-height: 500px;
     }
     
     .komadai h3 {
@@ -68,7 +68,7 @@
     .board-section {
         background: var(--color-surface);
         border: 2px solid var(--color-border);
-        padding: 16px;
+        padding: 8px;
         border-radius: 8px;
     }
     
@@ -264,31 +264,56 @@
     
     @media (max-width: 1199px) {
         .game-container {
-            grid-template-columns: minmax(120px, 160px) 1fr minmax(200px, 260px);
+            grid-template-columns: auto auto auto minmax(200px, 1fr);
         }
         .komadai {
-            max-width: 180px;
+            min-width: 70px;
+            max-width: 120px;
+            padding: 10px;
         }
     }
     
-    @media (max-width: 767px) {
+    @media (max-width: 899px) {
+        .game-container {
+            grid-template-columns: auto 1fr auto;
+            grid-template-rows: auto auto;
+        }
+        .komadai:first-of-type {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        .board-section {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        .komadai:last-of-type {
+            grid-column: 3;
+            grid-row: 1;
+        }
+        .info-panel {
+            grid-column: 1 / 4;
+            grid-row: 2;
+        }
+    }
+    
+    @media (max-width: 599px) {
         .game-container {
             grid-template-columns: 1fr;
             grid-template-rows: auto;
+            gap: 8px;
         }
         
         .komadai:first-of-type,
         .komadai:last-of-type {
             grid-column: 1;
             grid-row: auto;
-            justify-self: stretch;
+            align-self: stretch;
             max-width: none;
         }
         
         .board-section {
             grid-column: 1;
             grid-row: auto;
-            justify-self: stretch;
             order: 1;
         }
         
