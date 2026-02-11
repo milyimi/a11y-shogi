@@ -42,6 +42,12 @@
             <li><strong>Enter</strong> または <strong>Space</strong> で打ちたい駒を選びます（自動的に盤面へ戻ります）</li>
             <li>矢印キーで打ちたい場所へ移動し、<strong>Enter</strong> で決定します</li>
         </ol>
+        <p style="margin-top: 8px; line-height: 1.8;">
+            <small style="color: var(--color-text-secondary);">
+                ※駒台で <strong>Escape</strong> を押すと、駒を選ばずに盤面へ戻れます。
+                矢印キーで駒台内の駒を切り替えられます。
+            </small>
+        </p>
     </section>
     
     <section style="margin-top: 48px;" aria-labelledby="keyboard-shortcuts-heading">

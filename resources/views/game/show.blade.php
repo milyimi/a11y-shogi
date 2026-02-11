@@ -1042,8 +1042,25 @@
 
         handPieces.forEach(button => {
             button.addEventListener('click', handleHandPieceSelect);
+            button.addEventListener('keydown', handleHandPieceKeydown);
         });
         
+        function handleHandPieceKeydown(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                focusCell(window.focusedCell.rank, window.focusedCell.file);
+                document.getElementById('game-announcements').textContent = '盤面に戻りました';
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = e.currentTarget.nextElementSibling;
+                if (next && next.classList.contains('hand-piece')) next.focus();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prev = e.currentTarget.previousElementSibling;
+                if (prev && prev.classList.contains('hand-piece')) prev.focus();
+            }
+        }
+
         function handleCellSelect(cell) {
             if (isGameOver()) {
                 document.getElementById('game-announcements').textContent = 'ゲームは終了しています';
@@ -1380,6 +1397,7 @@
 
             document.querySelectorAll('.hand-piece').forEach(button => {
                 button.addEventListener('click', handleHandPieceSelect);
+                button.addEventListener('keydown', handleHandPieceKeydown);
             });
         }
 
