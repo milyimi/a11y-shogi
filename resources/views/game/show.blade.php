@@ -61,18 +61,16 @@
         overflow-y: auto;
     }
     
-    .komadai .hand-pieces {
-        flex-wrap: wrap;
-    }
-    
     .komadai h3 {
-        margin: 0 0 12px 0;
+        margin: 0 0 8px 0;
         flex-shrink: 0;
     }
     
     .komadai .hand-pieces {
         flex: 1;
         overflow-y: auto;
+        align-content: flex-start;
+        align-items: flex-start;
     }
     
     .board-section {
