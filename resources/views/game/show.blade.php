@@ -780,17 +780,17 @@
                     handleReset();
                     break;
                 case 'T':
-                    // Shift+T: 先手駒台の表示/非表示
+                    // Shift+T: 先手駒台へフォーカス移動
                     if (e.shiftKey) {
                         e.preventDefault();
-                        toggleHandPieces('sente');
+                        focusHandPieces('sente');
                     }
                     break;
                 case 'G':
-                    // Shift+G: 後手駒台の表示/非表示
+                    // Shift+G: 後手駒台へフォーカス移動
                     if (e.shiftKey) {
                         e.preventDefault();
-                        toggleHandPieces('gote');
+                        focusHandPieces('gote');
                     }
                     break;
             }
@@ -953,18 +953,19 @@
             });
         }
         
-        // 駒台の表示/非表示を切り替え
-        function toggleHandPieces(color) {
-            const komadaiElements = document.querySelectorAll('.komadai');
-            komadaiElements.forEach(el => {
-                const heading = el.querySelector('h3');
-                if (heading && heading.textContent.includes(color === 'sente' ? '先手' : '後手')) {
-                    const isVisible = el.style.display !== 'none';
-                    el.style.display = isVisible ? 'none' : 'flex';
-                    const announcement = `${color === 'sente' ? '先手' : '後手'}駒台を${isVisible ? '非表示' : '表示'}にしました`;
-                    document.getElementById('game-announcements').textContent = announcement;
-                }
-            });
+        // 駒台へフォーカス移動
+        function focusHandPieces(color) {
+            const handId = color === 'sente' ? 'sente-hand' : 'gote-hand';
+            const hand = document.getElementById(handId);
+            if (!hand) return;
+
+            const firstButton = hand.querySelector('button.hand-piece');
+            if (!firstButton) {
+                document.getElementById('game-announcements').textContent = '持ち駒がありません';
+                return;
+            }
+            firstButton.focus({ preventScroll: true });
+            document.getElementById('game-announcements').textContent = `${color === 'sente' ? '先手' : '後手'}の駒台へ移動しました`;
         }
         
         cells.forEach(cell => {
@@ -1426,6 +1427,10 @@
             button.setAttribute('data-selected', 'true');
             console.log('[handleHandPieceSelect] Selected hand piece:', selectedHandPiece);
             document.getElementById('game-announcements').textContent = '持ち駒を選択しました。打つ場所を選んでください。';
+
+            if (e.detail === 0) {
+                focusCell(window.focusedCell.rank, window.focusedCell.file);
+            }
         }
         
         // ピース名マップ（アナウンス用）
