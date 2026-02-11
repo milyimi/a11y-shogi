@@ -90,6 +90,7 @@
         cursor: pointer;
         transition: background-color 0.2s, box-shadow 0.2s;
         color: var(--color-text);
+        position: relative;
     }
     
     .cell:hover, .cell:focus {
@@ -251,6 +252,65 @@
     }
     html.high-contrast .pause-banner p {
         color: #F0E0C8 !important;
+    }
+
+    /* Windows強制カラーモード（Shift+Alt+PrintScreen）対応 */
+    @media (forced-colors: active) {
+        .cell {
+            border: 1px solid ButtonText;
+            forced-color-adjust: none;
+            background: Canvas;
+            color: CanvasText;
+        }
+        .cell:hover, .cell:focus {
+            outline: 4px solid Highlight;
+            outline-offset: -4px;
+            background: Canvas;
+        }
+        .cell[data-selected="true"] {
+            outline: 4px solid Highlight;
+            outline-offset: -4px;
+            background: Highlight;
+            color: HighlightText;
+        }
+        .cell[data-ai-last-move="true"] {
+            outline: 4px dashed LinkText;
+            outline-offset: -4px;
+            border: 3px solid LinkText;
+            background: Mark;
+            color: MarkText;
+        }
+        .cell[data-ai-last-move="true"]::after {
+            content: "★";
+            position: absolute;
+            top: 0;
+            right: 1px;
+            font-size: 10px;
+            color: LinkText;
+            line-height: 1;
+        }
+        .piece-sente {
+            color: CanvasText;
+        }
+        .piece-gote {
+            color: CanvasText;
+        }
+        .hand-piece {
+            forced-color-adjust: none;
+            background: Canvas;
+            color: CanvasText;
+            border: 2px solid ButtonText;
+        }
+        .hand-piece:hover, .hand-piece:focus {
+            outline: 3px solid Highlight;
+            outline-offset: -3px;
+        }
+        .hand-piece[data-selected="true"] {
+            outline: 3px solid Highlight;
+            outline-offset: -3px;
+            background: Highlight;
+            color: HighlightText;
+        }
     }
 </style>
 @endpush

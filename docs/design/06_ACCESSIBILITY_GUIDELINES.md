@@ -521,6 +521,10 @@ announcements.textContent =
 - **フォーカスは移動しない**（全盲ユーザーが操作位置を見失わないように）
 - 全盲ユーザーには aria-live アナウンスでAI指し手を通知
 - ハイコントラストモードでも視認性を確保（茶色背景 + オレンジ枠）
+- Windows強制カラーモード（Shift+Alt+PrintScreen）にも対応:
+  - `@media (forced-colors: active)` で `outline: dashed 4px` + `border: 3px solid` を適用
+  - `::after` 疑似要素で ★マークを右上に表示（追加の視覚手がかり）
+  - システムカラーキーワード（`LinkText`, `Mark`）を使用し、ユーザー設定に追従
 - 次のAI指し手時にハイライトは自動クリア
 
 ---
