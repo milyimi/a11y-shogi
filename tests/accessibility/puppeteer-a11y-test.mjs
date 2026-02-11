@@ -231,11 +231,11 @@ async function getFocusInfo(page) {
   check(btnUndo !== null && btnResign !== null && btnReset !== null && btnQuit !== null,
     '操作ボタン(待った/投了/リセット/ホーム)が全て存在');
 
-  // 3-11 棋譜セクション
-  const historySection = await page.$('section[aria-labelledby="history-heading"]');
-  check(historySection !== null,
-    '棋譜セクション (aria-labelledby) が存在',
-    '棋譜セクションにaria-labelledbyが無い');
+  // 3-11 棋譜モーダル
+  const historyModal = await page.$('#history-modal[aria-labelledby="history-modal-title"]');
+  check(historyModal !== null,
+    '棋譜モーダル (aria-labelledby) が存在',
+    '棋譜モーダルにaria-labelledbyが無い');
 
   // ───────────────────────────────────────────
   //  4. キーボードナビゲーション テスト

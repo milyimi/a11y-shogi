@@ -611,6 +611,16 @@
         .btn:disabled {
             opacity: 0.5;
         }
+        .btn-danger {
+            forced-color-adjust: none;
+            background: ButtonFace !important;
+            color: ButtonText !important;
+            border: 3px solid ButtonText;
+        }
+        .btn-danger:hover, .btn-danger:focus {
+            background: Highlight !important;
+            color: HighlightText !important;
+        }
         .game-modal-close {
             forced-color-adjust: none;
             background: ButtonFace;
@@ -895,7 +905,7 @@
                     </button>
                 </div>
                 <div style="margin-top: 8px;">
-                    <button type="button" class="btn" id="btn-resign" style="width: 100%; background: #C62828; color: #fff; border-color: #B71C1C; font-size: 0.85rem; padding: 8px;" data-tooltip="負けを認める（確認あり）">
+                    <button type="button" class="btn btn-danger" id="btn-resign" style="width: 100%; font-size: 0.85rem; padding: 8px;" data-tooltip="負けを認める（確認あり）">
                         <ruby>投了<rt>とうりょう</rt></ruby>する（負けを認める）
                     </button>
                 </div>

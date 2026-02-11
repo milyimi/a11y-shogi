@@ -23,6 +23,17 @@
             --color-success: #008800;
             --color-surface: #F5F5F5;
             --color-table-border: #BBBBBB;
+            /* ボタン配色（将棋盤の木目調） */
+            --color-btn-bg: #F0E6D6;
+            --color-btn-bg-end: #E8DCC8;
+            --color-btn-hover-bg: #E0D0B8;
+            --color-btn-hover-bg-end: #D4C4A8;
+            --color-btn-text: #3C2F1E;
+            --color-btn-border: #C4A882;
+            --color-btn-shadow: rgba(150, 120, 80, 0.2);
+            --color-btn-danger-bg: #C62828;
+            --color-btn-danger-hover: #A51D1D;
+            --color-btn-danger-border: #B71C1C;
         }
 
         html.high-contrast {
@@ -37,6 +48,17 @@
             --color-success: #66DD66;
             --color-surface: #2A2A2A;
             --color-table-border: #666666;
+            /* ボタン配色（HC） */
+            --color-btn-bg: #2E2820;
+            --color-btn-bg-end: #262018;
+            --color-btn-hover-bg: #3D3520;
+            --color-btn-hover-bg-end: #4A4028;
+            --color-btn-text: #F0E0C8;
+            --color-btn-border: #D4A843;
+            --color-btn-shadow: rgba(212, 168, 67, 0.25);
+            --color-btn-danger-bg: #C62828;
+            --color-btn-danger-hover: #E53935;
+            --color-btn-danger-border: #EF5350;
         }
         
         * {
@@ -178,28 +200,31 @@
             padding: 12px 24px;
             min-height: 44px;
             min-width: 44px;
-            border: 2px solid var(--color-border);
-            border-radius: 6px;
-            background: var(--color-bg) !important;
-            color: var(--color-text) !important;
+            border: 2px solid var(--color-btn-border);
+            border-radius: 8px;
+            background: linear-gradient(to bottom, var(--color-btn-bg), var(--color-btn-bg-end)) !important;
+            color: var(--color-btn-text) !important;
             text-decoration: none;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.12s, border-color 0.2s;
+            box-shadow: 0 2px 6px var(--color-btn-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.4);
             text-align: center;
+            letter-spacing: 0.02em;
         }
         
         .btn:hover, .btn:focus {
-            background: var(--color-text) !important;
-            color: var(--color-bg) !important;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(to bottom, var(--color-btn-hover-bg), var(--color-btn-hover-bg-end)) !important;
+            color: var(--color-btn-text) !important;
+            border-color: var(--color-btn-text);
+            box-shadow: 0 4px 10px var(--color-btn-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
             transform: translateY(-1px);
         }
         
         .btn:active {
             transform: translateY(0);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+            background: var(--color-btn-hover-bg-end) !important;
         }
 
         .btn:disabled {
@@ -212,30 +237,56 @@
         .btn-secondary {
             background: transparent !important;
             border-style: dashed;
+            border-color: var(--color-btn-border);
+            box-shadow: none;
         }
 
         .btn-secondary:hover, .btn-secondary:focus {
-            background: var(--color-surface) !important;
-            color: var(--color-text) !important;
+            background: var(--color-btn-bg) !important;
+            color: var(--color-btn-text) !important;
             border-style: solid;
+            border-color: var(--color-btn-text);
+            box-shadow: 0 2px 6px var(--color-btn-shadow);
+        }
+
+        .btn-danger {
+            background: linear-gradient(to bottom, #D32F2F, var(--color-btn-danger-bg)) !important;
+            color: #FFFFFF !important;
+            border-color: var(--color-btn-danger-border);
+            box-shadow: 0 2px 6px rgba(198, 40, 40, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-danger:hover, .btn-danger:focus {
+            background: linear-gradient(to bottom, var(--color-btn-danger-bg), var(--color-btn-danger-hover)) !important;
+            color: #FFFFFF !important;
+            border-color: var(--color-btn-danger-hover);
+            box-shadow: 0 4px 10px rgba(198, 40, 40, 0.4);
+        }
+
+        .btn-danger:active {
+            background: var(--color-btn-danger-hover) !important;
         }
         
         .btn-primary {
-            background: var(--color-link) !important;
+            background: linear-gradient(to bottom, #1A6FC4, var(--color-link)) !important;
             color: #FFFFFF !important;
             border-color: var(--color-link);
             box-shadow: 0 2px 6px rgba(0, 78, 152, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         
         .btn-primary:hover, .btn-primary:focus {
-            background: #003D7A !important;
+            background: linear-gradient(to bottom, var(--color-link), #003D7A) !important;
             border-color: #003D7A;
             color: #FFFFFF !important;
             box-shadow: 0 4px 10px rgba(0, 61, 122, 0.35);
         }
 
+        .btn-primary:active {
+            background: #003D7A !important;
+        }
+
         html.high-contrast .btn-primary {
-            background: #1B5299 !important;
+            background: linear-gradient(to bottom, #2563EB, #1B5299) !important;
             color: #FFFFFF !important;
             border-color: #6CB4FF !important;
             box-shadow: 0 2px 6px rgba(27, 82, 153, 0.4);
@@ -243,20 +294,9 @@
 
         html.high-contrast .btn-primary:hover,
         html.high-contrast .btn-primary:focus {
-            background: #2563EB !important;
+            background: linear-gradient(to bottom, #3B82F6, #2563EB) !important;
             border-color: #93C5FD !important;
             color: #FFFFFF !important;
-        }
-
-        html.high-contrast .btn {
-            border-color: #D4A843;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
-        html.high-contrast .btn:hover,
-        html.high-contrast .btn:focus {
-            background: #F0E0C8 !important;
-            color: #1A1A1A !important;
         }
 
         html.high-contrast .btn-secondary {
