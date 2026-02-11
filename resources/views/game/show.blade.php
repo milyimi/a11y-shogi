@@ -6,37 +6,39 @@
 <style>
     .game-container {
         display: grid;
-        grid-template-columns: auto auto auto minmax(250px, 1fr);
-        gap: 0 8px;
+        grid-template-columns: 1fr minmax(250px, 320px);
+        gap: 12px;
         max-width: 1200px;
         margin: 16px auto;
         padding: 0 12px;
     }
     
+    /* 盤面エリア（後手駒台＋盤面＋先手駒台）*/
+    .board-area {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        align-items: stretch;
+        align-self: start;
+    }
+    
     /* 後手の駒台 - 盤面の左・上寄せ（後手から見て右側） */
     .komadai:first-of-type {
-        grid-column: 1;
-        grid-row: 1;
-        align-self: start;
+        align-self: flex-start;
     }
     
     /* 盤面 - 中央 */
     .board-section {
-        grid-column: 2;
-        grid-row: 1;
+        flex-shrink: 0;
     }
     
     /* 情報パネル - 右側 */
     .info-panel {
-        grid-column: 4;
-        grid-row: 1;
     }
     
     /* 先手の駒台 - 盤面の右・下寄せ（先手から見て右側） */
     .komadai:last-of-type {
-        grid-column: 3;
-        grid-row: 1;
-        align-self: end;
+        align-self: flex-end;
     }
     
     .komadai, .info-panel {
@@ -50,9 +52,12 @@
     
     .komadai {
         min-width: 80px;
-        max-width: 140px;
+        max-width: 130px;
         overflow-y: auto;
-        max-height: 500px;
+    }
+    
+    .komadai .hand-pieces {
+        flex-wrap: wrap;
     }
     
     .komadai h3 {
@@ -264,70 +269,44 @@
     
     @media (max-width: 1199px) {
         .game-container {
-            grid-template-columns: auto auto auto minmax(200px, 1fr);
+            grid-template-columns: 1fr minmax(220px, 280px);
         }
         .komadai {
             min-width: 70px;
-            max-width: 120px;
+            max-width: 110px;
             padding: 10px;
         }
     }
     
-    @media (max-width: 899px) {
-        .game-container {
-            grid-template-columns: auto 1fr auto;
-            grid-template-rows: auto auto;
-        }
-        .komadai:first-of-type {
-            grid-column: 1;
-            grid-row: 1;
-        }
-        .board-section {
-            grid-column: 2;
-            grid-row: 1;
-        }
-        .komadai:last-of-type {
-            grid-column: 3;
-            grid-row: 1;
-        }
-        .info-panel {
-            grid-column: 1 / 4;
-            grid-row: 2;
-        }
-    }
-    
-    @media (max-width: 599px) {
+    @media (max-width: 767px) {
         .game-container {
             grid-template-columns: 1fr;
-            grid-template-rows: auto;
             gap: 8px;
         }
         
-        .komadai:first-of-type,
-        .komadai:last-of-type {
-            grid-column: 1;
-            grid-row: auto;
-            align-self: stretch;
-            max-width: none;
-        }
-        
-        .board-section {
-            grid-column: 1;
-            grid-row: auto;
-            order: 1;
-        }
-        
-        .komadai, .info-panel {
-            order: 2;
+        .board-area {
+            justify-content: center;
         }
         
         .info-panel {
-            grid-column: 1;
-            grid-row: auto;
+            order: 2;
         }
         
         .cell {
             font-size: 18px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .board-area {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .komadai:first-of-type,
+        .komadai:last-of-type {
+            align-self: stretch;
+            max-width: none;
         }
     }
 
@@ -570,6 +549,7 @@
     <a href="#shogi-board" class="skip-link">盤面へスキップ</a>
     
     <div class="game-container">
+        <div class="board-area">
         {{-- 駒台（後手） --}}
         <aside class="komadai" aria-labelledby="gote-komadai-heading">
             <h3 id="gote-komadai-heading">後手の駒台</h3>
@@ -663,6 +643,43 @@
                 @endfor
             </div>
         </main>
+        
+        {{-- 駒台（先手） --}}
+        <aside class="komadai" aria-labelledby="sente-komadai-heading">
+            <h3 id="sente-komadai-heading">先手の駒台</h3>
+            <div class="hand-pieces" id="sente-hand" aria-label="先手の持ち駒" aria-live="polite" aria-relevant="additions removals">
+                @if(!empty($gameState['boardState']['hand']['sente']))
+                    @php
+                        $pieceNameMap = [
+                            'fu' => '歩',
+                            'kyosha' => '香',
+                            'keima' => '桂',
+                            'gin' => '銀',
+                            'kin' => '金',
+                            'kaku' => '角',
+                            'hisha' => '飛',
+                            'tokin' => 'と金',
+                            'nkyosha' => '成香',
+                            'nkeima' => '成桂',
+                            'ngin' => '成銀',
+                            'uma' => '馬',
+                            'ryu' => '龍',
+                        ];
+                    @endphp
+                    @foreach($gameState['boardState']['hand']['sente'] as $piece => $count)
+                        @if($count > 0)
+                        <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="sente"
+                                aria-label="先手の持ち駒 {{ $pieceNameMap[$piece] ?? $piece }} {{ $count }}枚">
+                            {{ $pieceNameMap[$piece] ?? $piece }} × {{ $count }}
+                        </button>
+                        @endif
+                    @endforeach
+                @else
+                    <p style="color: var(--color-text-secondary);">持ち駒なし</p>
+                @endif
+            </div>
+        </aside>
+        </div>{{-- /.board-area --}}
         
         {{-- ランキング登録ダイアログ --}}
         <div id="ranking-registration-dialog" role="dialog" aria-modal="true" aria-labelledby="ranking-dialog-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center; z-index: 2000;">
@@ -872,42 +889,6 @@
                     @endif
                 </div>
             </section>
-        </aside>
-        
-        {{-- 駒台（先手） --}}
-        <aside class="komadai" aria-labelledby="sente-komadai-heading">
-            <h3 id="sente-komadai-heading">先手の駒台</h3>
-            <div class="hand-pieces" id="sente-hand" aria-label="先手の持ち駒" aria-live="polite" aria-relevant="additions removals">
-                @if(!empty($gameState['boardState']['hand']['sente']))
-                    @php
-                        $pieceNameMap = [
-                            'fu' => '歩',
-                            'kyosha' => '香',
-                            'keima' => '桂',
-                            'gin' => '銀',
-                            'kin' => '金',
-                            'kaku' => '角',
-                            'hisha' => '飛',
-                            'tokin' => 'と金',
-                            'nkyosha' => '成香',
-                            'nkeima' => '成桂',
-                            'ngin' => '成銀',
-                            'uma' => '馬',
-                            'ryu' => '龍',
-                        ];
-                    @endphp
-                    @foreach($gameState['boardState']['hand']['sente'] as $piece => $count)
-                        @if($count > 0)
-                        <button type="button" class="hand-piece" data-piece="{{ $piece }}" data-color="sente"
-                                aria-label="先手の持ち駒 {{ $pieceNameMap[$piece] ?? $piece }} {{ $count }}枚">
-                            {{ $pieceNameMap[$piece] ?? $piece }} × {{ $count }}
-                        </button>
-                        @endif
-                    @endforeach
-                @else
-                    <p style="color: var(--color-text-secondary);">持ち駒なし</p>
-                @endif
-            </div>
         </aside>
     </div>
 </div>
