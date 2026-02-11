@@ -502,15 +502,17 @@
         bottom: calc(100% + 6px);
         left: 50%;
         transform: translateX(-50%);
-        background: var(--color-text, #1A1A1A);
-        color: var(--color-bg, #fff);
+        background: var(--color-btn-text, #3C2F1E);
+        color: var(--color-btn-bg, #F0E6D6);
+        border: 1px solid var(--color-btn-border, #C4A882);
         padding: 6px 12px;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 0.8rem;
         font-weight: normal;
         white-space: nowrap;
         z-index: 100;
         pointer-events: none;
+        box-shadow: 0 2px 8px rgba(60, 47, 30, 0.25);
     }
     
     /* ランキング登録ダイアログスタイル */
