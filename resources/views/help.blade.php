@@ -112,14 +112,14 @@
         
         <h4 style="margin-top: 16px;">駒台へ移動</h4>
         <dl style="line-height: 2; margin-top: 8px;">
-            <dt style="font-weight: bold;">Shift+T</dt>
+            <dt style="font-weight: bold;">Shift+T または 1キー</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                先手の駒台へフォーカスを移動します
+                先手の駒台へフォーカスを移動します（片手でも操作可能）
             </dd>
             
-            <dt style="font-weight: bold;">Shift+G</dt>
+            <dt style="font-weight: bold;">Shift+G または 2キー</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                後手の駒台へフォーカスを移動します
+                後手の駒台へフォーカスを移動します（片手でも操作可能）
             </dd>
         </dl>
     </section>
@@ -205,10 +205,17 @@
             <li><strong>盤面差分読み上げ</strong> - Shift+Bで前回からの変化だけ読み上げ</li>
             <li><strong>利き筋情報</strong> - Iキーで現在マスを狙う相手の駒を読み上げ</li>
             <li><strong>表示設定</strong> - 駒の文字サイズ変更・タイマー非表示オプション</li>
-            <li><strong>prefers-reduced-motion対応</strong> - OS設定に応じてアニメーションを無効化</li>
+            <li><strong>prefers-reduced-motion対応</strong> - OS設定に応じてアニメーションを完全停止</li>
             <li><strong>セッションタイムアウト警告</strong> - 期限切れ5分前に通知</li>
             <li><strong>ARIAラベル</strong> - スクリーンリーダーで正確な情報を提供</li>
             <li><strong>フォーカスインジケーター</strong> - 現在の位置が常に明確</li>
+            <li><strong>駒選択状態バー</strong> - 選択中の駒とEscape解除を常時表示</li>
+            <li><strong>トースト通知無効化</strong> - 感覚過敏の方向けに通知OFF可能</li>
+            <li><strong>フォント変更</strong> - UDデジタル教科書体やBIZ UDゴシックが選択可能</li>
+            <li><strong>片手操作対応</strong> - 1/2キーで駒台移動（Shift不要）</li>
+            <li><strong>キー入力デバウンス</strong> - 手の震えによる誤操作を防止</li>
+            <li><strong>難易度補足</strong> - 「初級（よわい）」のように平易な説明付き</li>
+            <li><strong>ふりがな対応</strong> - ボタン名・駒名にルビを付与</li>
         </ul>
     </section>
     

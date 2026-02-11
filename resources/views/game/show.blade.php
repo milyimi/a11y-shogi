@@ -208,7 +208,8 @@
         font-weight: bold;
         cursor: pointer;
         color: var(--color-text);
-        min-height: 40px;
+        min-height: 44px;
+        min-width: 44px;
         display: flex;
         align-items: center;
         transition: background-color 0.2s, box-shadow 0.2s;
@@ -277,12 +278,28 @@
         }
     }
 
-    /* prefers-reduced-motion: アニメーション/transition を無効化 */
+    /* 特大文字サイズ時の盤面レスポンシブ対応 */
+    .shogi-board.large-piece-size {
+        max-width: none;
+        min-width: auto;
+    }
+    .shogi-board.large-piece-size .cell {
+        min-width: 56px;
+        min-height: 56px;
+    }
+
+    /* prefers-reduced-motion: アニメーション/transition を完全無効化 */
     @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
-            transition-duration: 0.001ms !important;
-            animation-duration: 0.001ms !important;
-            transition-delay: 0s !important;
+            transition: none !important;
+            animation: none !important;
+        }
+        .ai-thinking-spinner {
+            display: none !important;
+        }
+        .toast {
+            opacity: 1 !important;
+            transform: none !important;
         }
     }
 
@@ -335,6 +352,8 @@
     .toast-success { background: #2E7D32; color: #fff; border: 2px solid #1B5E20; }
     .toast-error { background: #C62828; color: #fff; border: 2px solid #B71C1C; }
     .toast-info { background: #1565C0; color: #fff; border: 2px solid #0D47A1; }
+    /* トースト無効化 */
+    .toast-disabled .toast-container { display: none !important; }
 
     /* 手番/手数の視覚強調 */
     .turn-highlight {
@@ -351,6 +370,36 @@
     }
 
     /* ツールチップ */
+    /* 選択中状態バー */
+    .selection-status-bar {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: rgba(255, 140, 0, 0.15);
+        border: 2px solid var(--color-focus, #FF8C00);
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        margin-top: 8px;
+    }
+    .selection-status-bar.active { display: flex; }
+    .selection-status-bar kbd {
+        background: var(--color-text, #1A1A1A);
+        color: var(--color-bg, #fff);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+    }
+
+    /* フォントファミリー変更 */
+    .font-ud-digital {
+        font-family: 'UD デジタル 教科書体 NP-R', 'UD Digi Kyokasho NP-R', sans-serif;
+    }
+    .font-gothic {
+        font-family: 'BIZ UDゴシック', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    }
+
     [data-tooltip] {
         position: relative;
     }
@@ -672,34 +721,57 @@
                 <h3 id="actions-heading">操作</h3>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <button type="button" class="btn" id="btn-undo" data-tooltip="直前の手を取り消す" {{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : 'disabled' }}>
-                        待ったをする
+                        <ruby>待<rt>ま</rt></ruby>ったをする
                     </button>
                     <button type="button" class="btn" id="btn-reset" data-tooltip="初期状態に戻す">
                         リセット
                     </button>
                     <button type="button" class="btn btn-secondary" id="btn-quit">
-                        ホームに戻る
+                        ホームに<ruby>戻<rt>もど</rt></ruby>る
                     </button>
                 </div>
                 <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border);">
                     <button type="button" class="btn" id="btn-resign" style="width: 100%; background: #C62828; color: #fff; border-color: #B71C1C;" data-tooltip="負けを認める（確認あり）">
-                        投了する
+                        <ruby>投了<rt>とうりょう</rt></ruby>する（負けを認める）
                     </button>
+                </div>
+                {{-- 駒選択中状態バー --}}
+                <div class="selection-status-bar" id="selection-status" aria-live="polite">
+                    <span id="selection-status-text">駒を選択中</span>
+                    <span>— <kbd>Esc</kbd>で解除</span>
                 </div>
             </section>
             
             <section aria-labelledby="shortcuts-heading" style="margin-top: 24px;">
-                <h3 id="shortcuts-heading">ショートカット</h3>
-                <dl style="line-height: 1.8; font-size: 0.85rem; color: var(--color-text-secondary);">
-                    <dt style="font-weight: bold; display: inline;">移動:</dt>
-                    <dd style="display: inline; margin-left: 4px;">矢印 / WASD</dd><br>
-                    <dt style="font-weight: bold; display: inline;">情報:</dt>
-                    <dd style="display: inline; margin-left: 4px;">B=盤面 S=状態 K=棋譜 I=利き筋</dd><br>
-                    <dt style="font-weight: bold; display: inline;">駒台:</dt>
-                    <dd style="display: inline; margin-left: 4px;">Shift+T/G</dd><br>
-                    <dt style="font-weight: bold; display: inline;">他:</dt>
-                    <dd style="display: inline; margin-left: 4px;">H=ヘルプ U=待った R=リセット</dd>
-                </dl>
+                <h3 id="shortcuts-heading">
+                    <button type="button" class="panel-toggle" id="toggle-shortcuts" aria-expanded="true" aria-controls="shortcuts-content" style="background:none;border:none;font:inherit;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;color:inherit;">
+                        <span aria-hidden="true">▼</span> ショートカット
+                    </button>
+                </h3>
+                <div id="shortcuts-content">
+                    <dl style="line-height: 2; font-size: 0.85rem; color: var(--color-text-secondary);">
+                        <dt style="font-weight: bold; display: inline;">矢印 / WASD:</dt>
+                        <dd style="display: inline; margin-left: 4px;">盤面移動</dd><br>
+                        <dt style="font-weight: bold; display: inline;">B:</dt>
+                        <dd style="display: inline; margin-left: 4px;">盤面読み上げ</dd><br>
+                        <dt style="font-weight: bold; display: inline;">Shift+B:</dt>
+                        <dd style="display: inline; margin-left: 4px;">盤面差分読み上げ</dd><br>
+                        <dt style="font-weight: bold; display: inline;">S:</dt>
+                        <dd style="display: inline; margin-left: 4px;">ゲーム状態</dd><br>
+                        <dt style="font-weight: bold; display: inline;">K:</dt>
+                        <dd style="display: inline; margin-left: 4px;">棋譜<ruby>読<rt>よ</rt></ruby>み上げ</dd><br>
+                        <dt style="font-weight: bold; display: inline;">I:</dt>
+                        <dd style="display: inline; margin-left: 4px;">相手の<ruby>利<rt>き</rt></ruby>き<ruby>筋<rt>すじ</rt></ruby></dd><br>
+                        <dt style="font-weight: bold; display: inline;">1 / 2:</dt>
+                        <dd style="display: inline; margin-left: 4px;">先手 / 後手の<ruby>駒台<rt>こまだい</rt></ruby></dd><br>
+                        <dt style="font-weight: bold; display: inline;">H:</dt>
+                        <dd style="display: inline; margin-left: 4px;">ヘルプ</dd><br>
+                        <dt style="font-weight: bold; display: inline;">U:</dt>
+                        <dd style="display: inline; margin-left: 4px;"><ruby>待<rt>ま</rt></ruby>った</dd><br>
+                        <dt style="font-weight: bold; display: inline;">R:</dt>
+                        <dd style="display: inline; margin-left: 4px;">リセット</dd>
+                    </dl>
+                </div>
             </section>
 
             <section aria-labelledby="display-settings-heading" style="margin-top: 24px;">
@@ -709,6 +781,10 @@
                         <input type="checkbox" id="toggle-timer" checked style="width: 18px; height: 18px;">
                         タイマー表示
                     </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" id="toggle-toast" checked style="width: 18px; height: 18px;">
+                        トースト通知
+                    </label>
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <label for="piece-size-select">駒の文字サイズ:</label>
                         <select id="piece-size-select" style="padding: 4px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);">
@@ -716,6 +792,14 @@
                             <option value="24" selected>標準 (24px)</option>
                             <option value="30">大 (30px)</option>
                             <option value="36">特大 (36px)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <label for="font-family-select">フォント:</label>
+                        <select id="font-family-select" style="padding: 4px 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);">
+                            <option value="default">標準</option>
+                            <option value="ud-digital">UDデジタル教科書体</option>
+                            <option value="gothic">BIZ UDゴシック</option>
                         </select>
                     </div>
                 </div>
@@ -786,6 +870,8 @@
 
     // --- トースト通知 ---
     function showToast(message, type = 'info') {
+        // トースト無効化中は表示しない
+        if (document.documentElement.classList.contains('toast-disabled')) return;
         const container = document.getElementById('toast-container');
         if (!container) return;
         const toast = document.createElement('div');
@@ -793,10 +879,17 @@
         toast.textContent = message;
         toast.setAttribute('role', 'status');
         container.appendChild(toast);
-        requestAnimationFrame(() => toast.classList.add('show'));
+        // prefers-reduced-motion を確認して即時表示 or アニメーション
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReduced) {
+            toast.style.opacity = '1';
+            toast.style.transform = 'none';
+        } else {
+            requestAnimationFrame(() => toast.classList.add('show'));
+        }
         setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 350);
+            if (!prefersReduced) toast.classList.remove('show');
+            setTimeout(() => toast.remove(), prefersReduced ? 0 : 350);
         }, 4000);
     }
     window.showToast = showToast;
@@ -923,7 +1016,7 @@
         // 初期フォーカスを設定
         updateFocus();
         
-        // 初回ガイダンスをアナウンス（ゲーム開始時に1回だけ）
+        // 初回ガイダンスを段階的に提示（短く分割）
         setTimeout(function() {
             var guide = '対局を開始しました。';
             if (currentPlayer === 'human') {
@@ -931,9 +1024,7 @@
             } else {
                 guide += 'AIが先に指します。';
             }
-            guide += '矢印キーで盤面を移動、Enterで駒を選択・移動します。';
-            guide += 'Bキーで盤面全体の読み上げ、Kキーで棋譜の読み上げ、Hキーでヘルプページを開きます。';
-            guide += '持ち駒を打つにはShift+Tで先手駒台、Shift+Gで後手駒台へ移動できます。';
+            guide += '矢印キーで移動、Enterで選択できます。Hキーでヘルプを開けます。';
             document.getElementById('game-announcements').textContent = guide;
         }, 500);
         
@@ -1002,6 +1093,20 @@
                 case 'G':
                     // Shift+G: 後手駒台へフォーカス移動
                     if (e.shiftKey) {
+                        e.preventDefault();
+                        focusHandPieces('gote');
+                    }
+                    break;
+                case '1':
+                    // 1キー: 先手駒台（片手代替）
+                    if (!e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        focusHandPieces('sente');
+                    }
+                    break;
+                case '2':
+                    // 2キー: 後手駒台（片手代替）
+                    if (!e.shiftKey && !e.ctrlKey && !e.altKey) {
                         e.preventDefault();
                         focusHandPieces('gote');
                     }
@@ -1306,6 +1411,7 @@
                             fromCell.removeAttribute('data-selected');
                             fromCell = null;
                             clearLegalMoves();
+                            updateSelectionStatus(null);
                             document.getElementById('game-announcements').textContent = '選択をキャンセルしました';
                             handled = true;
                         }
@@ -1414,8 +1520,10 @@
                 showLegalMoves(piece, file, rank);
                 // 合法手を音声でも通知
                 announceLegalMoves(piece, file, rank);
+                // 選択中状態バーを表示
+                updateSelectionStatus(`${file}の${rank}の${pieceName}を選択中`);
                 document.getElementById('game-announcements').textContent = 
-                    `${file}の${rank}の${pieceName}を選択しました。移動先を選んでください`;
+                    `${file}の${rank}の${pieceName}を選択しました。移動先を選んでください。Escapeで解除`;
             } else {
                 // 移動先を選択
                 const toRank = rank;
@@ -1428,6 +1536,7 @@
                     fromCell.removeAttribute('data-selected');
                     fromCell = null;
                     clearLegalMoves();
+                    updateSelectionStatus(null);
                     document.getElementById('game-announcements').textContent = '選択をキャンセルしました';
                 } else {
                     // 移動先に自分の駒がある場合は、選択を切り替え
@@ -1449,6 +1558,7 @@
                     } else {
                         // 駒を移動
                         clearLegalMoves();
+                        updateSelectionStatus(null);
                         makeMove(fromFile, fromRank, toFile, toRank);
                         fromCell.removeAttribute('data-selected');
                         fromCell = null;
@@ -1705,6 +1815,21 @@
 
             renderHand(senteHand, 'sente');
             renderHand(goteHand, 'gote');
+
+            // 持ち駒変動をgame-status（盤面近く）でも通知
+            const handSummary = [];
+            ['sente', 'gote'].forEach(color => {
+                const items = hand[color] || {};
+                const entries = Object.entries(items).filter(([, c]) => c > 0);
+                if (entries.length > 0) {
+                    const cn = color === 'sente' ? '先手' : '後手';
+                    const list = entries.map(([p, c]) => `${pieceNameMap[p]||p}${c}`).join('');
+                    handSummary.push(`${cn}: ${list}`);
+                }
+            });
+            if (handSummary.length > 0) {
+                document.getElementById('game-status').textContent = `持ち駒: ${handSummary.join(' / ')}`;
+            }
 
             document.querySelectorAll('.hand-piece').forEach(button => {
                 button.addEventListener('click', handleHandPieceSelect);
@@ -1980,9 +2105,75 @@
             if (row) row.style.display = this.checked ? '' : 'none';
         });
 
+        // --- トースト通知の無効化トグル ---
+        document.getElementById('toggle-toast')?.addEventListener('change', function() {
+            if (this.checked) {
+                document.documentElement.classList.remove('toast-disabled');
+            } else {
+                document.documentElement.classList.add('toast-disabled');
+            }
+        });
+
         // --- 駒の文字サイズ変更 ---
         document.getElementById('piece-size-select')?.addEventListener('change', function() {
             document.documentElement.style.setProperty('--piece-font-size', this.value + 'px');
+            const board = document.getElementById('shogi-board');
+            if (board) {
+                if (parseInt(this.value) >= 30) {
+                    board.classList.add('large-piece-size');
+                } else {
+                    board.classList.remove('large-piece-size');
+                }
+            }
+        });
+
+        // --- フォントファミリー変更 ---
+        document.getElementById('font-family-select')?.addEventListener('change', function() {
+            document.documentElement.classList.remove('font-ud-digital', 'font-gothic');
+            if (this.value !== 'default') {
+                document.documentElement.classList.add('font-' + this.value);
+            }
+        });
+
+        // --- ショートカットセクション折りたたみ ---
+        document.getElementById('toggle-shortcuts')?.addEventListener('click', function() {
+            const content = document.getElementById('shortcuts-content');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', !expanded);
+            this.querySelector('span').textContent = expanded ? '▶' : '▼';
+            if (content) content.style.display = expanded ? 'none' : '';
+        });
+
+        // --- 選択中状態バー更新 ---
+        function updateSelectionStatus(text) {
+            const bar = document.getElementById('selection-status');
+            const textEl = document.getElementById('selection-status-text');
+            if (!bar || !textEl) return;
+            if (text) {
+                textEl.textContent = text;
+                bar.classList.add('active');
+            } else {
+                bar.classList.remove('active');
+            }
+        }
+
+        // --- キー入力デバウンス ---
+        let _lastKeyTime = 0;
+        const KEY_DEBOUNCE_MS = 100;
+        const originalKeydownHandler = document.querySelector('.cell')?.parentElement;
+        // セル keydown にデバウンスを組み込み（既存ハンドラのラッパー）
+        document.querySelectorAll('.cell').forEach(cell => {
+            const origHandler = cell._keydownHandler;
+            cell.addEventListener('keydown', function(e) {
+                const now = Date.now();
+                if (now - _lastKeyTime < KEY_DEBOUNCE_MS && 
+                    ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                _lastKeyTime = now;
+            }, true); // capture phase
         });
 
         function updateMoveHistory(moveHistory) {

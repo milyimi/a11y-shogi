@@ -38,21 +38,21 @@
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="difficulty" value="easy" required checked
                                    style="width: 20px; height: 20px;">
-                            <span style="font-weight: 500;">初級</span>
+                            <span style="font-weight: 500;">初級（よわい）</span>
                             <span style="color: var(--color-text-secondary);">- 基本的な手を指すAI</span>
                         </label>
                         
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="difficulty" value="medium" required
                                    style="width: 20px; height: 20px;">
-                            <span style="font-weight: 500;">中級</span>
+                            <span style="font-weight: 500;">中級（ふつう）</span>
                             <span style="color: var(--color-text-secondary);">- 戦略的な手を考えるAI</span>
                         </label>
                         
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="radio" name="difficulty" value="hard" required
                                    style="width: 20px; height: 20px;">
-                            <span style="font-weight: 500;">上級</span>
+                            <span style="font-weight: 500;">上級（つよい）</span>
                             <span style="color: var(--color-text-secondary);">- 高度な読みを行うAI</span>
                         </label>
                     </div>
