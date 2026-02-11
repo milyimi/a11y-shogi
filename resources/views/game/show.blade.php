@@ -1129,7 +1129,6 @@
                             let aiAnnouncement = buildAIMoveAnnouncement(data);
                             document.getElementById('game-announcements').textContent = aiAnnouncement;
                             highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
-                            focusCell(data.aiMove.to_rank, data.aiMove.to_file);
                         }, 500);
                     } else if (data.status === 'in_progress') {
                         // AIの手がないかつゲーム続行中
@@ -1191,7 +1190,6 @@
                             let aiAnnouncement = buildAIMoveAnnouncement(data);
                             document.getElementById('game-announcements').textContent = aiAnnouncement;
                             highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
-                            focusCell(data.aiMove.to_rank, data.aiMove.to_file);
                         }, 500);
                     }
                 } else {
@@ -1730,7 +1728,6 @@
                             document.getElementById('game-announcements').textContent = 
                                 `AIが${data.aiMove.from_file}の${data.aiMove.from_rank}から${data.aiMove.to_file}の${data.aiMove.to_rank}に移動しました`;
                             highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
-                            focusCell(data.aiMove.to_rank, data.aiMove.to_file);
                         }, 500);
                     }
                 } else {
