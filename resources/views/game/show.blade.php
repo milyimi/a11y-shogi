@@ -6,31 +6,37 @@
 <style>
     .game-container {
         display: grid;
-        grid-template-columns: 200px 1fr 300px;
-        grid-template-rows: auto auto;
+        grid-template-columns: minmax(140px, 200px) 1fr minmax(250px, 300px);
+        grid-template-rows: auto 1fr auto;
         gap: 16px;
         max-width: 1400px;
         margin: 24px auto;
     }
     
+    /* 後手の駒台 - 盤面上部・右寄せ（伝統的配置） */
     .komadai:first-of-type {
-        grid-column: 1;
-        grid-row: 1;
-    }
-    
-    .board-section {
         grid-column: 2;
-        grid-row: 1 / 3;
+        grid-row: 1;
+        justify-self: end;
     }
     
+    /* 盤面 - 中央 */
+    .board-section {
+        grid-column: 1 / 3;
+        grid-row: 2;
+        justify-self: center;
+    }
+    
+    /* 情報パネル - 右側全行 */
     .info-panel {
         grid-column: 3;
-        grid-row: 1 / 3;
+        grid-row: 1 / 4;
     }
     
+    /* 先手の駒台 - 盤面下部・左寄せ（伝統的配置） */
     .komadai:last-of-type {
         grid-column: 1;
-        grid-row: 2;
+        grid-row: 3;
     }
     
     .komadai, .info-panel {
@@ -43,8 +49,10 @@
     }
     
     .komadai {
-        max-height: 180px;
-        overflow-y: auto;
+        max-height: none;
+        overflow-y: visible;
+        min-width: 140px;
+        max-width: 220px;
     }
     
     .komadai h3 {
@@ -256,21 +264,41 @@
     
     @media (max-width: 1199px) {
         .game-container {
-            grid-template-columns: 180px 1fr 280px;
+            grid-template-columns: minmax(120px, 160px) 1fr minmax(200px, 260px);
+        }
+        .komadai {
+            max-width: 180px;
         }
     }
     
     @media (max-width: 767px) {
         .game-container {
             grid-template-columns: 1fr;
+            grid-template-rows: auto;
+        }
+        
+        .komadai:first-of-type,
+        .komadai:last-of-type {
+            grid-column: 1;
+            grid-row: auto;
+            justify-self: stretch;
+            max-width: none;
+        }
+        
+        .board-section {
+            grid-column: 1;
+            grid-row: auto;
+            justify-self: stretch;
+            order: 1;
         }
         
         .komadai, .info-panel {
             order: 2;
         }
         
-        .board-section {
-            order: 1;
+        .info-panel {
+            grid-column: 1;
+            grid-row: auto;
         }
         
         .cell {
