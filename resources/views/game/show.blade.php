@@ -110,6 +110,11 @@
         background: var(--color-focus);
         box-shadow: inset 0 0 0 2px #FF8C00, 0 0 0 3px #FF8C00;
     }
+
+    .cell[data-ai-last-move="true"] {
+        background: #FFE0B2;
+        box-shadow: inset 0 0 0 3px #E65100, 0 0 0 3px #E65100;
+    }
     
     .piece-sente {
         color: #000000;
@@ -139,6 +144,10 @@
     html.high-contrast .cell[data-selected="true"] {
         background: #7A5A00;
         box-shadow: inset 0 0 0 3px #FF8C00, 0 0 0 3px #FF8C00;
+    }
+    html.high-contrast .cell[data-ai-last-move="true"] {
+        background: #8B4513;
+        box-shadow: inset 0 0 0 3px #FF6600, 0 0 0 3px #FF6600;
     }
     html.high-contrast .cell:hover,
     html.high-contrast .cell:focus {
@@ -1119,6 +1128,8 @@
                         setTimeout(() => {
                             let aiAnnouncement = buildAIMoveAnnouncement(data);
                             document.getElementById('game-announcements').textContent = aiAnnouncement;
+                            highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                            focusCell(data.aiMove.to_rank, data.aiMove.to_file);
                         }, 500);
                     } else if (data.status === 'in_progress') {
                         // AIの手がないかつゲーム続行中
@@ -1179,6 +1190,8 @@
                         setTimeout(() => {
                             let aiAnnouncement = buildAIMoveAnnouncement(data);
                             document.getElementById('game-announcements').textContent = aiAnnouncement;
+                            highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                            focusCell(data.aiMove.to_rank, data.aiMove.to_file);
                         }, 500);
                     }
                 } else {
@@ -1406,6 +1419,18 @@
                 document.querySelectorAll('.cell').forEach(c => c.tabIndex = -1);
                 targetCell.tabIndex = 0;
                 targetCell.focus();
+            }
+        }
+
+        // AI指し手のハイライト表示
+        function highlightAIMove(toRank, toFile) {
+            // 前回のハイライトをクリア
+            document.querySelectorAll('.cell[data-ai-last-move]').forEach(c => {
+                c.removeAttribute('data-ai-last-move');
+            });
+            const targetCell = document.querySelector(`.cell[data-rank="${toRank}"][data-file="${toFile}"]`);
+            if (targetCell) {
+                targetCell.setAttribute('data-ai-last-move', 'true');
             }
         }
 
@@ -1704,6 +1729,8 @@
                         setTimeout(() => {
                             document.getElementById('game-announcements').textContent = 
                                 `AIが${data.aiMove.from_file}の${data.aiMove.from_rank}から${data.aiMove.to_file}の${data.aiMove.to_rank}に移動しました`;
+                            highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                            focusCell(data.aiMove.to_rank, data.aiMove.to_file);
                         }, 500);
                     }
                 } else {
