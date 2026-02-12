@@ -228,17 +228,19 @@
         }
 
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.45;
             cursor: not-allowed;
             box-shadow: none;
             transform: none;
+            filter: grayscale(0.4);
+            border-style: dotted;
         }
 
         .btn-secondary {
-            background: transparent !important;
+            background: linear-gradient(to bottom, rgba(240, 230, 214, 0.3), rgba(232, 220, 200, 0.3)) !important;
             border-style: dashed;
             border-color: var(--color-btn-border);
-            box-shadow: none;
+            box-shadow: 0 1px 3px var(--color-btn-shadow);
         }
 
         .btn-secondary:hover, .btn-secondary:focus {

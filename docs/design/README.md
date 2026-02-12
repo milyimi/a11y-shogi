@@ -202,6 +202,8 @@ UI/UX デザインとワイヤーフレーム
 | 2026-02-13 | 1.8 | レイアウト改善: 駒台を盤面の左右に配置（後手=左上・先手=右下）・駒台サイズ拡大(min140px/max200px)・棋譜/表示設定/ショートカットをモーダルダイアログ化・info-panel高さ圧縮・board-area flexラッパー追加・モーダルのフォーカストラップ/Escape閉じ/フォーカス復帰対応 | Engineering |
 | 2026-02-13 | 1.9 | 駒台再拡大(min180px/max240px,minH280px)・info-panel圧縮(操作ボタン/モーダルボタン3列grid横並び)・駒台内駒ボタン高さ修正(align-content:flex-startでstretch防止) | Engineering |
 | 2026-02-13 | 2.0 | forced-colorsツールチップ修正(forced-color-adjust:none+Canvas/CanvasText)・ボタンデザイン改善(border-radius:6px・box-shadow・transformアニメーション・btn-secondaryスタイル)・HCモードツールチップ/ボタンスタイル対応 | Engineering |
+| 2026-02-13 | 2.1 | ボタンデザイン全面改善: 木目調グラデーション(#F0E6D6→#E8DCC8)・焦げ茶文字(#3C2F1E)・btn-dangerクラス(投了用)・ツールチップ木目調統一・CSS変数でボタン配色一括管理 | Engineering |
+| 2026-02-13 | 2.2 | お客様AIフィードバック反映: btn-secondary視認性改善(半透明ベージュ)・disabledボタン状態説明(dotted枠+grayscale+aria-describedby)・AI長考5秒再通知・モーダルボタン絵文字HTMLエンティティ化(aria-hidden) | Engineering |
 
 ---
 

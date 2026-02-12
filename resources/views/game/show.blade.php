@@ -896,9 +896,10 @@
             <section aria-labelledby="actions-heading" style="margin-top: 12px;">
                 <h3 id="actions-heading">操作</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
-                    <button type="button" class="btn" id="btn-undo" data-tooltip="直前の手を取り消す" style="font-size: 0.85rem; padding: 8px 4px;" {{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : 'disabled' }}>
+                    <button type="button" class="btn" id="btn-undo" data-tooltip="直前の手を取り消す" aria-describedby="btn-undo-desc" style="font-size: 0.85rem; padding: 8px 4px;" {{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : 'disabled' }}>
                         <ruby>待<rt>ま</rt></ruby>った
                     </button>
+                    <span id="btn-undo-desc" class="sr-only">{{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : '（まだ使えません）' }}</span>
                     <button type="button" class="btn" id="btn-reset" data-tooltip="初期状態に戻す" style="font-size: 0.85rem; padding: 8px 4px;">
                         リセット
                     </button>
@@ -921,13 +922,13 @@
             {{-- モーダルを開くボタン --}}
             <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
                 <button type="button" class="btn btn-open-modal" id="btn-open-history" aria-haspopup="dialog" style="font-size: 0.8rem; padding: 8px 2px;">
-                    📋 <ruby>棋譜<rt>きふ</rt></ruby>
+                    <span aria-hidden="true">&#x1F4CB;</span> <ruby>棋譜<rt>きふ</rt></ruby>
                 </button>
                 <button type="button" class="btn btn-open-modal" id="btn-open-settings" aria-haspopup="dialog" style="font-size: 0.8rem; padding: 8px 2px;">
-                    ⚙ 設定
+                    <span aria-hidden="true">&#x2699;</span> 設定
                 </button>
                 <button type="button" class="btn btn-open-modal" id="btn-open-shortcuts" aria-haspopup="dialog" style="font-size: 0.8rem; padding: 8px 2px;">
-                    ⌨ キー
+                    <span aria-hidden="true">&#x2328;</span> キー
                 </button>
             </div>
         </aside>
@@ -1744,6 +1745,13 @@
             const thinkingEl = document.getElementById('ai-thinking');
             if (thinkingEl) thinkingEl.classList.add('active');
             
+            // AI長考時の再通知（5秒後）
+            const aiThinkingReminder = setTimeout(() => {
+                if (thinkingEl && thinkingEl.classList.contains('active')) {
+                    thinkingEl.querySelector('span').textContent = 'AIが考え中です、もう少しお待ちください';
+                }
+            }, 5000);
+            
             fetchJson(`/game/{{ $game->id }}/move`, {
                 method: 'POST',
                 headers: {
@@ -1759,7 +1767,11 @@
             })
             .then(data => {
                 console.log('[makeMove] API response:', data.success, 'boardState available:', !!data.boardState);
-                if (thinkingEl) thinkingEl.classList.remove('active');
+                clearTimeout(aiThinkingReminder);
+                if (thinkingEl) {
+                    thinkingEl.classList.remove('active');
+                    thinkingEl.querySelector('span').textContent = 'AI思考中…';
+                }
                 if (data.success) {
                     showToast(`${fromFile}の${fromRank}から${toFile}の${toRank}へ移動`, 'success');
                     window.lastMoveTarget = { rank: toRank, file: toFile };
@@ -1804,7 +1816,11 @@
             })
             .catch(error => {
                 console.warn('[makeMove] Error:', error);
-                if (thinkingEl) thinkingEl.classList.remove('active');
+                clearTimeout(aiThinkingReminder);
+                if (thinkingEl) {
+                    thinkingEl.classList.remove('active');
+                    thinkingEl.querySelector('span').textContent = 'AI思考中…';
+                }
                 document.getElementById('game-announcements').textContent = 'エラーが発生しました';
                 showToast('エラーが発生しました', 'error');
             });
@@ -2452,11 +2468,14 @@
 
             // 待ったボタンの有効/無効
             const undoBtn = document.getElementById('btn-undo');
+            const undoDesc = document.getElementById('btn-undo-desc');
             if (undoBtn) {
                 if (data.moveCount !== undefined && data.moveCount > 0 && (!data.status || data.status === 'in_progress')) {
                     undoBtn.removeAttribute('disabled');
+                    if (undoDesc) undoDesc.textContent = '';
                 } else if (data.status && data.status !== 'in_progress') {
                     undoBtn.setAttribute('disabled', '');
+                    if (undoDesc) undoDesc.textContent = '（まだ使えません）';
                 }
             }
 
