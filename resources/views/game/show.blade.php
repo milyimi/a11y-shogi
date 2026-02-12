@@ -854,6 +854,7 @@
         
         {{-- 情報パネル --}}
         <aside class="info-panel" aria-labelledby="info-heading">
+            <h2 id="info-heading" class="sr-only">対局情報パネル</h2>
             {{-- AI思考中インジケーター --}}
             <div class="ai-thinking-indicator" id="ai-thinking" role="status" aria-live="polite">
                 <div class="ai-thinking-spinner" aria-hidden="true"></div>
