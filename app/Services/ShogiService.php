@@ -28,13 +28,13 @@ class ShogiService
                 // 8段目
                 '8' => [
                     '1' => null,
-                    '2' => ['type' => 'hisha', 'color' => 'gote'],
+                    '2' => ['type' => 'kaku', 'color' => 'gote'],
                     '3' => null,
                     '4' => null,
                     '5' => null,
                     '6' => null,
                     '7' => null,
-                    '8' => ['type' => 'kaku', 'color' => 'gote'],
+                    '8' => ['type' => 'hisha', 'color' => 'gote'],
                     '9' => null,
                 ],
                 // 7段目（後手の歩）
@@ -70,13 +70,13 @@ class ShogiService
                 // 2段目
                 '2' => [
                     '1' => null,
-                    '2' => ['type' => 'kaku', 'color' => 'sente'],
+                    '2' => ['type' => 'hisha', 'color' => 'sente'],
                     '3' => null,
                     '4' => null,
                     '5' => null,
                     '6' => null,
                     '7' => null,
-                    '8' => ['type' => 'hisha', 'color' => 'sente'],
+                    '8' => ['type' => 'kaku', 'color' => 'sente'],
                     '9' => null,
                 ],
                 // 1段目（先手側最奥）
