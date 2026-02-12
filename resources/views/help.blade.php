@@ -12,22 +12,22 @@
         
         <h4>盤面の操作</h4>
         <dl style="line-height: 2; margin-top: 16px;">
-            <dt style="font-weight: bold;">矢印キー (←↑↓→) / WASD</dt>
+            <dt style="font-weight: bold;"><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> / <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                盤面上のマス目を移動します（W=上、A=左、S=下、D=右）
+                盤面上のマス目を移動します（<kbd>W</kbd>=上、<kbd>A</kbd>=左、<kbd>S</kbd>=下、<kbd>D</kbd>=右）
             </dd>
             
-            <dt style="font-weight: bold;">Enter / Space</dt>
+            <dt style="font-weight: bold;"><kbd>Enter</kbd> / <kbd>Space</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 駒を選択します。もう一度押すと移動先を決定します
             </dd>
             
-            <dt style="font-weight: bold;">Escape</dt>
+            <dt style="font-weight: bold;"><kbd>Escape</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 駒の選択をキャンセルし、合法手ハイライトをクリアします
             </dd>
             
-            <dt style="font-weight: bold;">Tab / Shift+Tab</dt>
+            <dt style="font-weight: bold;"><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 ボタンなど盤面以外の要素に移動します
             </dd>
@@ -44,13 +44,13 @@
             取った駒は駒台に並びます。持ち駒を盤面に打つには、次の3ステップで操作します。
         </p>
         <ol style="margin-top: 12px; line-height: 2; padding-left: 24px;">
-            <li><strong>Shift+T</strong>（先手の駒台）または <strong>Shift+G</strong>（後手の駒台）を押して、駒台へ移動します</li>
-            <li><strong>Enter</strong> または <strong>Space</strong> で打ちたい駒を選びます（自動的に盤面へ戻ります）</li>
-            <li>矢印キー（またはWASD）で打ちたい場所へ移動し、<strong>Enter</strong> で決定します</li>
+            <li><kbd>Shift</kbd>+<kbd>T</kbd>（先手の駒台）または <kbd>Shift</kbd>+<kbd>G</kbd>（後手の駒台）を押して、駒台へ移動します</li>
+            <li><kbd>Enter</kbd> または <kbd>Space</kbd> で打ちたい駒を選びます（自動的に盤面へ戻ります）</li>
+            <li>矢印キー（または<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>）で打ちたい場所へ移動し、<kbd>Enter</kbd> で決定します</li>
         </ol>
         <p style="margin-top: 8px; line-height: 1.8;">
             <small style="color: var(--color-text-secondary);">
-                ※駒台で <strong>Escape</strong> を押すと、駒を選ばずに盤面へ戻れます。
+                ※駒台で <kbd>Escape</kbd> を押すと、駒を選ばずに盤面へ戻れます。
                 矢印キーで駒台内の駒を切り替えられます。
             </small>
         </p>
@@ -66,32 +66,32 @@
         
         <h4 style="margin-top: 16px;">情報の確認</h4>
         <dl style="line-height: 2; margin-top: 8px;">
-            <dt style="font-weight: bold;">B</dt>
+            <dt style="font-weight: bold;"><kbd>B</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 盤面全体の状態を読み上げます
             </dd>
             
-            <dt style="font-weight: bold;">Shift+B</dt>
+            <dt style="font-weight: bold;"><kbd>Shift</kbd>+<kbd>B</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 盤面の差分読み上げ（前回からの変化のみ）
             </dd>
             
-            <dt style="font-weight: bold;">S</dt>
+            <dt style="font-weight: bold;"><kbd>S</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 現在のゲーム状態（手番、手数、経過時間）を読み上げます
             </dd>
             
-            <dt style="font-weight: bold;">K</dt>
+            <dt style="font-weight: bold;"><kbd>K</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 棋譜（直近5手）を読み上げます
             </dd>
             
-            <dt style="font-weight: bold;">I</dt>
+            <dt style="font-weight: bold;"><kbd>I</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 現在のマスを狙っている相手の駒（利き筋）を読み上げます
             </dd>
             
-            <dt style="font-weight: bold;">H</dt>
+            <dt style="font-weight: bold;"><kbd>H</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 ヘルプを表示します（このページ）
             </dd>
@@ -99,12 +99,12 @@
         
         <h4 style="margin-top: 16px;">ゲーム操作</h4>
         <dl style="line-height: 2; margin-top: 8px;">
-            <dt style="font-weight: bold;">U</dt>
+            <dt style="font-weight: bold;"><kbd>U</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 待ったをします（一手戻す）
             </dd>
             
-            <dt style="font-weight: bold;">R</dt>
+            <dt style="font-weight: bold;"><kbd>R</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 ゲームをリセットします
             </dd>
@@ -112,12 +112,12 @@
         
         <h4 style="margin-top: 16px;">駒台へ移動</h4>
         <dl style="line-height: 2; margin-top: 8px;">
-            <dt style="font-weight: bold;">Shift+T または 1キー</dt>
+            <dt style="font-weight: bold;"><kbd>Shift</kbd>+<kbd>T</kbd> または <kbd>1</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 先手の駒台へフォーカスを移動します（片手でも操作可能）
             </dd>
             
-            <dt style="font-weight: bold;">Shift+G または 2キー</dt>
+            <dt style="font-weight: bold;"><kbd>Shift</kbd>+<kbd>G</kbd> または <kbd>2</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
                 後手の駒台へフォーカスを移動します（片手でも操作可能）
             </dd>

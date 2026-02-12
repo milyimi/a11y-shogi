@@ -204,6 +204,7 @@ UI/UX デザインとワイヤーフレーム
 | 2026-02-13 | 2.0 | forced-colorsツールチップ修正(forced-color-adjust:none+Canvas/CanvasText)・ボタンデザイン改善(border-radius:6px・box-shadow・transformアニメーション・btn-secondaryスタイル)・HCモードツールチップ/ボタンスタイル対応 | Engineering |
 | 2026-02-13 | 2.1 | ボタンデザイン全面改善: 木目調グラデーション(#F0E6D6→#E8DCC8)・焦げ茶文字(#3C2F1E)・btn-dangerクラス(投了用)・ツールチップ木目調統一・CSS変数でボタン配色一括管理 | Engineering |
 | 2026-02-13 | 2.2 | お客様AIフィードバック反映: btn-secondary視認性改善(半透明ベージュ)・disabledボタン状態説明(dotted枠+grayscale+aria-describedby)・AI長考5秒再通知・モーダルボタン絵文字HTMLエンティティ化(aria-hidden) | Engineering |
+| 2026-02-13 | 2.3 | お客様AIフィードバック反映: `<main>`重複解消(盤面セクションを`<section>`に変更)・ゲーム情報セクション`aria-live="polite"`追加・ランキングダイアログに閉じるボタン追加・ヘルプページキー名`<kbd>`マークアップ・`<kbd>`要素のCSSスタイル追加 | Engineering |
 
 ---
 

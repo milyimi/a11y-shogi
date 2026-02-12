@@ -304,6 +304,26 @@
         html.high-contrast .btn-secondary {
             border-color: #AA8855;
         }
+
+        kbd {
+            display: inline-block;
+            padding: 2px 7px;
+            font-family: inherit;
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: var(--color-btn-text, #3C2F1E);
+            background: var(--color-btn-bg, #F0E6D6);
+            border: 1px solid var(--color-btn-border, #C4A882);
+            border-radius: 4px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+            white-space: nowrap;
+        }
+
+        html.high-contrast kbd {
+            color: #F0E0C8;
+            background: #3A3028;
+            border-color: #D4A843;
+        }
         
         .sr-only {
             position: absolute;

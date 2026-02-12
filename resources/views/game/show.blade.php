@@ -693,7 +693,7 @@
         </aside>
         
         {{-- 盤面 --}}
-        <main class="board-section" aria-labelledby="board-heading">
+        <section class="board-section" aria-labelledby="board-heading">
             <h3 id="board-heading" class="sr-only">将棋盤</h3>
             
             <div role="grid" aria-label="将棋盤 9×9マス" class="shogi-board" id="shogi-board">
@@ -748,7 +748,7 @@
                     </div>
                 @endfor
             </div>
-        </main>
+        </section>
         
         {{-- 駒台（先手） --}}
         <aside class="komadai" aria-labelledby="sente-komadai-heading">
@@ -790,7 +790,10 @@
         {{-- ランキング登録ダイアログ --}}
         <div id="ranking-registration-dialog" role="dialog" aria-modal="true" aria-labelledby="ranking-dialog-title" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center; z-index: 2000;">
             <div style="background: var(--color-bg); border: 4px solid var(--color-border); border-radius: 8px; padding: 32px; max-width: 500px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); color: var(--color-text);">
-                <h2 id="ranking-dialog-title" style="margin-top: 0; margin-bottom: 16px; font-size: 1.5rem;">🎉 ランキングに登録しますか？</h2>
+                <h2 id="ranking-dialog-title" style="margin-top: 0; margin-bottom: 16px; font-size: 1.5rem;">
+                    🎉 ランキングに登録しますか？
+                    <button type="button" class="game-modal-close" id="btn-close-ranking" aria-label="閉じる" style="float: right;">✕</button>
+                </h2>
                 
                 <p id="ranking-dialog-message" style="margin-bottom: 24px; font-size: 1.1rem; line-height: 1.6;">
                     おめでとうございます！AIに勝利しました。
@@ -857,7 +860,7 @@
                 <span>AI思考中…</span>
             </div>
 
-            <section aria-labelledby="game-info-heading">
+            <section aria-labelledby="game-info-heading" aria-live="polite" aria-relevant="text">
                 <h3 id="game-info-heading">ゲーム情報</h3>
                 <dl style="line-height: 1.6;">
                     <div style="margin-bottom: 4px;">
@@ -2840,6 +2843,19 @@
                     ? 'ランキング登録をスキップしました'
                     : '対局を終了しました';
                 // 盤面の最初のセルにフォーカスを戻す
+                const firstCell = document.querySelector('.cell');
+                if (firstCell) {
+                    firstCell.focus();
+                }
+            });
+
+            // 閉じるボタン（✕）のクリックハンドラ
+            document.getElementById('btn-close-ranking')?.addEventListener('click', function() {
+                const isHumanWin = window.gameData?.status === 'mate' && window.gameData?.winner === 'human';
+                rankingDialog.style.display = 'none';
+                document.getElementById('game-announcements').textContent = isHumanWin
+                    ? 'ランキング登録をキャンセルしました'
+                    : '対局を終了しました';
                 const firstCell = document.querySelector('.cell');
                 if (firstCell) {
                     firstCell.focus();
