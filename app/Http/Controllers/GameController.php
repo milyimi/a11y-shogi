@@ -818,6 +818,101 @@ class GameController extends Controller
     }
 
     /**
+     * AIが先手（プレイヤーが後手選択時）のAI初手を実行
+     */
+    public function aiFirstMove(GameSession $session): JsonResponse
+    {
+        try {
+            if ($session->status !== 'in_progress') {
+                return response()->json(['success' => false, 'message' => 'ゲームは終了しています。']);
+            }
+
+            $boardState = $session->getBoardPosition();
+
+            // AIのターンでなければ拒否
+            if (!$this->isAITurn($session, $boardState)) {
+                return response()->json(['success' => false, 'message' => 'AIの手番ではありません。']);
+            }
+
+            // 既に手が指されている場合は拒否（二重実行防止）
+            if ($session->total_moves > 0) {
+                return response()->json(['success' => false, 'message' => 'AIは既に初手を指しています。']);
+            }
+
+            $aiMove = $this->aiService->generateMove(
+                $boardState,
+                $session->difficulty,
+                $boardState['turn']
+            );
+
+            if (!$aiMove) {
+                return response()->json(['success' => false, 'message' => 'AIが手を生成できませんでした。']);
+            }
+
+            $aiCapturedPiece = $aiMove['capture']
+                ? ($boardState['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null)
+                : null;
+
+            $aiBoard = $this->executeMove($boardState, $aiMove);
+            $aiBoard['turn'] = $aiBoard['turn'] === 'sente' ? 'gote' : 'sente';
+
+            $session->updateBoardPosition($aiBoard);
+            $session->increment('total_moves');
+
+            // 指し手記録
+            $aiPieceAfterDrop = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+            $this->saveMoveRecord(
+                $session,
+                $session->total_moves,
+                'ai',
+                $aiPieceAfterDrop ? $aiPieceAfterDrop['type'] : 'unknown',
+                $boardState['turn'],
+                $aiMove['from_rank'],
+                $aiMove['from_file'],
+                $aiMove['to_rank'],
+                $aiMove['to_file'],
+                false,
+                $aiCapturedPiece ? $aiCapturedPiece['type'] : null
+            );
+            $this->saveBoardState($session, $aiBoard, $session->total_moves);
+
+            // 棋譜記録
+            $aiPiece = $aiBoard['board'][$aiMove['to_rank']][$aiMove['to_file']] ?? null;
+            $aiPieceName = $aiPiece ? $this->shogiService->getPieceName($aiPiece['type']) : '駒';
+            $aiColorName = ($boardState['turn'] === 'sente') ? '先手' : '後手';
+            $aiMoveDesc = "{$aiColorName}: {$aiMove['to_file']}の{$aiMove['to_rank']}に{$aiPieceName}";
+            if ($aiCapturedPiece) {
+                $aiCapName = $this->shogiService->getPieceName($aiCapturedPiece['type']);
+                $aiMoveDesc .= "（{$aiCapName}取り）";
+            }
+            $moveHistory = $session->move_history;
+            if (is_string($moveHistory)) $moveHistory = json_decode($moveHistory, true) ?? [];
+            if (!is_array($moveHistory)) $moveHistory = [];
+            $moveHistory[] = $aiMoveDesc;
+            $session->move_history = $moveHistory;
+            $session->save();
+
+            return response()->json([
+                'success' => true,
+                'aiMove' => $aiMove,
+                'aiCapturedPiece' => $aiCapturedPiece ? $aiCapturedPiece['type'] : null,
+                'boardState' => $aiBoard,
+                'moveCount' => $session->total_moves,
+                'currentPlayer' => 'human',
+                'moveHistory' => $moveHistory,
+                'aiMoveDescription' => sprintf(
+                    '%dの%dから%dの%dに移動',
+                    $aiMove['from_file'], $aiMove['from_rank'],
+                    $aiMove['to_file'], $aiMove['to_rank']
+                ),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('[GameController::aiFirstMove] Error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'エラーが発生しました。']);
+        }
+    }
+
+    /**
      * 棋譜を戻す（一手前に戻す）
      */
     public function undo(GameSession $session): JsonResponse

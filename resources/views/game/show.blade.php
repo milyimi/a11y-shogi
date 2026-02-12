@@ -1196,6 +1196,11 @@
             }
             guide += '矢印キーで移動、Enterで選択できます。Hキーでヘルプを開けます。';
             document.getElementById('game-announcements').textContent = guide;
+
+            // AIが先手の場合、AI初手を自動リクエスト
+            if (currentPlayer !== 'human') {
+                requestAiFirstMove();
+            }
         }, 500);
         
         // グローバルキーボードショートカット
@@ -1451,6 +1456,53 @@
 
         function isGameOver() {
             return window.gameData && window.gameData.status && window.gameData.status !== 'in_progress';
+        }
+
+        // AI初手リクエスト（プレイヤーが後手選択時）
+        function requestAiFirstMove() {
+            const thinkingEl = document.getElementById('ai-thinking');
+            if (thinkingEl) thinkingEl.classList.add('active');
+
+            const aiThinkingReminder = setTimeout(() => {
+                if (thinkingEl && thinkingEl.classList.contains('active')) {
+                    thinkingEl.querySelector('span').textContent = 'AIが考え中です、もう少しお待ちください';
+                }
+            }, 5000);
+
+            fetchJson(`/game/{{ $game->id }}/ai-first-move`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(data => {
+                clearTimeout(aiThinkingReminder);
+                if (thinkingEl) {
+                    thinkingEl.classList.remove('active');
+                    thinkingEl.querySelector('span').textContent = 'AI思考中…';
+                }
+                if (data.success && data.aiMove) {
+                    updateBoard(data.boardState);
+                    updateGameInfo(data);
+                    currentPlayer = 'human';
+
+                    let aiAnnouncement = buildAIMoveAnnouncement(data);
+                    document.getElementById('game-announcements').textContent = aiAnnouncement + ' あなたの手番です。';
+                    highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                } else {
+                    document.getElementById('game-announcements').textContent = 'AIの初手でエラーが発生しました。ページを再読み込みしてください。';
+                }
+            })
+            .catch(err => {
+                clearTimeout(aiThinkingReminder);
+                if (thinkingEl) {
+                    thinkingEl.classList.remove('active');
+                    thinkingEl.querySelector('span').textContent = 'AI思考中…';
+                }
+                console.error('[requestAiFirstMove] Error:', err);
+                document.getElementById('game-announcements').textContent = 'AIの初手でエラーが発生しました。';
+            });
         }
 
         // 待った（undo）

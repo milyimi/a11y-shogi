@@ -15,6 +15,7 @@ Route::prefix('game')->name('game.')->group(function () {
     Route::post('/start', [GameController::class, 'start'])->name('start');
     Route::get('/{session}', [GameController::class, 'show'])->name('show');
     Route::post('/{session}/move', [GameController::class, 'move'])->name('move');
+    Route::post('/{session}/ai-first-move', [GameController::class, 'aiFirstMove'])->name('aiFirstMove');
     Route::post('/{session}/promote', [GameController::class, 'promote'])->name('promote');
     Route::post('/{session}/undo', [GameController::class, 'undo'])->name('undo');
     Route::post('/{session}/resign', [GameController::class, 'resign'])->name('resign');
