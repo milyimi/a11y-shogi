@@ -379,20 +379,34 @@
             .btn-primary,
             .btn-secondary,
             .btn-danger {
-                forced-color-adjust: auto;
+                forced-color-adjust: none;
                 background: ButtonFace !important;
                 color: ButtonText !important;
                 border: 2px solid ButtonText !important;
                 box-shadow: none !important;
+                outline: none;
+                transform: none !important;
             }
             .btn:hover, .btn:focus,
-            .btn-primary:hover, .btn-primary:focus,
             .btn-secondary:hover, .btn-secondary:focus,
             .btn-danger:hover, .btn-danger:focus {
                 background: Highlight !important;
                 color: HighlightText !important;
-                border-color: Highlight !important;
-                outline: 3px solid Highlight;
+                border-color: HighlightText !important;
+                outline: 3px solid HighlightText !important;
+                outline-offset: 2px;
+            }
+            .btn-primary {
+                forced-color-adjust: none;
+                background: Highlight !important;
+                color: HighlightText !important;
+                border: 3px solid HighlightText !important;
+            }
+            .btn-primary:hover, .btn-primary:focus {
+                background: ButtonText !important;
+                color: ButtonFace !important;
+                border-color: ButtonFace !important;
+                outline: 3px solid ButtonFace !important;
                 outline-offset: 2px;
             }
             .btn:active,
@@ -404,9 +418,6 @@
             .btn:disabled {
                 opacity: 0.5;
                 border-style: dotted;
-            }
-            .btn-primary {
-                border: 3px solid Highlight !important;
             }
             .btn-secondary {
                 border-style: dashed !important;
@@ -425,12 +436,16 @@
                 outline-offset: 2px;
             }
             .contrast-toggle {
-                forced-color-adjust: auto;
+                forced-color-adjust: none;
+                background: ButtonFace !important;
+                color: ButtonText !important;
                 border: 2px solid ButtonText;
             }
             .contrast-toggle:hover,
             .contrast-toggle:focus {
-                outline: 3px solid Highlight;
+                background: Highlight !important;
+                color: HighlightText !important;
+                outline: 3px solid HighlightText;
                 outline-offset: 2px;
             }
             .header {
