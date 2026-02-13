@@ -219,6 +219,8 @@
             border-color: var(--color-btn-text);
             box-shadow: 0 4px 10px var(--color-btn-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
             transform: translateY(-1px);
+            outline: 3px solid var(--color-focus);
+            outline-offset: 2px;
         }
         
         .btn:active {
@@ -249,6 +251,8 @@
             border-style: solid;
             border-color: var(--color-btn-text);
             box-shadow: 0 2px 6px var(--color-btn-shadow);
+            outline: 3px solid var(--color-focus);
+            outline-offset: 2px;
         }
 
         .btn-danger {
@@ -263,6 +267,8 @@
             color: #FFFFFF !important;
             border-color: var(--color-btn-danger-hover);
             box-shadow: 0 4px 10px rgba(198, 40, 40, 0.4);
+            outline: 3px solid var(--color-focus);
+            outline-offset: 2px;
         }
 
         .btn-danger:active {
@@ -281,6 +287,8 @@
             border-color: #003D7A;
             color: #FFFFFF !important;
             box-shadow: 0 4px 10px rgba(0, 61, 122, 0.35);
+            outline: 3px solid var(--color-focus);
+            outline-offset: 2px;
         }
 
         .btn-primary:active {
@@ -299,6 +307,8 @@
             background: linear-gradient(to bottom, #3B82F6, #2563EB) !important;
             border-color: #93C5FD !important;
             color: #FFFFFF !important;
+            outline: 3px solid var(--color-focus);
+            outline-offset: 2px;
         }
 
         html.high-contrast .btn-secondary {
