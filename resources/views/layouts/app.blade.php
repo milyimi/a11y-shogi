@@ -393,8 +393,8 @@
                 background: Highlight !important;
                 color: HighlightText !important;
                 border-color: HighlightText !important;
-                outline: 3px solid HighlightText !important;
-                outline-offset: 2px;
+                outline: 3px solid Highlight !important;
+                outline-offset: 3px;
             }
             .btn-primary {
                 forced-color-adjust: none;
@@ -403,11 +403,11 @@
                 border: 3px solid HighlightText !important;
             }
             .btn-primary:hover, .btn-primary:focus {
-                background: ButtonText !important;
-                color: ButtonFace !important;
-                border-color: ButtonFace !important;
-                outline: 3px solid ButtonFace !important;
-                outline-offset: 2px;
+                background: HighlightText !important;
+                color: Highlight !important;
+                border-color: Highlight !important;
+                outline: 3px solid Highlight !important;
+                outline-offset: 3px;
             }
             .btn:active,
             .btn-primary:active,
