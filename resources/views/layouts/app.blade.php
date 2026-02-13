@@ -363,6 +363,109 @@
             background: #1A3A1A;
         }
         
+        /* Windows高コントラストモード (forced-colors) 対応 */
+        @media (forced-colors: active) {
+            .btn {
+                forced-color-adjust: none;
+                background: ButtonFace !important;
+                color: ButtonText !important;
+                border: 2px solid ButtonText;
+                box-shadow: none;
+            }
+            .btn:hover, .btn:focus {
+                background: Highlight !important;
+                color: HighlightText !important;
+                border-color: Highlight;
+                outline: 2px solid Highlight;
+                outline-offset: 2px;
+            }
+            .btn:active {
+                background: Highlight !important;
+                color: HighlightText !important;
+            }
+            .btn:disabled {
+                opacity: 0.5;
+                border-style: dotted;
+            }
+            .btn-primary {
+                forced-color-adjust: none;
+                background: Highlight !important;
+                color: HighlightText !important;
+                border: 2px solid ButtonText;
+            }
+            .btn-primary:hover, .btn-primary:focus {
+                background: ButtonText !important;
+                color: ButtonFace !important;
+                border-color: ButtonText;
+                outline: 2px solid Highlight;
+                outline-offset: 2px;
+            }
+            .btn-secondary {
+                forced-color-adjust: none;
+                background: ButtonFace !important;
+                color: ButtonText !important;
+                border: 2px dashed ButtonText;
+            }
+            .btn-secondary:hover, .btn-secondary:focus {
+                background: Highlight !important;
+                color: HighlightText !important;
+                border-style: solid;
+                border-color: Highlight;
+            }
+            .btn-danger {
+                forced-color-adjust: none;
+                background: ButtonFace !important;
+                color: ButtonText !important;
+                border: 3px solid ButtonText;
+                box-shadow: none;
+            }
+            .btn-danger:hover, .btn-danger:focus {
+                background: Highlight !important;
+                color: HighlightText !important;
+                border-color: Highlight;
+            }
+            a {
+                color: LinkText;
+            }
+            a:visited {
+                color: VisitedText;
+            }
+            a:hover, a:focus {
+                outline: 3px solid Highlight;
+                outline-offset: 2px;
+            }
+            .contrast-toggle {
+                forced-color-adjust: none;
+                background: ButtonFace;
+                color: ButtonText;
+                border: 2px solid ButtonText;
+            }
+            .contrast-toggle:hover,
+            .contrast-toggle:focus {
+                background: Highlight;
+                color: HighlightText;
+                outline: 2px solid Highlight;
+                outline-offset: 2px;
+            }
+            .header {
+                border-bottom-color: CanvasText;
+            }
+            .footer {
+                border-top-color: CanvasText;
+            }
+            .skip-link:focus {
+                background: Highlight;
+                color: HighlightText;
+            }
+            kbd {
+                forced-color-adjust: none;
+                background: ButtonFace;
+                color: ButtonText;
+                border: 1px solid ButtonText;
+                box-shadow: none;
+            }
+        }
+
         @media (max-width: 767px) {
             body {
                 font-size: 14px;
