@@ -599,35 +599,16 @@
             color: CanvasText;
             border: 2px solid CanvasText;
         }
-        .btn {
-            forced-color-adjust: none;
-            background: ButtonFace !important;
-            color: ButtonText !important;
-            border: 2px solid ButtonText;
-        }
-        .btn:hover, .btn:focus {
-            background: Highlight !important;
-            color: HighlightText !important;
-            border-color: Highlight;
-        }
-        .btn:disabled {
-            opacity: 0.5;
-        }
-        .btn-danger {
-            forced-color-adjust: none;
-            background: ButtonFace !important;
-            color: ButtonText !important;
-            border: 3px solid ButtonText;
-        }
-        .btn-danger:hover, .btn-danger:focus {
-            background: Highlight !important;
-            color: HighlightText !important;
+        .btn, .btn-danger {
+            /* レイアウト共通CSSで対応済み - ゲーム固有の上書きのみ */
         }
         .game-modal-close {
-            forced-color-adjust: none;
-            background: ButtonFace;
-            color: ButtonText;
+            forced-color-adjust: auto;
             border: 2px solid ButtonText;
+        }
+        .game-modal-close:hover, .game-modal-close:focus {
+            outline: 3px solid Highlight;
+            outline-offset: 2px;
         }
     }
 </style>

@@ -365,21 +365,29 @@
         
         /* Windows高コントラストモード (forced-colors) 対応 */
         @media (forced-colors: active) {
-            .btn {
-                forced-color-adjust: none;
+            .btn,
+            .btn-primary,
+            .btn-secondary,
+            .btn-danger {
+                forced-color-adjust: auto;
                 background: ButtonFace !important;
                 color: ButtonText !important;
-                border: 2px solid ButtonText;
-                box-shadow: none;
+                border: 2px solid ButtonText !important;
+                box-shadow: none !important;
             }
-            .btn:hover, .btn:focus {
+            .btn:hover, .btn:focus,
+            .btn-primary:hover, .btn-primary:focus,
+            .btn-secondary:hover, .btn-secondary:focus,
+            .btn-danger:hover, .btn-danger:focus {
                 background: Highlight !important;
                 color: HighlightText !important;
-                border-color: Highlight;
-                outline: 2px solid Highlight;
+                border-color: Highlight !important;
+                outline: 3px solid Highlight;
                 outline-offset: 2px;
             }
-            .btn:active {
+            .btn:active,
+            .btn-primary:active,
+            .btn-danger:active {
                 background: Highlight !important;
                 color: HighlightText !important;
             }
@@ -388,41 +396,13 @@
                 border-style: dotted;
             }
             .btn-primary {
-                forced-color-adjust: none;
-                background: Highlight !important;
-                color: HighlightText !important;
-                border: 2px solid ButtonText;
-            }
-            .btn-primary:hover, .btn-primary:focus {
-                background: ButtonText !important;
-                color: ButtonFace !important;
-                border-color: ButtonText;
-                outline: 2px solid Highlight;
-                outline-offset: 2px;
+                border: 3px solid Highlight !important;
             }
             .btn-secondary {
-                forced-color-adjust: none;
-                background: ButtonFace !important;
-                color: ButtonText !important;
-                border: 2px dashed ButtonText;
-            }
-            .btn-secondary:hover, .btn-secondary:focus {
-                background: Highlight !important;
-                color: HighlightText !important;
-                border-style: solid;
-                border-color: Highlight;
+                border-style: dashed !important;
             }
             .btn-danger {
-                forced-color-adjust: none;
-                background: ButtonFace !important;
-                color: ButtonText !important;
-                border: 3px solid ButtonText;
-                box-shadow: none;
-            }
-            .btn-danger:hover, .btn-danger:focus {
-                background: Highlight !important;
-                color: HighlightText !important;
-                border-color: Highlight;
+                border: 3px solid ButtonText !important;
             }
             a {
                 color: LinkText;
@@ -435,16 +415,12 @@
                 outline-offset: 2px;
             }
             .contrast-toggle {
-                forced-color-adjust: none;
-                background: ButtonFace;
-                color: ButtonText;
+                forced-color-adjust: auto;
                 border: 2px solid ButtonText;
             }
             .contrast-toggle:hover,
             .contrast-toggle:focus {
-                background: Highlight;
-                color: HighlightText;
-                outline: 2px solid Highlight;
+                outline: 3px solid Highlight;
                 outline-offset: 2px;
             }
             .header {
@@ -458,10 +434,7 @@
                 color: HighlightText;
             }
             kbd {
-                forced-color-adjust: none;
-                background: ButtonFace;
-                color: ButtonText;
-                border: 1px solid ButtonText;
+                forced-color-adjust: auto;
                 box-shadow: none;
             }
         }
