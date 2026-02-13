@@ -312,7 +312,18 @@
         }
 
         html.high-contrast .btn-secondary {
-            border-color: #AA8855;
+            background: linear-gradient(to bottom, #3A3028, #2E2820) !important;
+            color: #F0E0C8 !important;
+            border-color: #D4A843 !important;
+            border-width: 2px;
+        }
+
+        html.high-contrast .btn-secondary:hover,
+        html.high-contrast .btn-secondary:focus {
+            background: linear-gradient(to bottom, #4A4028, #3D3520) !important;
+            color: #FFFFFF !important;
+            border-color: #F0E0C8 !important;
+            border-style: solid;
         }
 
         kbd {
