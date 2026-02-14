@@ -150,6 +150,9 @@
         background: rgba(46, 125, 50, 0.25);
         box-shadow: inset 0 0 0 3px #2E7D32;
     }
+    .cell[data-legal-move="true"]:focus {
+        background: var(--color-cell-focus, #C8AD8A);
+    }
     .cell[data-legal-move="true"]::before {
         content: "●";
         position: absolute;
@@ -200,6 +203,9 @@
     html.high-contrast .cell[data-legal-move="true"] {
         background: #1B4332;
         box-shadow: inset 0 0 0 3px #4CAF50;
+    }
+    html.high-contrast .cell[data-legal-move="true"]:focus {
+        background: #5C4433;
     }
     html.high-contrast .cell[data-legal-move="true"]::before {
         color: #81C784;
@@ -702,12 +708,16 @@
             color: MarkText !important;
             border-color: CanvasText !important;
         }
-        /* forced-colors: 合法手マーカー */
+        /* forced-colors: 合法手マーカー — borderで表示しoutlineはフォーカス専用 */
         .cell[data-legal-move="true"] {
             background: Canvas !important;
             box-shadow: none !important;
-            outline: 3px dashed Highlight !important;
-            outline-offset: -3px;
+            outline: none !important;
+            border: 3px dashed Highlight !important;
+        }
+        .cell[data-legal-move="true"]:focus {
+            outline: 4px solid Highlight !important;
+            outline-offset: -4px;
         }
         .cell[data-legal-move="true"]::before {
             color: Highlight !important;
