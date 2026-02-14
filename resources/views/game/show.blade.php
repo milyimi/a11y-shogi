@@ -539,8 +539,9 @@
         border-radius: 6px;
         font-size: 0.8rem;
         font-weight: normal;
-        white-space: normal;
-        max-width: 200px;
+        white-space: nowrap;
+        width: max-content;
+        max-width: 250px;
         text-align: center;
         z-index: 100;
         pointer-events: none;
