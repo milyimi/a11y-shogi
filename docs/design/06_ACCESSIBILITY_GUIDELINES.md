@@ -1179,15 +1179,20 @@ node tests/accessibility/blind-user-playtest.mjs
 node tests/e2e/full-feature-test.mjs
 
 # 障害者AIペルソナ Wave 1-3（102テスト）
-node test-diverse.mjs
-node test-diverse2.mjs
-node test-diverse3.mjs
+node tests/customer-ai/test-diverse.mjs
+node tests/customer-ai/test-diverse2.mjs
+node tests/customer-ai/test-diverse3.mjs
 
-# 棋士AIペルソナ（30テスト）
-node test-kishi.mjs
+# 専門家AIペルソナ（67テスト）
+node tests/expert-ai/test-kishi.mjs
+node tests/expert-ai/test-designer.mjs
 
-# WebデザイナーAIペルソナ（37テスト）
-node test-designer.mjs
+# 追加お客様AIペルソナ（193テスト）
+node tests/customer-ai/test-senior.mjs
+node tests/customer-ai/test-child.mjs
+node tests/customer-ai/test-ux.mjs
+node tests/customer-ai/test-teacher.mjs
+node tests/customer-ai/test-mobile.mjs
 ```
 
 ---

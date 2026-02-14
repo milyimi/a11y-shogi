@@ -74,7 +74,7 @@ a11y-shogiは、視覚障害・上肢障害・認知障害・色覚多様性・�
 | データベース | SQLite |
 | AI エンジン | Minimax + Alpha-Beta Pruning (Depth 4, 500K Transposition Table) |
 | 外部AI | python-shogi 1.1.1, Fairy-Stockfish 11.1 (USI) |
-| テスト | Pest (PHP 125), Puppeteer (E2E 392) — **計517テスト** |
+| テスト | Pest (PHP 125), Puppeteer (E2E 585) — **計710テスト** |
 
 ## セットアップ
 
@@ -160,12 +160,17 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | コントラスト | `node tests/accessibility/contrast-test.mjs` | 28 | WCAG AAA配色、ダーク/HC両モード |
 | 全盲ユーザー対局 | `node tests/accessibility/blind-user-playtest.mjs` | 77 | 22フェーズの対局シミュレーション |
 | 全機能E2E | `node tests/e2e/full-feature-test.mjs` | 59 | 15カテゴリの全機能動作検証 |
-| 障害者AI Wave 1 | `node test-diverse.mjs` | 45 | 上肢障害/色覚/認知/聴覚/高齢者/ADHD |
-| 障害者AI Wave 2 | `node test-diverse2.mjs` | 31 | 脳性麻痺/ディスレクシア/ズーム/自閉症 |
-| 障害者AI Wave 3 | `node test-diverse3.mjs` | 26 | 知的障害/片麻痺/てんかん/WCAG AAA |
-| 棋士AIペルソナ | `node test-kishi.mjs` | 30 | 初期配置/駒移動/将棋用語/ゲームフロー |
-| WebデザイナーAI | `node test-designer.mjs` | 37 | レイアウト/レスポンシブ/配色/一貫性 |
-| **合計** | | **517** | |
+| 障害者AI Wave 1 | `node tests/customer-ai/test-diverse.mjs` | 45 | 上肢障害/色覚/認知/聴覚/高齢者/ADHD |
+| 障害者AI Wave 2 | `node tests/customer-ai/test-diverse2.mjs` | 31 | 脳性麻痺/ディスレクシア/ズーム/自閉症 |
+| 障害者AI Wave 3 | `node tests/customer-ai/test-diverse3.mjs` | 26 | 知的障害/片麻痺/てんかん/WCAG AAA |
+| 棋士AIペルソナ | `node tests/expert-ai/test-kishi.mjs` | 30 | 初期配置/駒移動/将棋用語/ゲームフロー |
+| WebデザイナーAI | `node tests/expert-ai/test-designer.mjs` | 37 | レイアウト/レスポンシブ/配色/一貫性 |
+| 高齢者AI | `node tests/customer-ai/test-senior.mjs` | 62 | 視認性/マウス操作/誤操作復帰/安定性 |
+| 子供・初心者AI | `node tests/customer-ai/test-child.mjs` | 28 | ふりがな/直感性/エラー親切さ/楽しさ |
+| UXリサーチャーAI | `node tests/customer-ai/test-ux.mjs` | 45 | ニールセン10原則/認知負荷/一貫性 |
+| 教育者AI | `node tests/customer-ai/test-teacher.mjs` | 30 | 授業活用/安全性/多様な障がい/Chromebook |
+| モバイルユーザーAI | `node tests/customer-ai/test-mobile.mjs` | 28 | スマホ視認性/タッチ/レスポンシブ/性能 |
+| **合計** | | **710** | |
 
 ### 全テスト一括実行
 
@@ -180,16 +185,23 @@ node tests/accessibility/blind-user-playtest.mjs
 node tests/e2e/full-feature-test.mjs
 
 # 障害者AIペルソナテスト
-node test-diverse.mjs
-node test-diverse2.mjs
-node test-diverse3.mjs
+node tests/customer-ai/test-diverse.mjs
+node tests/customer-ai/test-diverse2.mjs
+node tests/customer-ai/test-diverse3.mjs
 
 # 専門家AIペルソナテスト
-node test-kishi.mjs
-node test-designer.mjs
+node tests/expert-ai/test-kishi.mjs
+node tests/expert-ai/test-designer.mjs
+
+# 追加お客様AIペルソナテスト
+node tests/customer-ai/test-senior.mjs
+node tests/customer-ai/test-child.mjs
+node tests/customer-ai/test-ux.mjs
+node tests/customer-ai/test-teacher.mjs
+node tests/customer-ai/test-mobile.mjs
 ```
 
-### テスト対象ペルソナ（19種類）
+### テスト対象ペルソナ（24種類）
 
 | # | ペルソナ | 障害種別 |
 |---|---|---|
@@ -212,6 +224,11 @@ node test-designer.mjs
 | Q | てんかん | 光感受性 |
 | — | 棋士AI | 将棋ルール正確性 |
 | — | WebデザイナーAI | UI/UX設計品質 |
+| — | 高齢者AI | デジタル不慣れ（72歳） |
+| — | 子供・初心者AI | 小学生（12歳）将棋初心者 |
+| — | UXリサーチャーAI | ヒューリスティック評価専門家 |
+| — | 教育者AI | 特別支援学校教諭 |
+| — | モバイルユーザーAI | スマートフォン通勤ユーザー |
 
 ## プロジェクト構造
 
@@ -233,10 +250,11 @@ a11y-shogi/
 ├── tests/
 │   ├── Feature/                # PHP ユニットテスト (Pest)
 │   ├── accessibility/          # E2E アクセシビリティテスト (Puppeteer)
-│   └── e2e/                    # 全機能E2Eテスト (Puppeteer)
-├── test-diverse*.mjs           # 障害者AIペルソナテスト (Wave 1-3)
-├── test-kishi.mjs              # 棋士AIペルソナテスト
-├── test-designer.mjs           # WebデザイナーAIペルソナテスト
+│   ├── e2e/                    # 全機能E2Eテスト (Puppeteer)
+│   ├── customer-ai/            # お客様AIペルソナテスト (8ファイル)
+│   └── expert-ai/              # 専門家AIペルソナテスト (2ファイル)
+├── tests/customer-ai/          # お客様AIペルソナテスト (8ファイル)
+├── tests/expert-ai/            # 専門家AIペルソナテスト (2ファイル)
 └── docs/design/                # 設計ドキュメント（7文書）
 ```
 
