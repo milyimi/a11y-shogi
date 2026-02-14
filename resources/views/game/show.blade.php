@@ -114,9 +114,9 @@
     
     .cell:hover, .cell:focus {
         background: var(--color-cell-focus, #C8AD8A);
-        outline: 4px solid var(--color-focus);
+        outline: 4px solid #E68A00;
         outline-offset: -4px;
-        box-shadow: inset 0 0 0 6px rgba(255, 140, 0, 0.4);
+        box-shadow: inset 0 0 0 6px rgba(230, 138, 0, 0.5);
     }
     
     html.high-contrast .cell:hover,
@@ -132,28 +132,29 @@
     }
 
     .cell[data-ai-last-move="true"] {
-        background: #FFE0B2;
-        box-shadow: inset 0 0 0 3px #E65100, 0 0 0 3px #E65100;
+        background: #FFD180;
+        box-shadow: inset 0 0 0 3px #BF360C, 0 0 0 3px #BF360C;
     }
     .cell[data-ai-last-move="true"]::after {
         content: "★";
         position: absolute;
-        top: 0;
-        right: 1px;
-        font-size: 10px;
-        color: #E65100;
+        top: 1px;
+        right: 2px;
+        font-size: 14px;
+        color: #BF360C;
         line-height: 1;
         pointer-events: none;
     }
 
     .cell[data-legal-move="true"] {
-        background: rgba(76, 175, 80, 0.3);
+        background: rgba(46, 125, 50, 0.25);
+        box-shadow: inset 0 0 0 3px #2E7D32;
     }
     .cell[data-legal-move="true"]::before {
         content: "●";
         position: absolute;
-        font-size: 12px;
-        color: rgba(76, 175, 80, 0.7);
+        font-size: 20px;
+        color: #2E7D32;
         pointer-events: none;
     }
     
@@ -162,7 +163,7 @@
     }
     
     .piece-gote {
-        color: var(--color-gote, #CC0000);
+        color: var(--color-gote, #B91C1C);
         transform: rotate(180deg);
         text-decoration: underline;
         text-decoration-thickness: 2px;
@@ -180,7 +181,7 @@
         border-color: #D4A843;
     }
     html.high-contrast .piece-sente {
-        color: #F0E0C8;
+        color: #FFE8C0;
     }
     html.high-contrast .piece-gote {
         color: #99DDFF;
@@ -197,10 +198,12 @@
         color: #FF6600;
     }
     html.high-contrast .cell[data-legal-move="true"] {
-        background: #2E5930;
+        background: #1B4332;
+        box-shadow: inset 0 0 0 3px #4CAF50;
     }
     html.high-contrast .cell[data-legal-move="true"]::before {
-        color: #66BB6A;
+        color: #81C784;
+        font-size: 20px;
     }
     html.high-contrast .cell:hover,
     html.high-contrast .cell:focus {
@@ -509,7 +512,9 @@
         border-radius: 6px;
         font-size: 0.8rem;
         font-weight: normal;
-        white-space: nowrap;
+        white-space: normal;
+        max-width: 200px;
+        text-align: center;
         z-index: 100;
         pointer-events: none;
         box-shadow: 0 2px 8px rgba(60, 47, 30, 0.25);
@@ -609,6 +614,75 @@
         .game-modal-close:hover, .game-modal-close:focus {
             outline: 3px solid Highlight;
             outline-offset: 2px;
+        }
+        /* forced-colors: トースト */
+        .toast {
+            forced-color-adjust: none;
+            background: Canvas !important;
+            color: CanvasText !important;
+            border: 2px solid CanvasText !important;
+            box-shadow: none;
+        }
+        /* forced-colors: モーダル */
+        .game-modal-overlay {
+            forced-color-adjust: none;
+            background: rgba(0, 0, 0, 0.8) !important;
+        }
+        .game-modal {
+            forced-color-adjust: auto;
+            border: 3px solid CanvasText !important;
+        }
+        /* forced-colors: AI思考スピナー */
+        .ai-thinking-indicator {
+            forced-color-adjust: none;
+            background: Canvas !important;
+            border: 2px solid CanvasText !important;
+            color: CanvasText !important;
+        }
+        .ai-thinking-spinner {
+            border-color: GrayText !important;
+            border-top-color: Highlight !important;
+        }
+        /* forced-colors: 選択中状態バー */
+        .selection-status-bar {
+            forced-color-adjust: none;
+            background: Canvas !important;
+            border: 2px solid Highlight !important;
+            color: CanvasText !important;
+        }
+        /* forced-colors: 駒台・盤面セクション */
+        .komadai, .board-section {
+            forced-color-adjust: auto;
+            border: 2px solid CanvasText !important;
+        }
+        /* forced-colors: ランキングダイアログ */
+        #ranking-registration-dialog > div {
+            forced-color-adjust: auto;
+            border: 3px solid CanvasText !important;
+        }
+        /* forced-colors: アラート */
+        .alert {
+            forced-color-adjust: none;
+            background: Canvas !important;
+            color: CanvasText !important;
+            border-color: CanvasText !important;
+        }
+        /* forced-colors: 手番ハイライト */
+        .turn-highlight {
+            forced-color-adjust: none;
+            background: Mark !important;
+            color: MarkText !important;
+            border-color: CanvasText !important;
+        }
+        /* forced-colors: 合法手マーカー */
+        .cell[data-legal-move="true"] {
+            background: Canvas !important;
+            box-shadow: none !important;
+            outline: 3px dashed Highlight !important;
+            outline-offset: -3px;
+        }
+        .cell[data-legal-move="true"]::before {
+            color: Highlight !important;
         }
     }
 </style>
@@ -960,10 +1034,10 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <label for="piece-size-select" style="font-size: 1rem;">駒の文字サイズ:</label>
                         <select id="piece-size-select" style="padding: 6px 10px; font-size: 1rem; border: 2px solid var(--color-border); border-radius: 4px; background: var(--color-bg); color: var(--color-text);">
-                            <option value="20">小 (20px)</option>
-                            <option value="24" selected>標準 (24px)</option>
-                            <option value="30">大 (30px)</option>
-                            <option value="36">特大 (36px)</option>
+                            <option value="20">小</option>
+                            <option value="24" selected>標準</option>
+                            <option value="30">大</option>
+                            <option value="36">特大</option>
                         </select>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -1040,10 +1114,22 @@
         } else {
             requestAnimationFrame(() => toast.classList.add('show'));
         }
-        setTimeout(() => {
-            if (!prefersReduced) toast.classList.remove('show');
-            setTimeout(() => toast.remove(), prefersReduced ? 0 : 350);
-        }, 4000);
+        // ホバー/フォーカス中はタイマー一時停止（弱視者配慮）
+        let paused = false;
+        let timeoutId;
+        function startDismiss() {
+            timeoutId = setTimeout(() => {
+                if (paused) return;
+                if (!prefersReduced) toast.classList.remove('show');
+                setTimeout(() => toast.remove(), prefersReduced ? 0 : 350);
+            }, 7000);
+        }
+        toast.addEventListener('mouseenter', () => { paused = true; clearTimeout(timeoutId); });
+        toast.addEventListener('mouseleave', () => { paused = false; startDismiss(); });
+        toast.addEventListener('focus', () => { paused = true; clearTimeout(timeoutId); });
+        toast.addEventListener('blur', () => { paused = false; startDismiss(); });
+        toast.tabIndex = 0;
+        startDismiss();
     }
     window.showToast = showToast;
 
@@ -1189,21 +1275,25 @@
         updateFocus();
         
         // 初回ガイダンスを段階的に提示（短く分割）
-        setTimeout(function() {
-            var guide = '対局を開始しました。';
-            if (currentPlayer === 'human') {
-                guide += 'あなたの手番です。';
-            } else {
-                guide += 'AIが先に指します。';
-            }
-            guide += '矢印キーで移動、Enterで選択できます。Hキーでヘルプを開けます。';
-            document.getElementById('game-announcements').textContent = guide;
+        // ただし、リロード後のアナウンス（待った等）がある場合はスキップ
+        const hasPendingAnnounce = sessionStorage.getItem('a11y-shogi-announce');
+        if (!hasPendingAnnounce) {
+            setTimeout(function() {
+                var guide = '対局を開始しました。';
+                if (currentPlayer === 'human') {
+                    guide += 'あなたの手番です。';
+                } else {
+                    guide += 'AIが先に指します。';
+                }
+                guide += '矢印キーで移動、Enterで選択できます。Hキーでヘルプを開けます。';
+                document.getElementById('game-announcements').textContent = guide;
+            }, 500);
+        }
 
-            // AIが先手の場合、AI初手を自動リクエスト
-            if (currentPlayer !== 'human') {
-                requestAiFirstMove();
-            }
-        }, 500);
+        // AIが先手の場合、AI初手を自動リクエスト
+        if (currentPlayer !== 'human') {
+            setTimeout(function() { requestAiFirstMove(); }, hasPendingAnnounce ? 800 : 500);
+        }
         
         // グローバルキーボードショートカット
         document.addEventListener('keydown', function(e) {
@@ -1492,6 +1582,10 @@
                     let aiAnnouncement = buildAIMoveAnnouncement(data);
                     document.getElementById('game-announcements').textContent = aiAnnouncement + ' あなたの手番です。';
                     highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                    // 王手時に合法手を補足案内
+                    if (data.isCheck && data.status === 'in_progress') {
+                        setTimeout(() => announceCheckGuidance(), 800);
+                    }
                 } else {
                     document.getElementById('game-announcements').textContent = 'AIの初手でエラーが発生しました。ページを再読み込みしてください。';
                 }
@@ -1865,6 +1959,10 @@
                             let aiAnnouncement = buildAIMoveAnnouncement(data);
                             document.getElementById('game-announcements').textContent = aiAnnouncement;
                             highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                            // 王手時に合法手を補足案内
+                            if (data.isCheck && data.status === 'in_progress') {
+                                setTimeout(() => announceCheckGuidance(), 800);
+                            }
                         }, 500);
                     } else if (data.status === 'in_progress') {
                         // AIの手がないかつゲーム続行中
@@ -1933,6 +2031,10 @@
                             let aiAnnouncement = buildAIMoveAnnouncement(data);
                             document.getElementById('game-announcements').textContent = aiAnnouncement;
                             highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                            // 王手時に合法手を補足案内
+                            if (data.isCheck && data.status === 'in_progress') {
+                                setTimeout(() => announceCheckGuidance(), 800);
+                            }
                         }, 500);
                     }
                 } else {
@@ -2222,6 +2324,30 @@
             const coordList = moves.map(([f,r]) => `${f}の${r}`).join('、');
             // game-status（polite）に合法手を通知（メインアナウンスと競合しない）
             document.getElementById('game-status').textContent = `${pn}: ${coordList} に移動可能（${moves.length}マス）`;
+        }
+
+        // 王手時の合法手ガイダンス（動ける駒と移動先を自動通知）
+        function announceCheckGuidance() {
+            const board = window.gameData.boardState.board;
+            const nameMap = { 'fu':'歩','kyosha':'香','keima':'桂','gin':'銀','kin':'金','kaku':'角','hisha':'飛','gyoku':'玉','ou':'王','tokin':'と金','nkyosha':'成香','nkeima':'成桂','ngin':'成銀','uma':'馬','ryu':'龍' };
+            const movablePieces = [];
+            for (let r = 1; r <= 9; r++) {
+                for (let f = 1; f <= 9; f++) {
+                    const p = board[r]?.[f];
+                    if (!p || p.color !== humanColor) continue;
+                    const moves = calcLegalMoves(p, f, r, board, humanColor);
+                    if (moves.length > 0) {
+                        const pn = nameMap[p.type] || p.type;
+                        const coordList = moves.map(([mf,mr]) => `${mf}の${mr}`).join('、');
+                        movablePieces.push(`${f}の${r}の${pn}→${coordList}`);
+                    }
+                }
+            }
+            if (movablePieces.length > 0) {
+                document.getElementById('game-status').textContent = `王手です。動かせる駒: ${movablePieces.join('。')}`;
+            } else {
+                document.getElementById('game-status').textContent = '動かせる駒がありません。';
+            }
         }
 
         // 相手の利き筋情報（Iキー）
@@ -2769,6 +2895,10 @@
                             document.getElementById('game-announcements').textContent = 
                                 `AIが${data.aiMove.from_file}の${data.aiMove.from_rank}から${data.aiMove.to_file}の${data.aiMove.to_rank}に移動しました`;
                             highlightAIMove(data.aiMove.to_rank, data.aiMove.to_file);
+                            // 王手時に合法手を補足案内
+                            if (data.isCheck && data.status === 'in_progress') {
+                                setTimeout(() => announceCheckGuidance(), 800);
+                            }
                         }, 500);
                     }
                 } else {
@@ -2870,7 +3000,7 @@
                             const linkDiv = document.createElement('div');
                             linkDiv.style.marginTop = '24px';
                             linkDiv.style.padding = '16px';
-                            linkDiv.style.background = '#E6F3FF';
+                            linkDiv.style.background = 'var(--color-surface, #E6F3FF)';
                             linkDiv.style.borderRadius = '4px';
                             linkDiv.innerHTML = `
                                 <p style="margin: 0 0 12px 0; font-weight: bold;">${message}</p>

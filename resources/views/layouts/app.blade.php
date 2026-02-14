@@ -14,10 +14,10 @@
         :root {
             --color-text: #1A1A1A;
             --color-bg: #FFFFFF;
-            --color-text-secondary: #545454;
+            --color-text-secondary: #494949;
             --color-link: #0055AA;
             --color-link-visited: #551A8B;
-            --color-focus: #FFD700;
+            --color-focus: #E6A800;
             --color-border: #999999;
             --color-error: #CC0000;
             --color-success: #008800;
@@ -67,7 +67,7 @@
         
         body {
             font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
-            font-size: 16px;
+            font-size: 1rem;
             line-height: 1.6;
             color: var(--color-text);
             background-color: var(--color-bg);
@@ -256,10 +256,11 @@
         }
 
         .btn-danger {
-            background: linear-gradient(to bottom, #D32F2F, var(--color-btn-danger-bg)) !important;
+            background: linear-gradient(to bottom, #E53935, var(--color-btn-danger-bg)) !important;
             color: #FFFFFF !important;
             border-color: var(--color-btn-danger-border);
             box-shadow: 0 2px 6px rgba(198, 40, 40, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            font-size: 1.05em;
         }
 
         .btn-danger:hover, .btn-danger:focus {
@@ -473,11 +474,17 @@
                 forced-color-adjust: auto;
                 box-shadow: none;
             }
+            .alert {
+                forced-color-adjust: none;
+                background: Canvas !important;
+                color: CanvasText !important;
+                border-color: CanvasText !important;
+            }
         }
 
         @media (max-width: 767px) {
             body {
-                font-size: 14px;
+                font-size: 0.875rem;
             }
             
             .header h1 {
