@@ -1646,7 +1646,12 @@
         });
         
         function handleHandPieceKeydown(e) {
-            if (e.key === 'Escape') {
+            if (e.key === ' ') {
+                // Spaceキー: デフォルトのスクロールを防止し、明示的に選択処理を実行
+                // （ブラウザはSpaceをkeyupでclickに変換するが、スクロールでフォーカスが外れると不発になる）
+                e.preventDefault();
+                handleHandPieceSelect(e);
+            } else if (e.key === 'Escape') {
                 e.preventDefault();
                 focusCell(window.focusedCell.rank, window.focusedCell.file);
                 document.getElementById('game-announcements').textContent = '盤面に戻りました';
