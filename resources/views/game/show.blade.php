@@ -885,17 +885,19 @@
                         <ruby>待<rt>ま</rt></ruby>った
                     </button>
                     <span id="btn-undo-desc" class="sr-only">{{ ($gameState['moveCount'] ?? 0) > 0 && ($gameState['status'] === 'in_progress') ? '' : '（まだ使えません）' }}</span>
-                    <button type="button" class="btn" id="btn-reset" data-tooltip="初期状態に戻す" style="font-size: 0.85rem; padding: 8px 4px;">
+                    <button type="button" class="btn" id="btn-reset" data-tooltip="初期状態に戻す" aria-describedby="btn-reset-desc" style="font-size: 0.85rem; padding: 8px 4px;">
                         リセット
                     </button>
+                    <span id="btn-reset-desc" class="sr-only">初期状態に戻す（確認あり）</span>
                     <button type="button" class="btn btn-secondary" id="btn-quit" style="font-size: 0.85rem; padding: 8px 4px;">
                         ホームへ
                     </button>
                 </div>
                 <div style="margin-top: 8px;">
-                    <button type="button" class="btn btn-danger" id="btn-resign" style="width: 100%; font-size: 0.85rem; padding: 8px;" data-tooltip="負けを認める（確認あり）">
+                    <button type="button" class="btn btn-danger" id="btn-resign" style="width: 100%; font-size: 0.85rem; padding: 8px;" data-tooltip="負けを認める（確認あり）" aria-describedby="btn-resign-desc">
                         <ruby>投了<rt>とうりょう</rt></ruby>する（負けを認める）
                     </button>
+                    <span id="btn-resign-desc" class="sr-only">負けを認める（確認ダイアログが表示されます）</span>
                 </div>
                 {{-- 駒選択中状態バー --}}
                 <div class="selection-status-bar" id="selection-status" aria-live="polite">
@@ -1124,8 +1126,8 @@
                     }, 100);
                 }
                 
-                // Escキーでダイアログを閉じる
-                const handleEscape = (e) => {
+                // Escキー・フォーカストラップ
+                const handleRankingKeydown = (e) => {
                     if (e.key === 'Escape') {
                         rankingDialog.style.display = 'none';
                         const announcement = isHumanWin
@@ -1134,10 +1136,29 @@
                         document.getElementById('game-announcements').textContent = announcement;
                         const firstCell = document.querySelector('.cell');
                         if (firstCell) firstCell.focus();
-                        document.removeEventListener('keydown', handleEscape);
+                        document.removeEventListener('keydown', handleRankingKeydown);
+                    }
+                    // フォーカストラップ: Tabキーでダイアログ内を循環
+                    if (e.key === 'Tab') {
+                        const dialogEl = rankingDialog.querySelector('[role="dialog"] > div, div[style]') || rankingDialog;
+                        const focusable = rankingDialog.querySelectorAll('button:not([style*="display: none"]):not([disabled]), input:not([style*="display: none"]), [href], select, textarea, [tabindex]:not([tabindex="-1"])');
+                        if (focusable.length === 0) return;
+                        const first = focusable[0];
+                        const last = focusable[focusable.length - 1];
+                        if (e.shiftKey) {
+                            if (document.activeElement === first) {
+                                e.preventDefault();
+                                last.focus();
+                            }
+                        } else {
+                            if (document.activeElement === last) {
+                                e.preventDefault();
+                                first.focus();
+                            }
+                        }
                     }
                 };
-                document.addEventListener('keydown', handleEscape);
+                document.addEventListener('keydown', handleRankingKeydown);
             }
         }
     }
@@ -2499,7 +2520,12 @@
             if (data.currentPlayer !== undefined) {
                 const playerText = data.currentPlayer === 'human' ? 'あなた' : 'AI';
                 const colorText = data.humanColor === 'sente' ? '先手' : '後手';
-                document.getElementById('current-player').textContent = `${playerText}(${colorText})`;
+                const cpEl = document.getElementById('current-player');
+                if (data.currentPlayer === 'human') {
+                    cpEl.innerHTML = `<span class="turn-highlight">${playerText}</span>(${colorText})`;
+                } else {
+                    cpEl.textContent = `${playerText}(${colorText})`;
+                }
                 currentPlayer = data.currentPlayer;
             }
 
