@@ -99,6 +99,12 @@
             outline: 3px solid var(--color-focus);
             outline-offset: 2px;
         }
+
+        input[type="radio"]:focus,
+        input[type="checkbox"]:focus {
+            outline: 3px solid var(--color-focus) !important;
+            outline-offset: 3px;
+        }
         
         .skip-link {
             position: absolute;

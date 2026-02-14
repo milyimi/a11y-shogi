@@ -275,17 +275,17 @@
     
     @media (max-width: 1199px) {
         .game-container {
-            grid-template-columns: 1fr minmax(220px, 280px);
+            grid-template-columns: 1fr minmax(200px, 260px);
         }
         .komadai {
-            min-width: 140px;
-            max-width: 200px;
-            min-height: 200px;
-            padding: 12px;
+            min-width: 100px;
+            max-width: 160px;
+            min-height: 180px;
+            padding: 10px;
         }
     }
     
-    @media (max-width: 767px) {
+    @media (max-width: 799px) {
         .game-container {
             grid-template-columns: 1fr;
             gap: 8px;
