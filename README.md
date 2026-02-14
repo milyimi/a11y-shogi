@@ -253,8 +253,6 @@ a11y-shogi/
 │   ├── e2e/                    # 全機能E2Eテスト (Puppeteer)
 │   ├── customer-ai/            # お客様AIペルソナテスト (8ファイル)
 │   └── expert-ai/              # 専門家AIペルソナテスト (2ファイル)
-├── tests/customer-ai/          # お客様AIペルソナテスト (8ファイル)
-├── tests/expert-ai/            # 専門家AIペルソナテスト (2ファイル)
 └── docs/design/                # 設計ドキュメント（7文書）
 ```
 
