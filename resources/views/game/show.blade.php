@@ -295,6 +295,20 @@
             justify-content: center;
         }
         
+        .shogi-board {
+            min-width: 0;
+            max-width: 100%;
+        }
+        
+        .shogi-board .cell {
+            min-width: 0;
+            min-height: 0;
+        }
+        
+        .komadai {
+            min-width: 60px;
+        }
+        
         .info-panel {
             order: 2;
         }
@@ -325,6 +339,19 @@
     .shogi-board.large-piece-size .cell {
         min-width: 56px;
         min-height: 56px;
+    }
+
+    /* 400%ズーム（320px以下）で横スクロールを防ぐ */
+    @media (max-width: 480px) {
+        .shogi-board {
+            min-width: 0;
+            max-width: 100%;
+        }
+        .shogi-board .cell {
+            min-width: 0;
+            min-height: 0;
+            /* aspect-ratioは維持 — セルは親gridに追従 */
+        }
     }
 
     /* prefers-reduced-motion: アニメーション/transition を完全無効化 */
@@ -1135,7 +1162,10 @@
 
     
     // フォーカス管理（グローバルアクセス可能にする）
-    window.focusedCell = { rank: 9, file: 9 };
+    // 初心者向け: 自分の駒側にフォーカスを初期化（先手=3段目中央歩、後手=7段目中央歩）
+    window.focusedCell = @json($game->human_color) === 'sente'
+        ? { rank: 3, file: 5 }
+        : { rank: 7, file: 5 };
     let selectedCell = null;
     
     function updateFocus() {
@@ -1383,18 +1413,21 @@
         
         // 盤面全体を読み上げ
         function announceBoardState() {
+            const board = window.gameData.boardState.board;
+            const nameMap = { 'fu':'歩','kyosha':'香','keima':'桂','gin':'銀','kin':'金','kaku':'角','hisha':'飛','gyoku':'玉','ou':'王','tokin':'と金','nkyosha':'成香','nkeima':'成桂','ngin':'成銀','uma':'馬','ryu':'龍' };
             let announcement = '盤面: ';
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                const rank = cell.dataset.rank;
-                const file = cell.dataset.file;
-                const piece = cell.textContent.trim();
-                if (piece) {
-                    announcement += `${file}の${rank}に${piece}。`;
-                } else {
-                    announcement += `${file}の${rank}は空。`;
+            for (let r = 9; r >= 1; r--) {
+                for (let f = 9; f >= 1; f--) {
+                    const p = board[r]?.[f];
+                    if (p) {
+                        const cn = p.color === 'sente' ? '先手' : '後手';
+                        const pn = nameMap[p.type] || p.type;
+                        announcement += `${f}の${r}に${cn}の${pn}。`;
+                    } else {
+                        announcement += `${f}の${r}は空。`;
+                    }
                 }
-            });
+            }
             document.getElementById('game-announcements').textContent = announcement;
             // 現在の盤面スナップショットを保存（差分用）
             window._lastBoardSnapshot = JSON.parse(JSON.stringify(window.gameData.boardState.board));
@@ -3077,13 +3110,9 @@
         window._lastFocusBeforeDialog = document.activeElement;
         const overlay = document.createElement('div');
         overlay.id = 'confirm-dialog-overlay';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-labelledby', 'confirm-dialog-title');
-        overlay.setAttribute('aria-describedby', 'confirm-dialog-desc');
         overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:3000;';
         overlay.innerHTML = `
-            <div style="background:var(--color-bg,#fff);border:4px solid var(--color-border,#333);border-radius:8px;padding:32px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3);color:var(--color-text,#1A1A1A);">
+            <div role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-desc" style="background:var(--color-bg,#fff);border:4px solid var(--color-border,#333);border-radius:8px;padding:32px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3);color:var(--color-text,#1A1A1A);">
                 <h3 id="confirm-dialog-title" style="margin:0 0 12px 0;">${title}</h3>
                 <p id="confirm-dialog-desc" style="margin:0 0 24px 0;color:var(--color-text-secondary);">${description}</p>
                 <div style="display:flex;gap:12px;">

@@ -141,53 +141,71 @@
     
     <section style="margin-top: 48px;" aria-labelledby="game-rules-heading">
         <h3 id="game-rules-heading">将棋のルール（簡易版）</h3>
-        <p>将棋は2人で対戦するボードゲームです。</p>
+        <p>将棋は2人で対戦するボードゲームです。9×9マスの盤面で、交互に駒を動かします。</p>
         
+        <h4 style="margin-top: 24px;">先手と後手</h4>
+        <p style="line-height: 1.8;">先手（下側）が最初に指し、後手（上側）がその後に指します。交互に1手ずつ指していきます。</p>
+
         <h4 style="margin-top: 24px;">目的</h4>
-        <p>相手の王（玉）を詰めることが目的です。</p>
+        <p>相手の王（玉）を逃げられない状態にすること（<ruby>詰<rt>つ</rt></ruby>み）が目的です。王を取るのではなく、どこにも逃げられない状態を作ります。</p>
         
         <h4 style="margin-top: 24px;">駒の種類と動き</h4>
         <dl style="line-height: 2; margin-top: 16px;">
             <dt style="font-weight: bold;">歩（ふ）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                前に1マス進む（成ると「と」）
+                前に1マス進む（成ると「と金」= 金と同じ動き）
             </dd>
             
             <dt style="font-weight: bold;">香（きょう）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                前方へ直線（成ると「成香」）
+                前方へまっすぐ何マスでも進む（成ると金と同じ動き）
             </dd>
             
             <dt style="font-weight: bold;">桂（けい）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                前方へ桂馬跳び（成ると「成桂」）
+                前方へ2マス・横に1マス跳ぶ（途中の駒を飛び越せる唯一の駒。成ると金と同じ動き）
             </dd>
             
             <dt style="font-weight: bold;">銀（ぎん）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                斜め前後と真前（成ると「成銀」）
+                前方3方向と斜め後ろ2方向に1マス（成ると金と同じ動き）
             </dd>
             
             <dt style="font-weight: bold;">金（きん）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                前後左右と斜め前（成らない）
+                前後左右と斜め前2方向に1マス（成れません）
             </dd>
             
             <dt style="font-weight: bold;">角（かく）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                斜め方向（成ると「馬」で前後左右にも動ける）
+                斜め4方向に何マスでも進む（成ると「馬」= 前後左右にも1マス動ける）
             </dd>
             
             <dt style="font-weight: bold;">飛（ひ）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                前後左右（成ると「龍」で斜めにも動ける）
+                前後左右に何マスでも進む（成ると「龍」= 斜めにも1マス動ける）
             </dd>
             
             <dt style="font-weight: bold;">玉/王（ぎょく/おう）</dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                全方向に1マス
+                全方向に1マス（成れません。この駒を守るのがゲームの目的です）
             </dd>
         </dl>
+
+        <h4 style="margin-top: 24px;"><ruby>成<rt>な</rt></ruby>り（駒のパワーアップ）</h4>
+        <p style="line-height: 1.8;">自分の駒が相手の陣地（<strong>敵陣 = 相手側の3段</strong>）に入る・出る・中で動くとき、駒を裏返して強くできます。これを「成る」といいます。成ると別の動きになります（上の説明のカッコ内を参照）。成るかどうかは自分で選べますが、歩・香・桂は最奥に到達すると必ず成ります。</p>
+
+        <h4 style="margin-top: 24px;">持ち駒を<ruby>打<rt>う</rt></ruby>つ</h4>
+        <p style="line-height: 1.8;">将棋の最大の特徴です。相手の駒を取ると「持ち駒」として自分の駒台に並びます。持ち駒は自分の手番に、盤面の空いているマスに置く（打つ）ことができます。ただし以下のルールがあります：</p>
+        <ul style="margin-top: 8px; line-height: 1.8;">
+            <li><strong><ruby>二歩<rt>にふ</rt></ruby>禁止</strong>: 同じ列（縦の筋）に自分の歩が2枚あってはいけません</li>
+            <li>歩・香は最奥の段に打てません（動けなくなるため）</li>
+            <li>桂は最奥2段に打てません（動けなくなるため）</li>
+            <li>持ち駒は成った状態では打てません（元の駒の状態で打ちます）</li>
+        </ul>
+
+        <h4 style="margin-top: 24px;">王手と詰み</h4>
+        <p style="line-height: 1.8;">相手の王を次に取れる状態にすることを「<ruby>王手<rt>おうて</rt></ruby>」といいます。王手をかけられたら、必ず王を逃がすか、王手を防がなければなりません。どうやっても王手を防げない状態が「<ruby>詰<rt>つ</rt></ruby>み」で、詰まされた側の負けです。</p>
     </section>
     
     <section style="margin-top: 48px;" aria-labelledby="accessibility-heading">
