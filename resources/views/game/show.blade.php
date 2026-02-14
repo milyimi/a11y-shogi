@@ -2926,8 +2926,8 @@
                 <h3 id="confirm-dialog-title" style="margin:0 0 12px 0;">${title}</h3>
                 <p id="confirm-dialog-desc" style="margin:0 0 24px 0;color:var(--color-text-secondary);">${description}</p>
                 <div style="display:flex;gap:12px;">
-                    <button id="confirm-dialog-yes" class="btn btn-primary" style="flex:1;padding:12px;font-size:1rem;cursor:pointer;">はい</button>
-                    <button id="confirm-dialog-no" class="btn" style="flex:1;padding:12px;font-size:1rem;cursor:pointer;">キャンセル</button>
+                    <button id="confirm-dialog-yes" class="btn btn-primary" style="flex:1;padding:12px;font-size:1rem;cursor:pointer;white-space:nowrap;">はい</button>
+                    <button id="confirm-dialog-no" class="btn" style="flex:1;padding:12px;font-size:1rem;cursor:pointer;white-space:nowrap;">キャンセル</button>
                 </div>
             </div>
         `;

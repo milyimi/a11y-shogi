@@ -534,7 +534,8 @@ class ShogiService
 
     /**
      * 指し手が成りの対象かどうかを確認
-     * 移動先が敵陣で、かつ成り可能な駒の場合はtrue
+     * 移動元または移動先が敵陣で、かつ成り可能な駒の場合はtrue
+     * （将棋のルール: 敵陣から出る場合・敵陣に入る場合・敵陣内で動く場合いずれも成れる）
      */
     public function shouldPromote(array $boardState, int $fromRank, int $fromFile, int $toRank, int $toFile): bool
     {
@@ -549,8 +550,9 @@ class ShogiService
             return false;
         }
 
-        // 移動先が敵陣か確認
-        return $this->isInEnemyTerritory($toRank, $piece['color']);
+        // 移動元または移動先が敵陣か確認
+        return $this->isInEnemyTerritory($toRank, $piece['color']) 
+            || $this->isInEnemyTerritory($fromRank, $piece['color']);
     }
 
     /**
