@@ -342,10 +342,19 @@
             align-self: stretch;
         }
         
+        .komadai,
         .komadai:first-of-type,
         .komadai:last-of-type {
             align-self: stretch;
             max-width: none;
+            width: auto;
+            flex: 0 0 auto;
+            min-height: auto;
+        }
+        
+        .komadai .hand-pieces {
+            flex-direction: row;
+            flex-wrap: wrap;
         }
     }
 
