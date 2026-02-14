@@ -301,6 +301,11 @@
             justify-content: center;
         }
         
+        .board-section {
+            flex: 1 0 auto;
+            min-width: 0;
+        }
+        
         .shogi-board {
             min-width: 0;
             max-width: 100%;
@@ -313,6 +318,9 @@
         
         .komadai {
             min-width: 60px;
+            max-width: 90px;
+            width: 90px;
+            flex: 0 0 90px;
         }
         
         .info-panel {
@@ -328,6 +336,10 @@
         .board-area {
             flex-direction: column;
             align-items: center;
+        }
+        
+        .board-section {
+            align-self: stretch;
         }
         
         .komadai:first-of-type,
