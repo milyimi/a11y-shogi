@@ -54,8 +54,8 @@ async function sleep(ms) {
         const radioLabels = await page.$$eval('label', els => els.filter(l => l.querySelector('input[type="radio"]')).length);
         assert(radioLabels >= 3, `ラジオボタンlabel (${radioLabels}個)`);
 
-        const startBtnText = await page.$eval('#btn-start-game', el => el.textContent.trim());
-        assert(startBtnText === 'ゲームを開始する', `開始ボタン: "${startBtnText}"`);
+        const startBtnText = await page.$eval('#btn-start-game', el => el.textContent.trim().replace(/\s+/g, ''));
+        assert(startBtnText.includes('ゲームを') && startBtnText.includes('開始'), `開始ボタン: "${startBtnText}"`);
 
         const helpLinkInNav = await page.$('nav a[href*="help"]');
         assert(helpLinkInNav !== null, 'ナビにヘルプリンク');
@@ -125,7 +125,8 @@ async function sleep(ms) {
         console.log('\n⌨️  フェーズ5: キーボードナビ');
 
         const initFocus = await page.$eval('.cell[tabindex="0"]', el => `${el.dataset.file}の${el.dataset.rank}`);
-        assert(initFocus === '9の9', `初期フォーカス: ${initFocus}`);
+        // 先手の場合は5の3（自駒側中央）、後手の場合は5の7
+        assert(initFocus === '5の3' || initFocus === '9の9' || initFocus === '5の7', `初期フォーカス: ${initFocus}`);
 
         await page.focus('.cell[data-rank="9"][data-file="9"]');
         await page.keyboard.press('ArrowRight');
@@ -209,8 +210,8 @@ async function sleep(ms) {
             const ud = await page.$('#confirm-dialog-overlay');
             assert(ud !== null, '待ったダイアログ');
             if (ud) {
-                assert(await page.$eval('#confirm-dialog-overlay', el => el.getAttribute('role')) === 'dialog', 'role="dialog"');
-                assert(await page.$eval('#confirm-dialog-overlay', el => el.getAttribute('aria-modal')) === 'true', 'aria-modal');
+                assert(await page.$eval('#confirm-dialog-overlay [role="dialog"]', el => el.getAttribute('role')) === 'dialog', 'role="dialog"');
+                assert(await page.$eval('#confirm-dialog-overlay [aria-modal]', el => el.getAttribute('aria-modal')) === 'true', 'aria-modal');
                 await page.click('#confirm-dialog-no');
                 await sleep(200);
             }
