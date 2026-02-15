@@ -198,6 +198,32 @@ async function sleep(ms) {
         await sleep(300);
         assert(await page.$eval('#game-announcements', el => el.textContent).then(t => t.length > 10), 'Sキー状態');
 
+        // Hキーでショートカットモーダル表示（SR利用者の重要機能）
+        const focusedBefore = await page.evaluate(() => document.activeElement.className);
+        await page.keyboard.press('h');
+        await sleep(500);
+        const shortcutsModal = await page.$('#shortcuts-modal-overlay');
+        assert(shortcutsModal !== null, 'Hキーでモーダル表示');
+        if (shortcutsModal) {
+            assert(await page.$eval('#shortcuts-modal', el => el.getAttribute('role')) === 'dialog', 'ショートカットrole=dialog');
+            assert(await page.$eval('#shortcuts-modal', el => el.getAttribute('aria-modal')) === 'true', 'ショートカットaria-modal');
+            assert(await page.$eval('#shortcuts-modal-title', el => el.textContent.includes('ショートカット')), 'モーダルタイトル');
+            // フォーカスが閉じるボタンに移動しているか
+            const focusedBtn = await page.evaluate(() => {
+                const active = document.activeElement;
+                return active.getAttribute('aria-label') === '閉じる' && active.classList.contains('game-modal-close');
+            });
+            assert(focusedBtn, 'フォーカスが閉じるボタン');
+            // Escapeで閉じる
+            await page.keyboard.press('Escape');
+            await sleep(300);
+            const closed = await page.$eval('#shortcuts-modal-overlay', el => !el.classList.contains('open'));
+            assert(closed, 'Escapeで閉じる');
+            // フォーカスが元の位置に戻る（フォーカス管理）
+            const focusedAfter = await page.evaluate(() => document.activeElement.className);
+            assert(focusedAfter === focusedBefore, 'フォーカス復帰', `before=${focusedBefore}, after=${focusedAfter}`);
+        }
+
         // ========================================
         // フェーズ9: 待った
         // ========================================
