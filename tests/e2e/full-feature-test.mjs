@@ -160,7 +160,7 @@ async function confirmNo(page) {
 
     // 後手の玉が9段目にある
     const goteGyoku = await cellLabel(page, 9, 5);
-    check(goteGyoku?.includes('玉'), `9-5に後手玉: "${goteGyoku}"`);
+    check(goteGyoku?.includes('王'), `9-5に後手王: "${goteGyoku}"`);
 
     // ══════════════════════════════════════
     //  TEST 2: 駒の移動＋AI応答

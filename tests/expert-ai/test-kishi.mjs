@@ -79,7 +79,7 @@ async function startGame(page, color = 'sente') {
         // 9段目
         const rank9 = [
             { f: 9, type: 'kyosha' }, { f: 8, type: 'keima' }, { f: 7, type: 'gin' },
-            { f: 6, type: 'kin' }, { f: 5, type: 'gyoku' }, { f: 4, type: 'kin' },
+            { f: 6, type: 'kin' }, { f: 5, type: 'ou' }, { f: 4, type: 'kin' },
             { f: 3, type: 'gin' }, { f: 2, type: 'keima' }, { f: 1, type: 'kyosha' }
         ];
         rank9.forEach(({ f, type }) => {

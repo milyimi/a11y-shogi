@@ -113,7 +113,7 @@ describe('Reference Position Validation - 参照局面の正当性確認', funct
         expect($hasSenteKing)->toBeTrue();
     });
 
-    it('初期局面で後手玉が存在する', function () {
+    it('初期局面で後手王が存在する', function () {
         $shogi = app(ShogiService::class);
         $boardState = $shogi->getInitialBoard();
         
@@ -122,7 +122,7 @@ describe('Reference Position Validation - 参照局面の正当性確認', funct
 
         foreach ($board as $rank) {
             foreach ($rank as $piece) {
-                if ($piece && $piece['type'] === 'gyoku' && $piece['color'] === 'gote') {
+                if ($piece && $piece['type'] === 'ou' && $piece['color'] === 'gote') {
                     $hasGoteKing = true;
                     break 2;
                 }
