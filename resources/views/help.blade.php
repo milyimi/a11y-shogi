@@ -93,7 +93,7 @@
             
             <dt style="font-weight: bold;"><kbd>H</kbd></dt>
             <dd style="margin-left: 24px; margin-bottom: 12px;">
-                ヘルプを表示します（このページ）
+                ショートカット一覧を表示します（ゲーム画面内モーダル）
             </dd>
         </dl>
         

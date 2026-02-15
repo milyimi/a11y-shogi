@@ -310,6 +310,30 @@ async function startGame(page, color = 'sente') {
             check('N-3 ショートカット一覧が開ける', false, 'ボタンなし');
         }
 
+        // N-3b: Hキーでショートカットモーダルが開く（ページ遷移しない）
+        const urlBefore = page.url();
+        await page.keyboard.press('h');
+        await sleep(800);
+        const hKeyResult = await page.evaluate(() => {
+            const overlay = document.getElementById('shortcuts-modal-overlay');
+            if (!overlay) return { found: false, reason: 'no overlay element' };
+            const isOpen = overlay.classList.contains('open');
+            const modal = overlay.querySelector('.game-modal');
+            const text = modal ? modal.textContent : '';
+            return { found: true, isOpen, hasContent: text.includes('B:') && text.includes('H:') };
+        });
+        const urlAfter = page.url();
+        check('N-3b Hキーでショートカットモーダルが開く',
+            hKeyResult.found && hKeyResult.isOpen && hKeyResult.hasContent,
+            JSON.stringify(hKeyResult));
+        check('N-3c Hキーでページ遷移しない',
+            urlBefore === urlAfter,
+            `before=${urlBefore}, after=${urlAfter}`);
+        if (hKeyResult.isOpen) {
+            await page.keyboard.press('Escape');
+            await sleep(300);
+        }
+
         // N-4: 設定がセッション間で保持（localStorageに保存されるか）
         const hasLocalStorage = await page.evaluate(() => {
             // 設定変更してlocalStorageに保存されるか確認

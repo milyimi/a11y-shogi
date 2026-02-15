@@ -1134,7 +1134,7 @@
                     <dt style="font-weight: bold; display: inline;">1 / 2:</dt>
                     <dd style="display: inline; margin-left: 4px;">先手 / 後手の<ruby>駒台<rt>こまだい</rt></ruby></dd><br>
                     <dt style="font-weight: bold; display: inline;">H:</dt>
-                    <dd style="display: inline; margin-left: 4px;">ヘルプ</dd><br>
+                    <dd style="display: inline; margin-left: 4px;">このガイド<ruby>表示<rt>ひょうじ</rt></ruby></dd><br>
                     <dt style="font-weight: bold; display: inline;">U:</dt>
                     <dd style="display: inline; margin-left: 4px;"><ruby>待<rt>ま</rt></ruby>った</dd><br>
                     <dt style="font-weight: bold; display: inline;">R:</dt>
@@ -1386,10 +1386,10 @@
                     announceGameStatus();
                     break;
                 case 'H':
-                    // ヘルプページに移動
+                    // ショートカットモーダルを表示
                     if (e.shiftKey === false) {
                         e.preventDefault();
-                        window.location.href = '/help';
+                        openGameModal('shortcuts-modal-overlay', document.activeElement);
                     }
                     break;
                 case 'K':

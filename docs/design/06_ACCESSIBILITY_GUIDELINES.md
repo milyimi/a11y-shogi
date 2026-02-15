@@ -335,7 +335,7 @@ document.addEventListener('keydown', (event) => {
     case 'h':
     case 'H':
       event.preventDefault();
-      showHelpModal();
+      openGameModal('shortcuts-modal-overlay', document.activeElement);
       break;
   }
 });
@@ -425,7 +425,7 @@ document.addEventListener('keydown', (e) => {
       break;
     case 'h':
       e.preventDefault();
-      showHelpModal();
+      openGameModal('shortcuts-modal-overlay', document.activeElement);
       break;
     // ... その他のショートカット
   }
