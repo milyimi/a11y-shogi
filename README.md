@@ -74,7 +74,7 @@ a11y-shogiは、視覚障害・上肢障害・発達特性/学習障害・色覚
 | データベース | SQLite |
 | AI エンジン | Minimax + Alpha-Beta Pruning (Depth 4, 500K Transposition Table) |
 | 外部AI | python-shogi 1.1.1, Fairy-Stockfish 11.1 (USI) |
-| テスト | Pest (PHP 125), Puppeteer (E2E 594) — **計719テスト** |
+| テスト | Pest (PHP 125), Puppeteer (E2E 595) — **計720テスト** |
 
 ## セットアップ
 
@@ -158,7 +158,7 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | PHP ユニット | `vendor/bin/pest` | 125 | ルール検証、AI評価、成り・持ち駒等 |
 | E2E アクセシビリティ | `node tests/accessibility/puppeteer-a11y-test.mjs` | 59 | ARIA属性、キーボード、フォーカス管理 |
 | コントラスト | `node tests/accessibility/contrast-test.mjs` | 28 | WCAG AAA配色、ダーク/HC両モード |
-| 全盲ユーザー対局 | `node tests/accessibility/blind-user-playtest.mjs` | 84 | 22フェーズの対局シミュレーション |
+| 全盲ユーザー対局 | `node tests/accessibility/blind-user-playtest.mjs` | 85 | 22フェーズの対局シミュレーション |
 | 全機能E2E | `node tests/e2e/full-feature-test.mjs` | 59 | 15カテゴリの全機能動作検証 |
 | 障害者AI Wave 1 | `node tests/customer-ai/test-diverse.mjs` | 45 | 上肢障害/色覚/発達特性/聴覚/加齢の影響/ADHD |
 | 障害者AI Wave 2 | `node tests/customer-ai/test-diverse2.mjs` | 33 | 脳性麻痺/ディスレクシア/ズーム/自閉症 |
@@ -170,7 +170,7 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | UXリサーチャーAI | `node tests/customer-ai/test-ux.mjs` | 45 | ニールセン10原則/情報負荷/一貫性 |
 | 教育者AI | `node tests/customer-ai/test-teacher.mjs` | 30 | 授業活用/安全性/多様な障がい/Chromebook |
 | モバイルユーザーAI | `node tests/customer-ai/test-mobile.mjs` | 28 | スマホ視認性/タッチ/レスポンシブ/性能 |
-| **合計** | | **719** | |
+| **合計** | | **720** | |
 
 ### 全テスト一括実行
 
