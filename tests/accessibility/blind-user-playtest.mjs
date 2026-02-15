@@ -192,7 +192,10 @@ async function sleep(ms) {
         await page.focus('.cell[data-rank="5"][data-file="5"]');
         await page.keyboard.press('b');
         await sleep(300);
-        assert(await page.$eval('#game-announcements', el => el.textContent).then(t => t.includes('盤面')), 'Bキー盤面');
+        const boardText = await page.$eval('#game-announcements', el => el.textContent);
+        assert(boardText.includes('盤面'), 'Bキー盤面');
+        assert(boardText.includes('玉'), '盤面に玉が含まれる');
+        assert(boardText.includes('王'), '盤面に王が含まれる');
 
         // Shift+B: 盤面差分読み上げ（初回は全体読み上げと同じ）
         await page.keyboard.down('Shift');

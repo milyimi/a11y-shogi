@@ -19,7 +19,7 @@ class ShogiService
                     '2' => ['type' => 'keima', 'color' => 'gote'],
                     '3' => ['type' => 'gin', 'color' => 'gote'],
                     '4' => ['type' => 'kin', 'color' => 'gote'],
-                    '5' => ['type' => 'gyoku', 'color' => 'gote'],
+                    '5' => ['type' => 'ou', 'color' => 'gote'],
                     '6' => ['type' => 'kin', 'color' => 'gote'],
                     '7' => ['type' => 'gin', 'color' => 'gote'],
                     '8' => ['type' => 'keima', 'color' => 'gote'],
