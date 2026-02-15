@@ -203,15 +203,17 @@ async function sleep(ms) {
         assert(diffFirst.includes('盤面') || diffFirst.includes('変化'), 'Shift+B初回動作');
 
         // 1手進めてから再度Shift+B（差分のみ読み上げ）
-        const anyCell = await page.$('.cell.piece-sente');
-        if (anyCell) {
-            await anyCell.click();
-            await sleep(200);
-            const legalMove = await page.$('.cell.legal-move');
-            if (legalMove) {
-                await legalMove.click();
+        // ゲーム開始直後は必ず先手の駒がある（例：7の3の歩）
+        const cell73 = await page.$('.cell[data-rank="7"][data-file="3"]');
+        if (cell73) {
+            await cell73.click();
+            await sleep(300);
+            // 合法手マスを取得（必ず複数存在）
+            const legalMoves = await page.$$('.cell.legal-move');
+            if (legalMoves.length > 0) {
+                await legalMoves[0].click();
                 await sleep(500);
-                // 盤面変化後にShift+B
+                // 盤面変化後にShift+B（差分のみ読み上げ）
                 await page.keyboard.down('Shift');
                 await page.keyboard.press('b');
                 await page.keyboard.up('Shift');
