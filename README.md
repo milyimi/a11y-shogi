@@ -4,7 +4,7 @@
 
 ## 概要
 
-a11y-shogiは、視覚障害・上肢障害・認知障害・色覚多様性・感覚過敏を含む**すべてのユーザー**が楽しめる将棋対局システムです。Laravel + Viteをベースに、WCAG 2.1 AAA レベルのアクセシビリティ基準を達成しています。
+a11y-shogiは、視覚障害・上肢障害・発達特性/学習障害・色覚多様性・感覚過敏を含む**すべてのユーザー**が楽しめる将棋対局システムです。Laravel + Viteをベースに、WCAG 2.1 AAA レベルのアクセシビリティ基準を達成しています。
 
 ## 主な機能
 
@@ -160,14 +160,14 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | コントラスト | `node tests/accessibility/contrast-test.mjs` | 28 | WCAG AAA配色、ダーク/HC両モード |
 | 全盲ユーザー対局 | `node tests/accessibility/blind-user-playtest.mjs` | 77 | 22フェーズの対局シミュレーション |
 | 全機能E2E | `node tests/e2e/full-feature-test.mjs` | 59 | 15カテゴリの全機能動作検証 |
-| 障害者AI Wave 1 | `node tests/customer-ai/test-diverse.mjs` | 45 | 上肢障害/色覚/認知/聴覚/高齢者/ADHD |
+| 障害者AI Wave 1 | `node tests/customer-ai/test-diverse.mjs` | 45 | 上肢障害/色覚/発達特性/聴覚/加齢の影響/ADHD |
 | 障害者AI Wave 2 | `node tests/customer-ai/test-diverse2.mjs` | 31 | 脳性麻痺/ディスレクシア/ズーム/自閉症 |
 | 障害者AI Wave 3 | `node tests/customer-ai/test-diverse3.mjs` | 26 | 知的障害/片麻痺/てんかん/WCAG AAA |
 | 棋士AIペルソナ | `node tests/expert-ai/test-kishi.mjs` | 30 | 初期配置/駒移動/将棋用語/ゲームフロー |
 | WebデザイナーAI | `node tests/expert-ai/test-designer.mjs` | 37 | レイアウト/レスポンシブ/配色/一貫性 |
-| 高齢者AI | `node tests/customer-ai/test-senior.mjs` | 62 | 視認性/マウス操作/誤操作復帰/安定性 |
+| 加齢による見えにくさAI | `node tests/customer-ai/test-senior.mjs` | 62 | 視認性/マウス操作/誤操作復帰/安定性 |
 | 子供・初心者AI | `node tests/customer-ai/test-child.mjs` | 28 | ふりがな/直感性/エラー親切さ/楽しさ |
-| UXリサーチャーAI | `node tests/customer-ai/test-ux.mjs` | 45 | ニールセン10原則/認知負荷/一貫性 |
+| UXリサーチャーAI | `node tests/customer-ai/test-ux.mjs` | 45 | ニールセン10原則/情報負荷/一貫性 |
 | 教育者AI | `node tests/customer-ai/test-teacher.mjs` | 30 | 授業活用/安全性/多様な障がい/Chromebook |
 | モバイルユーザーAI | `node tests/customer-ai/test-mobile.mjs` | 28 | スマホ視認性/タッチ/レスポンシブ/性能 |
 | **合計** | | **710** | |
@@ -211,9 +211,9 @@ node tests/customer-ai/test-mobile.mjs
 | D | 弱視初心者 | 拡大表示 + 将棋初心者 |
 | E | 上肢障害者 | 片手キーボード操作 |
 | F | 色覚障害者 | P型色覚 |
-| G | 認知障害者 | 学習障害 |
+| G | 発達特性/学習障害 | ふりがな・平易な言葉 |
 | H | 聴覚障害者 | ろう者 |
-| I | 高齢者 | 弱視 + 手の震え |
+| I | 加齢による見えにくさ | 弱視 + 手の震え |
 | J | ADHD | 感覚過敏 |
 | K | 脳性麻痺 | Tab + Enter のみ |
 | L | ディスレクシア | 読字障害 |
@@ -224,7 +224,7 @@ node tests/customer-ai/test-mobile.mjs
 | Q | てんかん | 光感受性 |
 | — | 棋士AI | 将棋ルール正確性 |
 | — | WebデザイナーAI | UI/UX設計品質 |
-| — | 高齢者AI | デジタル不慣れ（72歳） |
+| — | 加齢による見えにくさAI | デジタル不慣れ（72歳） |
 | — | 子供・初心者AI | 小学生（12歳）将棋初心者 |
 | — | UXリサーチャーAI | ヒューリスティック評価専門家 |
 | — | 教育者AI | 特別支援学校教諭 |

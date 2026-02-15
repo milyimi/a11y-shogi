@@ -1,5 +1,5 @@
 /**
- * 高齢者AI（シニアユーザビリティ）テスト
+ * 加齢による見えにくさAI（シニアユーザビリティ）テスト
  * 
  * ペルソナ: 田中義雄（72歳）
  * - 将棋は50年のベテラン（ルールは完全に理解）
@@ -10,7 +10,7 @@
  * - 「エラー」「ダイアログ」等のカタカナIT用語は馴染みが薄い
  * 
  * 既存の顧客I（test-diverse.mjs）はタッチターゲット・フォントサイズ・設定UIを検証済み。
- * 本テストは「初めてこのサイトを開いた高齢者が迷わず一局遊べるか」を検証する。
+ * 本テストは「初めてこのサイトを開いた加齢による見えにくさのある人が迷わず一局遊べるか」を検証する。
  * 
  * テスト観点:
  *  - ホーム画面の分かりやすさ（ふりがな、初心者案内、操作手順の少なさ）
@@ -23,7 +23,7 @@
  */
 import puppeteer from 'puppeteer';
 
-const BASE = 'http://localhost:8080';
+const BASE = 'http://localhost:8000';
 const results = [];
 let pass = 0, fail = 0;
 
@@ -545,7 +545,7 @@ async function startGame(page, color = 'sente') {
             await page.keyboard.press('Escape');
             await sleep(200);
 
-            // E-34: トースト通知が7秒以上表示される（高齢者が読む時間）
+            // E-34: トースト通知が7秒以上表示される（読み終えるまでの時間確保）
             const toastDuration = await page.evaluate(() => {
                 // showToast関数内のtimeoutを確認（ソースコードレベル）
                 const src = document.querySelector('script')?.textContent || '';
@@ -932,7 +932,7 @@ async function startGame(page, color = 'sente') {
         fail++;
     } finally {
         // サマリー
-        console.log('\n═══ 高齢者AIテスト結果サマリー ═══');
+        console.log('\n═══ 加齢による見えにくさAIテスト結果サマリー ═══');
         console.log(`合計: ${pass + fail} テスト / ✅ ${pass} 成功 / ❌ ${fail} 失敗`);
         if (fail > 0) {
             console.log('\n--- 失敗項目 ---');

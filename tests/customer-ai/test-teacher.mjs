@@ -19,7 +19,7 @@
  */
 import puppeteer from 'puppeteer';
 
-const BASE = 'http://localhost:8080';
+const BASE = 'http://localhost:8000';
 const results = [];
 let pass = 0, fail = 0;
 
