@@ -194,6 +194,33 @@ async function sleep(ms) {
         await sleep(300);
         assert(await page.$eval('#game-announcements', el => el.textContent).then(t => t.includes('盤面')), 'Bキー盤面');
 
+        // Shift+B: 盤面差分読み上げ（初回は全体読み上げと同じ）
+        await page.keyboard.down('Shift');
+        await page.keyboard.press('b');
+        await page.keyboard.up('Shift');
+        await sleep(300);
+        const diffFirst = await page.$eval('#game-announcements', el => el.textContent);
+        assert(diffFirst.includes('盤面') || diffFirst.includes('変化'), 'Shift+B初回動作');
+
+        // 1手進めてから再度Shift+B（差分のみ読み上げ）
+        const anyCell = await page.$('.cell.piece-sente');
+        if (anyCell) {
+            await anyCell.click();
+            await sleep(200);
+            const legalMove = await page.$('.cell.legal-move');
+            if (legalMove) {
+                await legalMove.click();
+                await sleep(500);
+                // 盤面変化後にShift+B
+                await page.keyboard.down('Shift');
+                await page.keyboard.press('b');
+                await page.keyboard.up('Shift');
+                await sleep(300);
+                const diffAfter = await page.$eval('#game-announcements', el => el.textContent);
+                assert(diffAfter.includes('変化') || diffAfter.length < 200, 'Shift+B差分読み上げ（全体より短い）');
+            }
+        }
+
         await page.keyboard.press('s');
         await sleep(300);
         assert(await page.$eval('#game-announcements', el => el.textContent).then(t => t.length > 10), 'Sキー状態');
