@@ -74,7 +74,7 @@ a11y-shogiは、視覚障害・上肢障害・発達特性/学習障害・色覚
 | データベース | SQLite |
 | AI エンジン | Minimax + Alpha-Beta Pruning (Depth 4, 500K Transposition Table) |
 | 外部AI | python-shogi 1.1.1, Fairy-Stockfish 11.1 (USI) |
-| テスト | Pest (PHP 125), Puppeteer (E2E 597) — **計722テスト** |
+| テスト | Pest (PHP 125), Puppeteer (E2E 653) — **計778テスト** |
 
 ## セットアップ
 
@@ -153,52 +153,77 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 
 ### テスト一覧
 
-| テストスイート | コマンド | テスト数 | 内容 |
+| テストスイート | 実行コマンド | テスト数 | 内容 |
 |---|---|---|---|
-| PHP ユニット | `vendor/bin/pest` | 125 | ルール検証、AI評価、成り・持ち駒等 |
-| E2E アクセシビリティ | `node tests/accessibility/puppeteer-a11y-test.mjs` | 59 | ARIA属性、キーボード、フォーカス管理 |
-| コントラスト | `node tests/accessibility/contrast-test.mjs` | 28 | WCAG AAA配色、ダーク/HC両モード |
-| 全盲ユーザー対局 | `node tests/accessibility/blind-user-playtest.mjs` | 87 | 22フェーズの対局シミュレーション |
-| 全機能E2E | `node tests/e2e/full-feature-test.mjs` | 59 | 15カテゴリの全機能動作検証 |
-| 障害者AI Wave 1 | `node tests/customer-ai/test-diverse.mjs` | 45 | 上肢障害/色覚/発達特性/聴覚/加齢の影響/ADHD |
-| 障害者AI Wave 2 | `node tests/customer-ai/test-diverse2.mjs` | 33 | 脳性麻痺/ディスレクシア/ズーム/自閉症 |
-| 障害者AI Wave 3 | `node tests/customer-ai/test-diverse3.mjs` | 26 | 知的障害/片麻痺/てんかん/WCAG AAA |
-| 棋士AIペルソナ | `node tests/expert-ai/test-kishi.mjs` | 30 | 初期配置/駒移動/将棋用語/ゲームフロー |
-| WebデザイナーAI | `node tests/expert-ai/test-designer.mjs` | 37 | レイアウト/レスポンシブ/配色/一貫性 |
-| 加齢による見えにくさAI | `node tests/customer-ai/test-senior.mjs` | 62 | 視認性/マウス操作/誤操作復帰/安定性 |
-| 子供・初心者AI | `node tests/customer-ai/test-child.mjs` | 28 | ふりがな/直感性/エラー親切さ/楽しさ |
-| UXリサーチャーAI | `node tests/customer-ai/test-ux.mjs` | 45 | ニールセン10原則/情報負荷/一貫性 |
-| 教育者AI | `node tests/customer-ai/test-teacher.mjs` | 30 | 授業活用/安全性/多様な障がい/Chromebook |
-| モバイルユーザーAI | `node tests/customer-ai/test-mobile.mjs` | 28 | スマホ視認性/タッチ/レスポンシブ/性能 |
-| **合計** | | **722** | |
+| **PHP テスト** | `npm run test:php` | 125 | ルール検証、AI評価、成り・持ち駒等 |
+| **アクセシビリティテスト** | `npm run test:a11y` | 227 | 以下の8種類のテストを実行 |
+| ├ 全盲ユーザー対局 | `node tests/accessibility/blind-user-playtest.mjs` | 87 | 22フェーズの対局シミュレーション |
+| ├ 全盲者拡張テスト | `node tests/accessibility/blind-user-extended.mjs` | 21 | Shift+キー、複合操作、マルチゲーム |
+| ├ 弱視者対局シミュレーション | `node tests/accessibility/low-vision-test.mjs` | 35 | ズーム対応、テキスト、コントラスト、モバイル |
+| ├ WCAG AAA色対比 | `node tests/accessibility/contrast-test.mjs` | 28 | WCAG AAA配色、ダーク/HC両モード |
+| ├ 周辺視野喪失ユーザー | `node tests/accessibility/peripheral-vision-loss-test.mjs` | 20 | 視野制限/aria-announce/盤面読み上げ |
+| ├ パーキンソン病ユーザー | `node tests/accessibility/parkinsons-test.mjs` | 7 | 振戦対応/デバウンス/ボタンサイズ/Undo |
+| ├ 低スペック環境対応 | `node tests/accessibility/lowspec-network-test.mjs` | 12 | 3G遅延/キャッシュ/オフライン |
+| ├ 色覚異常ユーザー | `node tests/accessibility/color-blind-test.mjs` | 17 | 色以外の判別/aria-label/コントラスト |
+| **AIペルソナテスト** | `npm run test:ai` | 364 | 以下の10種類のテストを実行 |
+| ├ 障害者AI Wave 1 | `node tests/customer-ai/test-diverse.mjs` | 45 | 上肢障害/色覚/発達特性/聴覚/加齢 |
+| ├ 障害者AI Wave 2 | `node tests/customer-ai/test-diverse2.mjs` | 33 | 脳性麻痺/ディスレクシア/ズーム/自閉症 |
+| ├ 障害者AI Wave 3 | `node tests/customer-ai/test-diverse3.mjs` | 26 | 知的障害/片麻痺/てんかん/WCAG AAA |
+| ├ 加齢による見えにくさAI | `node tests/customer-ai/test-senior.mjs` | 62 | 視認性/マウス操作/誤操作復帰/安定性 |
+| ├ 子供・初心者AI | `node tests/customer-ai/test-child.mjs` | 28 | ふりがな/直感性/エラー親切さ/楽しさ |
+| ├ UXリサーチャーAI | `node tests/customer-ai/test-ux.mjs` | 45 | ニールセン10原則/情報負荷/一貫性 |
+| ├ 教育者AI | `node tests/customer-ai/test-teacher.mjs` | 30 | 授業活用/安全性/多様な障がい/Chromebook |
+| ├ モバイルユーザーAI | `node tests/customer-ai/test-mobile.mjs` | 28 | スマホ視認性/タッチ/レスポンシブ/性能 |
+| ├ 棋士AIペルソナ | `node tests/expert-ai/test-kishi.mjs` | 30 | 初期配置/駒移動/将棋用語/ゲームフロー |
+| ├ WebデザイナーAI | `node tests/expert-ai/test-designer.mjs` | 37 | レイアウト/レスポンシブ/配色/一貫性 |
+| **E2E 統合テスト** | `npm run test:e2e` | 59 | 15カテゴリの全機能動作検証 |
+| **全テスト** | `npm run test:all` | **775** | PHP + a11y + AI + E2E |
 
-### 全テスト一括実行
+### 全テスト一括実行（推奨）
 
 ```bash
-# PHP テスト
-vendor/bin/pest
+# PHPテスト（ユニット＋機能）
+npm run test:php
 
-# E2E テスト
-node tests/accessibility/puppeteer-a11y-test.mjs
-node tests/accessibility/contrast-test.mjs
+# アクセシビリティテスト（全8種）
+npm run test:a11y
+
+# AIペルソナテスト（全10種）
+npm run test:ai
+
+# E2E統合テスト
+npm run test:e2e
+
+# 全テスト実行
+npm run test:all
+```
+
+### 個別テスト実行
+
+各テストは以下でも実行可能です：
+
+```bash
+# アクセシビリティテスト（個別）
 node tests/accessibility/blind-user-playtest.mjs
-node tests/e2e/full-feature-test.mjs
+node tests/accessibility/blind-user-extended.mjs
+node tests/accessibility/low-vision-test.mjs
+node tests/accessibility/contrast-test.mjs
+node tests/accessibility/peripheral-vision-loss-test.mjs
+node tests/accessibility/parkinsons-test.mjs
+node tests/accessibility/lowspec-network-test.mjs
+node tests/accessibility/color-blind-test.mjs
 
-# 障害者AIペルソナテスト
+# AIペルソナテスト（個別）
 node tests/customer-ai/test-diverse.mjs
 node tests/customer-ai/test-diverse2.mjs
 node tests/customer-ai/test-diverse3.mjs
-
-# 専門家AIペルソナテスト
-node tests/expert-ai/test-kishi.mjs
-node tests/expert-ai/test-designer.mjs
-
-# 追加お客様AIペルソナテスト
 node tests/customer-ai/test-senior.mjs
 node tests/customer-ai/test-child.mjs
 node tests/customer-ai/test-ux.mjs
 node tests/customer-ai/test-teacher.mjs
 node tests/customer-ai/test-mobile.mjs
+node tests/expert-ai/test-kishi.mjs
+node tests/expert-ai/test-designer.mjs
 ```
 
 ### テスト対象ペルソナ（24種類）

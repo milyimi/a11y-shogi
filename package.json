@@ -8,7 +8,12 @@
         "test:browser": "jest --config jest.config.json",
         "test:browser:watch": "jest --config jest.config.json --watch",
         "test:browser:coverage": "jest --config jest.config.json --coverage",
-        "test:game-patterns": "node tests/browser/game-pattern-test.js"
+        "test:game-patterns": "node tests/browser/game-pattern-test.js",
+        "test:php": "vendor/bin/pest",
+        "test:a11y": "node tests/scripts/run-a11y-tests.mjs",
+        "test:ai": "node tests/scripts/run-ai-tests.mjs",
+        "test:e2e": "node tests/e2e/full-feature-test.mjs",
+        "test:all": "npm run test:php && npm run test:a11y && npm run test:ai && npm run test:e2e"
     },
     "devDependencies": {
         "@jest/globals": "^30.2.0",
