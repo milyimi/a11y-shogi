@@ -1018,11 +1018,16 @@ class GameController extends Controller
             $session->winner = 'ai';
             $session->winner_type = 'resignation';
             $session->finished_at = now();
+            $this->gameService->updateElapsedTime($session);
             $session->save();
 
             return response()->json([
                 'success' => true,
                 'message' => '投了しました',
+                'status' => $session->status,
+                'winner' => $session->winner,
+                'moveCount' => $session->total_moves,
+                'elapsedSeconds' => $session->elapsed_seconds,
             ]);
         } catch (\Exception $e) {
             \Log::error('Resign error: ' . $e->getMessage());

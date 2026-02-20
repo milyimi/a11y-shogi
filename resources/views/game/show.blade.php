@@ -1235,6 +1235,12 @@
                 rankingDialog.dataset.shown = 'true';
                 rankingDialog.style.display = 'flex';
 
+                // 手数を最新の値に更新
+                const rankingMovesEl = document.getElementById('ranking-moves');
+                if (rankingMovesEl && gameData.moveCount !== undefined) {
+                    rankingMovesEl.textContent = `${gameData.moveCount}手`;
+                }
+
                 if (isHumanWin) {
                     if (titleEl) titleEl.textContent = '🎉 ランキングに登録しますか？';
                     if (messageEl) {
@@ -1335,6 +1341,13 @@
         
         // 初期フォーカスを設定
         updateFocus();
+        
+        // ゲームが終了している場合、ランキング登録ダイアログを表示
+        if (window.gameData && window.gameData.status && window.gameData.status !== 'in_progress') {
+            setTimeout(function() {
+                showRankingRegistrationDialog();
+            }, 500);
+        }
         
         // 初回ガイダンスを段階的に提示（短く分割）
         // ただし、リロード後のアナウンス（待った等）がある場合はスキップ
@@ -2992,8 +3005,15 @@
                 })
                 .then(data => {
                     if (data.success) {
-                        sessionStorage.setItem('a11y-shogi-announce', '投了しました');
-                        location.reload();
+                        // ゲーム状態を更新（リロードせずに）
+                        updateGameInfo(data);
+                        document.getElementById('game-announcements').textContent = data.message || '投了しました';
+                        
+                        // ボタンを無効化
+                        const resignBtn = document.getElementById('btn-resign');
+                        const undoBtn = document.getElementById('btn-undo');
+                        if (resignBtn) resignBtn.disabled = true;
+                        if (undoBtn) undoBtn.disabled = true;
                     } else {
                         document.getElementById('game-announcements').textContent = data.message || '投了処理に失敗しました';
                     }
