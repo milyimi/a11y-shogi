@@ -159,6 +159,100 @@
             color: #4F46E5;
             background: #F5F3FF;
         }
+
+        /* ===== ダークモード対応 ===== */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+                color: #e0e0e0;
+            }
+
+            body.bg-gradient-to-br {
+                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+            }
+
+            .text-gray-900 {
+                color: #f0f0f0 !important;
+            }
+
+            .text-gray-600 {
+                color: #a0a0a0 !important;
+            }
+
+            .feedback-display {
+                background: #2a2a3e !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+            }
+
+            .feedback-value {
+                background: #1a1a2e !important;
+                color: #e0e0e0 !important;
+                border-left-color: #667eea !important;
+            }
+
+            .feedback-label {
+                color: #a0a0a0 !important;
+            }
+
+            .btn-secondary {
+                background: #2a2a3e !important;
+                color: #a0a0a0 !important;
+                border-color: #444 !important;
+            }
+
+            .btn-secondary:hover {
+                border-color: #667eea !important;
+                color: #667eea !important;
+                background: #333355 !important;
+            }
+
+            .bg-gradient-to-br.from-blue-50.to-indigo-50 {
+                background: linear-gradient(to bottom right, #2a2a3e, #1a1a2e) !important;
+                border-color: #555 !important;
+            }
+
+            .bg-gradient-to-br.from-blue-50.to-indigo-50 p {
+                color: #a0a0a0 !important;
+            }
+
+            .bg-gray-100 {
+                background: #1a1a2e !important;
+                color: #a0a0a0 !important;
+            }
+
+            svg.text-indigo-600 {
+                color: #667eea !important;
+                stroke: #667eea !important;
+            }
+
+            a.text-indigo-600 {
+                color: #667eea !important;
+            }
+
+            a.text-indigo-600:hover {
+                color: #7e8fef !important;
+            }
+        }
+
+        /* localStorage で明示的にダークモード設定された場合 */
+        html.high-contrast body {
+            background: #1a1a1a !important;
+            color: #f0f0f0 !important;
+        }
+
+        html.high-contrast .feedback-display {
+            background: #2a2a2a !important;
+        }
+
+        html.high-contrast .feedback-value {
+            background: #1a1a1a !important;
+            color: #f0f0f0 !important;
+        }
+
+        html.high-contrast .btn-secondary {
+            background: #2a2a2a !important;
+            border-color: #555 !important;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen">
@@ -327,6 +421,56 @@
         document.addEventListener('mousedown', () => {
             document.body.classList.remove('keyboard-mode');
         });
+
+        // ダークモード設定を同期（localStorage/OSテーマに基づく）
+        (() => {
+            const KEY = 'a11y-shogi-high-contrast';
+            const html = document.documentElement;
+            
+            function applyTheme(isDark) {
+                if (isDark) {
+                    html.classList.add('high-contrast');
+                    document.body.style.colorScheme = 'dark';
+                } else {
+                    html.classList.remove('high-contrast');
+                    document.body.style.colorScheme = 'light';
+                }
+            }
+
+            function init() {
+                const stored = localStorage.getItem(KEY);
+                if (stored === '1') {
+                    applyTheme(true);
+                } else if (stored === '0') {
+                    applyTheme(false);
+                } else {
+                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    applyTheme(isDark);
+                }
+            }
+
+            init();
+
+            const darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            darkMediaQuery.addEventListener('change', (e) => {
+                const stored = localStorage.getItem(KEY);
+                if (stored === null) {
+                    applyTheme(e.matches);
+                }
+            });
+
+            window.addEventListener('storage', (e) => {
+                if (e.key === KEY) {
+                    if (e.newValue === '1') {
+                        applyTheme(true);
+                    } else if (e.newValue === '0') {
+                        applyTheme(false);
+                    } else {
+                        init();
+                    }
+                }
+            });
+        })();
     </script>
 </body>
 </html>

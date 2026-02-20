@@ -262,6 +262,169 @@
             padding: 1.25rem;
             margin-bottom: 1rem;
         }
+
+        /* ===== ダークモード対応 ===== */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+                color: #e0e0e0;
+            }
+
+            body.bg-gradient-to-br {
+                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+            }
+
+            .text-gray-900 {
+                color: #f0f0f0 !important;
+            }
+
+            .text-gray-600 {
+                color: #a0a0a0 !important;
+            }
+
+            .card, .fieldset-card {
+                background: #2a2a3e !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+                border-color: #444 !important;
+            }
+
+            .form-input, .form-textarea {
+                background: #1a1a2e !important;
+                color: #e0e0e0 !important;
+                border-color: #444 !important;
+            }
+
+            .form-input:focus, .form-textarea:focus {
+                border-color: #667eea !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+            }
+
+            .radio-item {
+                background: #2a2a3e !important;
+                border-color: #444 !important;
+                color: #e0e0e0 !important;
+            }
+
+            .radio-item:hover {
+                border-color: #667eea !important;
+                background: #333355 !important;
+            }
+
+            .radio-item label {
+                color: #e0e0e0 !important;
+            }
+
+            .checkbox-item {
+                background: #2a2a3e !important;
+                border-color: #444 !important;
+                color: #e0e0e0 !important;
+            }
+
+            .checkbox-item:hover {
+                border-color: #667eea !important;
+                background: #333355 !important;
+            }
+
+            .checkbox-item label {
+                color: #e0e0e0 !important;
+            }
+
+            .btn-secondary {
+                background: #2a2a3e !important;
+                color: #a0a0a0 !important;
+                border-color: #444 !important;
+            }
+
+            .btn-secondary:hover {
+                border-color: #667eea !important;
+                color: #667eea !important;
+                background: #333355 !important;
+            }
+
+            .help-text {
+                color: #a0a0a0 !important;
+            }
+
+            .form-error {
+                color: #ff6666 !important;
+            }
+
+            .form-success {
+                color: #66dd66 !important;
+                background: rgba(102, 221, 102, 0.1) !important;
+                border-color: #66dd66 !important;
+            }
+
+            .skip-link {
+                background: #667eea !important;
+                color: white !important;
+            }
+
+            .bg-green-50 {
+                background: rgba(102, 221, 102, 0.1) !important;
+                border-color: #66dd66 !important;
+            }
+
+            /* SVGアイコンの色調整 */
+            svg.text-indigo-600 {
+                color: #667eea !important;
+                stroke: #667eea !important;
+            }
+
+            svg.text-gray-900 {
+                color: #e0e0e0 !important;
+                stroke: #e0e0e0 !important;
+            }
+
+            svg.text-white {
+                color: white !important;
+                stroke: white !important;
+            }
+
+            .text-indigo-600 {
+                color: #667eea !important;
+            }
+
+            .text-gray-500 {
+                color: #a0a0a0 !important;
+            }
+        }
+
+        /* localStorage で明示的にダークモード設定された場合 */
+        html.high-contrast {
+            --color-bg: #1a1a1a;
+            --color-text: #f0f0f0;
+        }
+
+        html.high-contrast body {
+            background: #1a1a1a !important;
+            color: #f0f0f0 !important;
+        }
+
+        html.high-contrast .card,
+        html.high-contrast .fieldset-card {
+            background: #2a2a2a !important;
+        }
+
+        html.high-contrast .form-input,
+        html.high-contrast .form-textarea {
+            background: #1a1a1a !important;
+            color: #f0f0f0 !important;
+            border-color: #555 !important;
+        }
+
+        html.high-contrast .radio-item,
+        html.high-contrast .checkbox-item {
+            background: #2a2a2a !important;
+            border-color: #555 !important;
+            color: #f0f0f0 !important;
+        }
+
+        html.high-contrast .btn-secondary {
+            background: #2a2a2a !important;
+            color: #a0a0a0 !important;
+            border-color: #555 !important;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen">
@@ -559,6 +722,60 @@
             // 初期値
             charCount.textContent = textarea.value.length;
         }
+
+        // ダークモード設定を同期（localStorage/OSテーマに基づく）
+        (() => {
+            const KEY = 'a11y-shogi-high-contrast';
+            const html = document.documentElement;
+            
+            function applyTheme(isDark) {
+                if (isDark) {
+                    html.classList.add('high-contrast');
+                    document.body.style.colorScheme = 'dark';
+                } else {
+                    html.classList.remove('high-contrast');
+                    document.body.style.colorScheme = 'light';
+                }
+            }
+
+            function init() {
+                const stored = localStorage.getItem(KEY);
+                if (stored === '1') {
+                    applyTheme(true);
+                } else if (stored === '0') {
+                    applyTheme(false);
+                } else {
+                    // OSの設定に従う
+                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    applyTheme(isDark);
+                }
+            }
+
+            // 初期化
+            init();
+
+            // OSのテーマ変更を検知
+            const darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            darkMediaQuery.addEventListener('change', (e) => {
+                const stored = localStorage.getItem(KEY);
+                if (stored === null) {
+                    applyTheme(e.matches);
+                }
+            });
+
+            // localStorage の変更を検知（別タブからの変更など）
+            window.addEventListener('storage', (e) => {
+                if (e.key === KEY) {
+                    if (e.newValue === '1') {
+                        applyTheme(true);
+                    } else if (e.newValue === '0') {
+                        applyTheme(false);
+                    } else {
+                        init();
+                    }
+                }
+            });
+        })();
 
         // フォーム検証
         document.getElementById('feedback-form').addEventListener('submit', function(e) {
