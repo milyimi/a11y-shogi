@@ -327,12 +327,37 @@ AI応答がある場合:
 ```json
 {
   "success": true,
-  "data": {
-    "status": "resigned",
-    "winner": "ai",
-    "message": "投了しました。AIの勝ちです。",
-    "moveHistory": [...]
-  }
+  "message": "投了しました",
+  "status": "resigned",
+  "winner": "ai",
+  "moveCount": 5,
+  "elapsedSeconds": 120
+}
+```
+
+**レスポンス (200 OK) - JSON (AJAX更新)**
+```json
+{
+  "success": true,
+  "message": "投了しました",
+  "status": "resigned",
+  "winner": "ai",
+  "moveCount": 5,
+  "elapsedSeconds": 120
+}
+```
+
+フロント側で `updateGameInfo()` が呼び出され、以下のUIが更新されます：
+- 手数表示: `5手`
+- ゲーム状態: `「対局が終了しました」`
+- ランキング登録ダイアログ: 投了のため登録対象外
+
+**エラーレスポンス (400 Bad Request)**
+```json
+{
+  "success": false,
+  "message": "エラーが発生しました",
+  "error": "server_error"
 }
 ```
 
