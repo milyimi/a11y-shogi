@@ -38,6 +38,7 @@ Routes/web.php
   ├── POST /game/start → GameController@start
   ├── GET  /game/{session} → GameController@show
   ├── POST /game/{session}/move → GameController@move
+  ├── POST /game/{session}/ai-first-move → GameController@aiFirstMove
   ├── POST /game/{session}/promote → GameController@promote
   ├── POST /game/{session}/undo → GameController@undo
   ├── POST /game/{session}/resign → GameController@resign
@@ -47,8 +48,13 @@ Routes/web.php
   ├── GET  /session/status → GameController@sessionStatus
   ├── POST /session/extend → GameController@extendSession
   ├── GET  /ranking → RankingController@index
+  ├── GET  /ranking/{difficulty} → RankingController@byDifficulty
   ├── POST /ranking/register → RankingController@register
-  └── GET  /help → GameController@help
+  ├── GET  /help → GameController@help
+  ├── GET  /feedback → FeedbackController@show
+  ├── POST /feedback/confirm → FeedbackController@confirm
+  ├── POST /feedback/submit → FeedbackController@store
+  └── GET  /feedback/thanks → FeedbackController@thanks
 ```
 
 ### 2. アプリケーション層
@@ -59,6 +65,7 @@ app/Http/Controllers/
   │   ├── start()          - 新規ゲーム開始
   │   ├── show()           - ゲーム画面表示
   │   ├── move()           - 指し手処理（移動/打ち）
+  │   ├── aiFirstMove()    - AI先手の初手送信
   │   ├── promote()        - 成り確定
   │   ├── undo()           - 棋譜戻る（AI戦は2手戻し）
   │   ├── resign()         - 投了
@@ -67,12 +74,20 @@ app/Http/Controllers/
   │   ├── reset()          - 対局リセット
   │   ├── sessionStatus()  - セッション状態取得
   │   ├── extendSession()  - セッション延長
+  │   ├── help()           - ヘルプページ表示
   │   ├── saveMoveRecord() - 棋譜レコード保存（private）
   │   └── saveBoardState() - 盤面状態保存（private、undo復元用）
   │
-  └── RankingController
-      ├── index()          - ランキング一覧
-      └── register()       - 勝利時の登録
+  ├── RankingController
+  │   ├── index()          - ランキング一覧表示
+  │   ├── byDifficulty()   - 難易度別ランキング表示
+  │   └── register()       - 勝利時のランキング登録
+  │
+  └── FeedbackController
+      ├── show()          - フィードバック入力フォーム表示
+      ├── confirm()       - フィードバック確認画面表示
+      ├── store()         - フィードバック送信（メール送信、レート制限チェック）
+      └── thanks()        - 送信完了画面表示
 ```
 
 ### 3. ビジネスロジック層
@@ -154,7 +169,29 @@ Artisan コマンド
       └── 勝率・平均手数の統計
 ```
 
-### 4. データアクセス層
+### 5. メール送信層（フィードバック機能）
+```
+app/Mail/
+  └── FeedbackMail
+      ├── Mailableクラス
+      ├── envelope() - メール件名・From設定
+      ├── content()  - メール本文・テンプレート指定
+      └── フィードバック種別を日本語上に変換
+
+resources/views/mail/
+  └── feedback_plain.blade.php
+      ├── 管理者向けプレーンテキスト形式メール
+      ├── フィードバック内容：種別・投稿者・連絡先・特性・意見
+      └── 日本語メッセージ出力
+
+メール送信設定
+  ├── MAIL_MAILER: smtp (Mailpit)
+  ├── MAIL_FROM: feedback@a11y-shogi.local
+  ├── 管理者メール: config('app.admin_email')
+  └── レート制限: セッション当たり5分間隔
+```
+
+### 6. データアクセス層
 ```
 app/Models/
   ├── GameSession
@@ -162,7 +199,7 @@ app/Models/
   └── BoardState
 ```
 
-### 5. データベース層
+### 7. データベース層
 ```
 SQLite Database
   ├── game_sessions

@@ -27,6 +27,10 @@
 | GET | `/session/status` | セッション状態確認 |
 | POST | `/session/extend` | セッション延長 |
 | GET | `/help` | ヘルプページ |
+| GET | `/feedback` | フィードバック入力フォーム表示 |
+| POST | `/feedback/confirm` | フィードバック確認画面表示 |
+| POST | `/feedback/submit` | フィードバック送信（メール送信） |
+| GET | `/feedback/thanks` | フィードバック送信完了画面 |
 
 ---
 
@@ -684,3 +688,251 @@ AI応答がある場合:
 - セッション: Laravel 標準セッション管理（有効期限: 120分）
 - 入力検証: バックエンド側で座標・難易度の検証
 - SQLインジェクション対策: Eloquent ORM + バインドパラメータ
+
+---
+
+## フィードバック API
+
+### 1. GET `/feedback` - フィードバック入力フォーム表示
+
+**説明**: フィードバック入力フォームを表示
+
+**パラメータ**: なし
+
+**レスポンス (200 OK) - HTML**
+```html
+<h1>ご連絡・ご報告フォーム</h1>
+<form method="POST" action="/feedback/confirm">
+  <fieldset>
+    <legend>ご報告の種類</legend>
+    <label>
+      <input type="radio" name="type" value="bug" required>
+      不具合報告
+    </label>
+    <label>
+      <input type="radio" name="type" value="feature_request">
+      機能リクエスト
+    </label>
+    <label>
+      <input type="radio" name="type" value="general">
+      一般的なご意見・ご感想
+    </label>
+    <p>GitHub Copilot等のAIツールを使うほど、より多くのテストケースが生まれ、
+       予期しない不具合が発見されることもあります。</p>
+  </fieldset>
+  
+  <label for="name">お名前（任意）</label>
+  <input type="text" id="name" name="name" maxlength="255">
+  
+  <label for="email">メールアドレス（任意）</label>
+  <input type="email" id="email" name="email">
+  
+  <label for="disability">投稿者の特性（任意）</label>
+  <select id="disability" name="disability">
+    <option value="">選択してください</option>
+    <option value="visual">視覚障害</option>
+    <option value="hearing">聴覚障害</option>
+    <option value="motor">運動障害</option>
+    <option value="cognitive">認知障害</option>
+    <option value="other">その他</option>
+  </select>
+  
+  <label for="message">ご意見・ご感想（必須）</label>
+  <textarea id="message" name="message" required minlength="10" maxlength="2000"></textarea>
+  
+  <button type="submit">確認</button>
+</form>
+```
+
+**アクセシビリティ**
+- 全ての form 要素に `aria-label` または `<label>` で説明
+- 必須項目: `required` 属性 + ARIA（aria-required）
+- エラー: `aria-describedby` + role="alert"
+
+---
+
+### 2. POST `/feedback/confirm` - フィードバック確認画面表示
+
+**説明**: フィードバック入力内容を確認画面で表示
+
+**リクエストボディ (application/x-www-form-urlencoded)**
+```
+type=bug&name=田中太郎&email=tanaka@example.com&disability=visual&message=このアプリはすばらしい
+```
+
+**パラメータ**
+| 名前 | 型 | 説明 | 必須 | バリデーション |
+|------|-----|------|------|---|
+| type | string | フィードバック種別 | ○ | in:bug,feature_request,general |
+| name | string | 投稿者名 | × | max:255 |
+| email | string | メールアドレス | × | email |
+| disability | string | 投稿者の特性 | × | in:visual,hearing,motor,cognitive,other |
+| message | string | ご意見・ご感想 | ○ | min:10, max:2000 |
+
+**レスポンス (200 OK) - HTML**
+```html
+<h1>確認画面</h1>
+<div aria-live="polite">以下の内容で送信します</div>
+<dl>
+  <dt>ご報告の種類</dt>
+  <dd>不具合報告</dd>
+  <dt>お名前</dt>
+  <dd>田中太郎</dd>
+  <dt>メールアドレス</dt>
+  <dd>tanaka@example.com</dd>
+  <dt>投稿者の特性</dt>
+  <dd>視覚障害</dd>
+  <dt>ご意見・ご感想</dt>
+  <dd>このアプリはすばらしい</dd>
+</dl>
+<button id="send-button">送信</button>
+<button id="back-button">戻る</button>
+```
+
+**エラー時 (422 Unprocessable Entity)**
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "type": ["ご報告の種類は必須です"],
+    "message": ["ご意見・ご感想は10文字以上で入力してください"]
+  }
+}
+```
+
+---
+
+### 3. POST `/feedback/submit` - フィードバック送信
+
+**説明**: フィードバックをメール送信、送信完了画面へリダイレクト
+
+**リクエストボディ (application/x-www-form-urlencoded)**
+```
+type=bug&name=田中太郎&email=tanaka@example.com&disability=visual&message=このアプリはすばらしい
+```
+
+**パラメータ**: POST /feedback/confirm と同じ
+
+**レスポンス (302 Found) - リダイレクト**
+```
+Location: /feedback/thanks
+```
+
+**メール送信内容**
+```
+To: config('app.admin_email') (管理者メール)
+From: feedback@a11y-shogi.local
+Subject: [a11y-shogi] 新しいフィードバック
+Content-Type: text/plain; charset=utf-8
+
+新しいフィードバック
+
+ご報告の種類: 不具合報告
+投稿者名: 田中太郎
+連絡先メール: tanaka@example.com
+投稿者の特性: 視覚障害
+デバイス情報: Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...
+報告日時: 2025-01-28 10:30:45
+
+ご意見・ご感想:
+このアプリはすばらしい
+
+このメールは自動生成されています。
+```
+
+**レート制限チェック (429 Too Many Requests)**
+```json
+{
+  "success": false,
+  "message": "5分以内に既にフィードバックを送信しています。後でもう一度お試しください。"
+}
+```
+
+**バリデーション失敗時 (422 Unprocessable Entity)**
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "message": ["ご意見・ご感想は2000文字以下で入力してください"]
+  }
+}
+```
+
+**サーバーエラー時 (500 Internal Server Error) - ユーザーには不可見**
+- メール送信失敗時もユーザーには成功メッセージ表示
+- 管理者への通知失敗をアプリケーションログに記録
+- リダイレクト先（/feedback/thanks）は正常表示
+
+---
+
+### 4. GET `/feedback/thanks` - フィードバック送信完了画面
+
+**説明**: フィードバック送信完了メッセージを表示
+
+**パラメータ**: なし
+
+**レスポンス (200 OK) - HTML**
+```html
+<h1>ご報告ありがとうございます</h1>
+<p>貴重なご意見をお寄せいただき、ありがとうございます。</p>
+<p>いただいたご意見は開発チームで検討させていただきます。</p>
+<a href="/">ホーム画面に戻る</a>
+```
+
+**アクセシビリティ**
+- 画面表示時: aria-live="polite" で「ご報告ありがとうございます」をアナウンス
+- フォーカス管理: `<h1>` にフォーカス移行
+
+---
+
+## フィードバック機能の仕様詳細
+
+### データフロー
+
+```
+1. GET /feedback
+   ↓ (フォームに入力)
+2. POST /feedback/confirm (セッションに保存)
+   ↓ (確認画面で確認)
+3. POST /feedback/submit
+   ├─ 1. レート制限チェック（セッション × IP）
+   ├─ 2. バリデーション
+   ├─ 3. メール送信（App\Mail\FeedbackMail）
+   ├─ 4. セッション削除
+   └─ 5. /feedback/thanks へリダイレクト
+   ↓
+4. GET /feedback/thanks (完了画面表示)
+```
+
+### プライバシー保護
+
+- **データベース保存**: なし（メール送信のみ）
+- **メール管理者**: config('app.admin_email') のみ
+- **User-Agent記録**: デバイス情報のみ（個人識別情報なし）
+- **ログ保存**: Laravel ログ（/storage/logs/）に記録
+
+### レート制限の詳細
+
+- **対象**: セッション ID + クライアント IP の組み合わせ
+- **制限時間**: 5分（300秒）
+- **制限条件**: 複数送信試行時に 429 エラー
+- **実装**: セッションキー `feedback_last_submission` に送信日時を保存
+
+### メール送信の信頼性
+
+- **送信方式**: キュー処理なし（同期送信）
+- **失敗時動作**: ログに記録、ユーザーには成功表示
+- **メールテンプレート**: resources/views/mail/feedback_plain.blade.php
+- **フィードバック種別**: match 文で日本語に自動変換
+  - bug → 不具合報告
+  - feature_request → 機能リクエスト
+  - general → 一般的なご意見・ご感想
+- **未記入フィールド**: 「未記入」に統一表示
+
+### アクセシビリティ仕様
+
+- スクリーンリーダー対応: aria-label, aria-describedby, aria-live 実装
+- キーボード操作: Tab キーで全要素をナビゲート可能
+- エラー表示: role="alert" で即座にアナウンス
+- 完了表示: aria-live="polite" で完了メッセージをアナウンス
+```

@@ -203,6 +203,15 @@
                 <a href="{{ route('help') }}" class="btn"><ruby>詳<rt>くわ</rt></ruby>しい<ruby>操作方法<rt>そうさほうほう</rt></ruby>を<ruby>見<rt>み</rt></ruby>る</a>
             </p>
         </div>
+
+        <div class="beginner-box" style="background-color: #EEF2FF; border-color: #818CF8;">
+            <p>💬 ご意見・ご感想のお願い</p>
+            <p>「こうなったら使いやすい」「こんな機能が欲しい」など、率直なご意見をお聞かせください。<br>
+            実際の<ruby>当事者<rt>とうじしゃ</rt></ruby>の<ruby>声<rt>こえ</rt></ruby>がアプリ<ruby>改善<rt>かいぜん</rt></ruby>の<ruby>最<rt>もっと</rt></ruby>も<ruby>大切<rt>たいせつ</rt></ruby>な<ruby>情報<rt>じょうほう</rt></ruby>です。</p>
+            <p class="help-link">
+                <a href="{{ route('feedback.show') }}" class="btn" style="background-color: #818CF8;">ご意見・ご感想を送る</a>
+            </p>
+        </div>
     </section>
 </div>
 @endsection

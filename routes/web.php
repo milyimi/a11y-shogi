@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\RankingController;
+use App\Http\Controllers\FeedbackController;
 use App\Models\GameSession;
 
 // ホーム画面
@@ -130,3 +131,11 @@ if (app()->environment('local')) {
         ]);
     })->name('debug.mate');
 }
+
+// フィードバック関連
+Route::prefix('feedback')->name('feedback.')->group(function () {
+    Route::get('/', [FeedbackController::class, 'show'])->name('show');
+    Route::post('/confirm', [FeedbackController::class, 'confirm'])->name('confirm');
+    Route::post('/submit', [FeedbackController::class, 'store'])->name('store');
+    Route::get('/thanks', [FeedbackController::class, 'thanks'])->name('thanks');
+});
