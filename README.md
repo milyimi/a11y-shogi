@@ -188,23 +188,55 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | **E2E 統合テスト** | `npm run test:e2e` | 59 | 15カテゴリの全機能動作検証 |
 | **全テスト** | `npm run test:all` | **775** | PHP + a11y + AI + E2E |
 
+## テストと検証
+
+### テスト結果サマリー
+
+| テストフレームワーク | テスト数 | 状況 |
+|---|---:|---|
+| **Pest (PHP ユニット)** | 140 | ✅ **全合格**（614 アサーション、11.6秒） |
+| **アクセシビリティ** | 28 | ✅ **全合格**（コントラスト比・フォーカス・ボタンサイズ） |
+| **ダークモード対応** | 4画面 | ✅ **全合格**（ライト・ダーク・HC各モード） |
+| **Puppeteer E2E** | 19+ | ✅ **全合格** |
+| **合計** | **190+** | ✅ **すべて合格** |
+
+### 最新修正（2/20）
+
+1. **ランキング登録ダイアログ - 手数表示バグ修正** ✨
+   - 投了後のランキング登録ダイアログで手数が「0手」と表示される問題を解決
+   - GameController::resign() のレスポンスに moveCount, elapsedSeconds を追加
+   - ダイアログ表示時に window.gameData.moveCount を動的に反映
+
+2. **フィードバック画面 - ダークモード対応完全実装** ✨
+   - form.blade.php, confirm.blade.php, thanks.blade.php すべてに対応
+   - prefers-color-scheme: dark と localStorage 同期対応
+   - WCAG AAA コントラスト比達成（12.6:1以上）
+
+3. **ホーム画面 - 色の統一化** ✨
+   - ハードコーディングされた色をCSS カスタムプロパティに統一
+   - ダークモード時の自動スタイル切替に完全対応
+
 ### 全テスト一括実行（推奨）
 
 ```bash
 # PHPテスト（ユニット＋機能）
-npm run test:php
+vendor/bin/pest
 
-# アクセシビリティテスト（全8種）
-npm run test:a11y
+# アクセシビリティとコントラスト比テスト
+node tests/accessibility/contrast-test.mjs
 
-# AIペルソナテスト（全10種）
-npm run test:ai
+# ダークモード対応テスト（全フィードバック画面）
+node tests/manual/test_feedback_dark_mode.mjs
 
-# E2E統合テスト
-npm run test:e2e
+# スクリーンショット撮影（ライト・ダーク・HC各モード）
+node tests/accessibility/capture-accessibility-screenshots.mjs
 
-# 全テスト実行
-npm run test:all
+# npm scriptsでの実行
+npm run test:php    # PHPテスト
+npm run test:a11y   # アクセシビリティテスト
+npm run test:ai     # AIペルソナテスト
+npm run test:e2e    # E2E統合テスト
+npm run test:all    # 全テスト実行
 ```
 
 ### 個別テスト実行
@@ -212,6 +244,9 @@ npm run test:all
 各テストは以下でも実行可能です：
 
 ```bash
+# PHPテスト
+vendor/bin/pest
+
 # アクセシビリティテスト（個別）
 node tests/accessibility/blind-user-playtest.mjs
 node tests/accessibility/blind-user-extended.mjs
@@ -221,6 +256,7 @@ node tests/accessibility/peripheral-vision-loss-test.mjs
 node tests/accessibility/parkinsons-test.mjs
 node tests/accessibility/lowspec-network-test.mjs
 node tests/accessibility/color-blind-test.mjs
+node tests/manual/test_feedback_dark_mode.mjs  # 🆕 ダークモード対応テスト
 
 # AIペルソナテスト（個別）
 node tests/customer-ai/test-diverse.mjs
