@@ -165,7 +165,7 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | テストスイート | 実行コマンド | テスト数 | 内容 |
 |---|---|---|---|
 | **PHP テスト** | `npm run test:php` | 140 | ルール検証、AI評価、成り・持ち駒等 |
-| **アクセシビリティテスト** | `npm run test:a11y` | 227 | 以下の8種類のテストを実行 |
+| **アクセシビリティテスト** | `npm run test:a11y` | 227 | 以下の8種類のテストを実行（視覚障害・運動障害・環境対応） |
 | ├ 全盲ユーザー対局 | `node tests/accessibility/blind-user-playtest.mjs` | 87 | 22フェーズの対局シミュレーション |
 | ├ 全盲者拡張テスト | `node tests/accessibility/blind-user-extended.mjs` | 21 | Shift+キー、複合操作、マルチゲーム |
 | ├ 弱視者対局シミュレーション | `node tests/accessibility/low-vision-test.mjs` | 35 | ズーム対応、テキスト、コントラスト、モバイル |
@@ -174,7 +174,7 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | ├ パーキンソン病ユーザー | `node tests/accessibility/parkinsons-test.mjs` | 7 | 振戦対応/デバウンス/ボタンサイズ/Undo |
 | ├ 低スペック環境対応 | `node tests/accessibility/lowspec-network-test.mjs` | 12 | 3G遅延/キャッシュ/オフライン |
 | ├ 色覚異常ユーザー | `node tests/accessibility/color-blind-test.mjs` | 17 | 色以外の判別/aria-label/コントラスト |
-| **AIペルソナテスト** | `npm run test:ai` | 364 | 以下の10種類のテストを実行 |
+| **AIペルソナテスト** | `npm run test:ai` | 364 | 以下の10種類のテストを実行（障害者・年齢層・環境・專門家） |
 | ├ 障害者AI Wave 1 | `node tests/customer-ai/test-diverse.mjs` | 45 | 上肢障害/色覚/発達特性/聴覚/加齢 |
 | ├ 障害者AI Wave 2 | `node tests/customer-ai/test-diverse2.mjs` | 33 | 脳性麻痺/ディスレクシア/ズーム/自閉症 |
 | ├ 障害者AI Wave 3 | `node tests/customer-ai/test-diverse3.mjs` | 26 | 知的障害/片麻痺/てんかん/WCAG AAA |
