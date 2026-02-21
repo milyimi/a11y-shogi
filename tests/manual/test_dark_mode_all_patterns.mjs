@@ -15,11 +15,10 @@ const BASE_URL = 'http://127.0.0.1:8000';
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const results = [];
 
-function isDark(bg) {
-    return bg === 'rgb(26, 26, 26)' || bg.includes('26, 26, 46') || bg.includes('22, 33, 62') || bg.includes('15, 52, 96');
-}
-function isLight(bg) {
-    return bg === 'rgba(0, 0, 0, 0)' || bg === 'rgb(255, 255, 255)' || bg.includes('238') || bg.includes('245');
+function isDarkCard(cardBg) {
+    // カード背景色でダークモード判定（より正確）
+    if (!cardBg || cardBg === 'N/A') return false;
+    return cardBg.includes('42, 42') || cardBg.includes('26, 26, 26') || cardBg.includes('22, 33, 62');
 }
 
 async function checkFeedbackPage(description, expectedDark) {
@@ -50,7 +49,7 @@ async function checkFeedbackPage(description, expectedDark) {
         };
     });
 
-    const actualDark = isDark(state.bodyBg);
+    const actualDark = isDarkCard(state.cardBg);
     const pass = expectedDark === actualDark;
     
     console.log(`\n${pass ? '✅' : '❌'} ${description}`);
@@ -130,27 +129,81 @@ try {
     // パターン7: ゲーム画面で実際にボタンクリック → フィードバック
     // ==========================================
     console.log('\n━━━ パターン7: ゲーム画面で実際にダークモードON → フィードバック ━━━');
-    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
+    
+    // 新しいページを作成（evaluateOnNewDocumentの影響を完全に排除）
+    const page7 = await browser.newPage();
+    await page7.setViewport({ width: 1280, height: 800 });
+    await page7.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]);
     
     // ホームからゲーム開始
-    await page.goto(BASE_URL, { waitUntil: 'networkidle0' });
+    await page7.goto(BASE_URL, { waitUntil: 'networkidle0' });
     await wait(500);
-    const formButton = await page.$('form button[type="submit"]');
+    const formButton = await page7.$('form button[type="submit"]');
     if (formButton) {
         await formButton.click();
-        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+        await page7.waitForNavigation({ waitUntil: 'networkidle0' });
     }
     await wait(1000);
     
-    // ダークモードON
-    const toggleBtn = await page.$('#contrast-toggle');
-    if (toggleBtn) {
-        await toggleBtn.click();
-        await wait(500);
-        console.log('   ゲーム画面でダークモードONクリック');
+    // ダークモードボタンを確実に待機してクリック
+    try {
+        await page7.waitForSelector('#contrast-toggle', { visible: true, timeout: 5000 });
+        const toggleBtn = await page7.$('#contrast-toggle');
+        if (toggleBtn) {
+            await toggleBtn.click();
+            await wait(500);
+            console.log('   ゲーム画面でダークモードONクリック');
+            
+            // localStorageが更新されたか確認
+            const stored = await page7.evaluate(() => localStorage.getItem('a11y-shogi-high-contrast'));
+            console.log(`   localStorage更新確認: ${stored}`);
+        } else {
+            console.log('   ⚠️ ダークモードボタンが見つかりませんでした');
+        }
+    } catch (e) {
+        console.log(`   ⚠️ ダークモードボタン待機エラー: ${e.message}`);
     }
     
-    await checkFeedbackPage('ゲーム画面でON → フィードバックでダーク', true);
+    // フィードバック画面に移動して確認
+    await page7.goto(`${BASE_URL}/feedback`, { waitUntil: 'domcontentloaded' });
+    await wait(500);
+
+    const state7 = await page7.evaluate(() => {
+        const body = document.body;
+        const html = document.documentElement;
+        const bodyBg = window.getComputedStyle(body).backgroundColor;
+        const bodyColor = window.getComputedStyle(body).color;
+        
+        const card = document.querySelector('.card');
+        const cardBg = card ? window.getComputedStyle(card).backgroundColor : 'N/A';
+        
+        const title = document.querySelector('.text-gray-900');
+        const titleColor = title ? window.getComputedStyle(title).color : 'N/A';
+        
+        return {
+            hasClass: html.classList.contains('high-contrast'),
+            bodyBg,
+            bodyColor,
+            cardBg,
+            titleColor,
+            localStorage: localStorage.getItem('a11y-shogi-high-contrast')
+        };
+    });
+
+    const actualDark7 = isDarkCard(state7.cardBg);
+    const pass7 = true === actualDark7;
+    
+    console.log(`\n${pass7 ? '✅' : '❌'} ゲーム画面でON → フィードバックでダーク`);
+    console.log(`   期待: ダーク | 実際: ${actualDark7 ? 'ダーク' : 'ライト'}`);
+    console.log(`   html.high-contrast: ${state7.hasClass}`);
+    console.log(`   body背景: ${state7.bodyBg}`);
+    console.log(`   カード背景: ${state7.cardBg}`);
+    console.log(`   タイトル色: ${state7.titleColor}`);
+    console.log(`   localStorage: ${state7.localStorage || '(未設定)'}`);
+    
+    results.push({ description: 'ゲーム画面でON → フィードバックでダーク', pass: pass7, expectedDark: true, actualDark: actualDark7, state: state7 });
+    
+    await page7.close();
 
     // ==========================================
     // パターン8: 確認画面・完了画面
@@ -172,14 +225,17 @@ try {
             await page.waitForNavigation({ waitUntil: 'networkidle0' });
             await wait(300);
             
-            const confirmState = await page.evaluate(() => ({
-                bodyBg: window.getComputedStyle(document.body).backgroundColor,
-                hasClass: document.documentElement.classList.contains('high-contrast')
-            }));
+            const confirmState = await page.evaluate(() => {
+                const card = document.querySelector('.card, .bg-white');
+                return {
+                    cardBg: card ? window.getComputedStyle(card).backgroundColor : window.getComputedStyle(document.body).backgroundColor,
+                    hasClass: document.documentElement.classList.contains('high-contrast')
+                };
+            });
             
-            const confirmDark = isDark(confirmState.bodyBg);
+            const confirmDark = isDarkCard(confirmState.cardBg);
             console.log(`\n${confirmDark ? '✅' : '❌'} 確認画面: ${confirmDark ? 'ダーク' : 'ライト'}`);
-            console.log(`   body背景: ${confirmState.bodyBg}`);
+            console.log(`   カード背景: ${confirmState.cardBg}`);
             results.push({ description: '確認画面ダーク', pass: confirmDark, expectedDark: true, actualDark: confirmDark });
             
             // 完了画面へ
@@ -189,14 +245,17 @@ try {
                 await page.waitForNavigation({ waitUntil: 'networkidle0' });
                 await wait(300);
                 
-                const thanksState = await page.evaluate(() => ({
-                    bodyBg: window.getComputedStyle(document.body).backgroundColor,
-                    hasClass: document.documentElement.classList.contains('high-contrast')
-                }));
+                const thanksState = await page.evaluate(() => {
+                    const card = document.querySelector('.card, .bg-white');
+                    return {
+                        cardBg: card ? window.getComputedStyle(card).backgroundColor : window.getComputedStyle(document.body).backgroundColor,
+                        hasClass: document.documentElement.classList.contains('high-contrast')
+                    };
+                });
                 
-                const thanksDark = isDark(thanksState.bodyBg);
+                const thanksDark = isDarkCard(thanksState.cardBg);
                 console.log(`${thanksDark ? '✅' : '❌'} 完了画面: ${thanksDark ? 'ダーク' : 'ライト'}`);
-                console.log(`   body背景: ${thanksState.bodyBg}`);
+                console.log(`   カード背景: ${thanksState.cardBg}`);
                 results.push({ description: '完了画面ダーク', pass: thanksDark, expectedDark: true, actualDark: thanksDark });
             }
         }
