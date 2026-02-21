@@ -752,15 +752,25 @@ AI応答がある場合:
   <label for="email">メールアドレス（任意）</label>
   <input type="email" id="email" name="email">
   
-  <label for="disability">投稿者の特性（任意）</label>
-  <select id="disability" name="disability">
-    <option value="">選択してください</option>
-    <option value="visual">視覚障害</option>
-    <option value="hearing">聴覚障害</option>
-    <option value="motor">運動障害</option>
-    <option value="cognitive">認知障害</option>
-    <option value="other">その他</option>
-  </select>
+  <fieldset>
+    <legend>ご自身の特性（任意、複数選択可）</legend>
+    <input type="checkbox" id="disability-blind" name="disability[]" value="全盲（スクリーンリーダー利用）">
+    <label for="disability-blind">全盲（スクリーンリーダー利用）</label>
+    <input type="checkbox" id="disability-lowvision" name="disability[]" value="弱視（拡大表示等を使用）">
+    <label for="disability-lowvision">弱視（拡大表示等を使用）</label>
+    <input type="checkbox" id="disability-colorblind" name="disability[]" value="色覚異常（色弱）">
+    <label for="disability-colorblind">色覚異常（色弱）</label>
+    <input type="checkbox" id="disability-motor" name="disability[]" value="運動機能障害（キーボード操作のみ等）">
+    <label for="disability-motor">運動機能障害（キーボード操作のみ等）</label>
+    <input type="checkbox" id="disability-adhd" name="disability[]" value="ADHD（集中困難等）">
+    <label for="disability-adhd">ADHD（集中困難等）</label>
+    <input type="checkbox" id="disability-dyslexia" name="disability[]" value="読字障害（ディスレクシア）">
+    <label for="disability-dyslexia">読字障害（ディスレクシア）</label>
+    <input type="checkbox" id="disability-other" name="disability[]" value="その他">
+    <label for="disability-other">その他</label>
+    <input type="checkbox" id="disability-none" name="disability[]" value="特性なし">
+    <label for="disability-none">特に当てはまるものはない</label>
+  </fieldset>
   
   <label for="message">ご意見・ご感想（必須）</label>
   <textarea id="message" name="message" required minlength="10" maxlength="2000"></textarea>
@@ -782,7 +792,7 @@ AI応答がある場合:
 
 **リクエストボディ (application/x-www-form-urlencoded)**
 ```
-type=bug&name=田中太郎&email=tanaka@example.com&disability=visual&message=このアプリはすばらしい
+type=bug&name=田中太郎&email=tanaka@example.com&disability[]=全盲（スクリーンリーダー利用）&disability[]=ADHD（集中困難等）&message=このアプリはすばらしい
 ```
 
 **パラメータ**
@@ -791,7 +801,7 @@ type=bug&name=田中太郎&email=tanaka@example.com&disability=visual&message=�
 | type | string | フィードバック種別 | ○ | in:bug,feature_request,general |
 | name | string | 投稿者名 | × | max:255 |
 | email | string | メールアドレス | × | email |
-| disability | string | 投稿者の特性 | × | in:visual,hearing,motor,cognitive,other |
+| disability | array | ご自身の特性（複数可） | × | nullable, array<br>disability.*: string\|max:100 |
 | message | string | ご意見・ご感想 | ○ | min:10, max:2000 |
 
 **レスポンス (200 OK) - HTML**
@@ -805,8 +815,8 @@ type=bug&name=田中太郎&email=tanaka@example.com&disability=visual&message=�
   <dd>田中太郎</dd>
   <dt>メールアドレス</dt>
   <dd>tanaka@example.com</dd>
-  <dt>投稿者の特性</dt>
-  <dd>視覚障害</dd>
+  <dt>ご自身の特性</dt>
+  <dd>全盲（スクリーンリーダー利用）、ADHD（集中困難等）</dd>
   <dt>ご意見・ご感想</dt>
   <dd>このアプリはすばらしい</dd>
 </dl>
@@ -833,7 +843,7 @@ type=bug&name=田中太郎&email=tanaka@example.com&disability=visual&message=�
 
 **リクエストボディ (application/x-www-form-urlencoded)**
 ```
-type=bug&name=田中太郎&email=tanaka@example.com&disability=visual&message=このアプリはすばらしい
+type=bug&name=田中太郎&email=tanaka@example.com&disability[]=全盲（スクリーンリーダー利用）&disability[]=ADHD（集中困難等）&message=このアプリはすばらしい
 ```
 
 **パラメータ**: POST /feedback/confirm と同じ
@@ -855,7 +865,7 @@ Content-Type: text/plain; charset=utf-8
 ご報告の種類: 不具合報告
 投稿者名: 田中太郎
 連絡先メール: tanaka@example.com
-投稿者の特性: 視覚障害
+ご自身の特性: 全盲（スクリーンリーダー利用）、ADHD（集中困難等）
 デバイス情報: Mozilla/5.0 (Windows NT 10.0; Win64; x64) ...
 報告日時: 2025-01-28 10:30:45
 
