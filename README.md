@@ -235,9 +235,6 @@ vendor/bin/pest
 # アクセシビリティとコントラスト比テスト
 node tests/accessibility/contrast-test.mjs
 
-# ダークモード対応テスト（全フィードバック画面）
-node tests/manual/test_feedback_dark_mode.mjs
-
 # ダークモード同期テスト（全5パターン検証）
 node tests/manual/test_dark_mode_all_patterns.mjs
 
@@ -269,7 +266,6 @@ node tests/accessibility/peripheral-vision-loss-test.mjs
 node tests/accessibility/parkinsons-test.mjs
 node tests/accessibility/lowspec-network-test.mjs
 node tests/accessibility/color-blind-test.mjs
-node tests/manual/test_feedback_dark_mode.mjs       # ダークモード対応テスト
 node tests/manual/test_dark_mode_all_patterns.mjs   # ダークモード同期全パターン
 node tests/manual/test_ranking_movecount.mjs         # ランキング手数表示テスト
 

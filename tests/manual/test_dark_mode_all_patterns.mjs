@@ -1,8 +1,8 @@
 import puppeteer from 'puppeteer';
 
 console.log('🔍 ダークモード全パターン検証\n');
-console.log('修正内容: @media (prefers-color-scheme: dark) を削除し、');
-console.log('          html.high-contrast クラスに完全統一\n');
+console.log('フィードバック画面がゲーム画面のダークモード設定と完全同期することを確認');
+console.log('テストパターン: localStorage・OS設定・実際のボタン操作・確認/完了画面\n');
 
 const browser = await puppeteer.launch({
     headless: false,

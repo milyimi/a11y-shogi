@@ -1223,9 +1223,6 @@ node tests/customer-ai/test-mobile.mjs
 # ダークモード同期テスト（全5パターン検証）
 node tests/manual/test_dark_mode_all_patterns.mjs
 
-# フィードバック画面ダークモード対応テスト
-node tests/manual/test_feedback_dark_mode.mjs
-
 # ランキング手数表示テスト
 node tests/manual/test_ranking_movecount.mjs
 ```
