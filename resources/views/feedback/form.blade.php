@@ -557,7 +557,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-blind" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="全盲（スクリーンリーダー利用）"
                                 >
                                 <label for="disability-blind">全盲（スクリーンリーダー利用）</label>
@@ -566,7 +566,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-lowvision" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="弱視（拡大表示等を使用）"
                                 >
                                 <label for="disability-lowvision">弱視（拡大表示等を使用）</label>
@@ -575,7 +575,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-colorblind" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="色覚異常（色弱）"
                                 >
                                 <label for="disability-colorblind">色覚異常（色弱）</label>
@@ -584,7 +584,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-motor" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="運動機能障害（キーボード操作のみ等）"
                                 >
                                 <label for="disability-motor">運動機能障害（キーボード操作のみ等）</label>
@@ -593,7 +593,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-adhd" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="ADHD（集中困難等）"
                                 >
                                 <label for="disability-adhd">ADHD（集中困難等）</label>
@@ -602,7 +602,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-dyslexia" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="読字障害（ディスレクシア）"
                                 >
                                 <label for="disability-dyslexia">読字障害（ディスレクシア）</label>
@@ -611,7 +611,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-other" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="その他"
                                 >
                                 <label for="disability-other">その他の特性がある</label>
@@ -620,7 +620,7 @@
                                 <input 
                                     type="checkbox" 
                                     id="disability-none" 
-                                    name="disability" 
+                                    name="disability[]" 
                                     value="特性なし"
                                 >
                                 <label for="disability-none">特に当てはまるものはない</label>

@@ -39,7 +39,7 @@ describe('FeedbackController', function () {
                 'type' => 'general',
                 'name' => '田中太郎',
                 'email' => 'test@example.com',
-                'disability' => '全盲（スクリーンリーダー利用）',
+                'disability' => ['全盲（スクリーンリーダー利用）'],
                 'message' => 'これは有効なフィードバックです。アプリがとても使いやすいです。',
             ];
 
@@ -82,7 +82,7 @@ describe('FeedbackController', function () {
                 'type' => 'bug',
                 'name' => '佐藤次郎',
                 'email' => 'satou@example.com',
-                'disability' => '弱視',
+                'disability' => ['弱視'],
                 'message' => 'ボタンがもっと大きいと使いやすいです。',
             ];
 
@@ -108,7 +108,7 @@ describe('FeedbackController', function () {
                 'type' => 'general',
                 'name' => '田中太郎',
                 'email' => 'test@example.com',
-                'disability' => '全盲（スクリーンリーダー利用）',
+                'disability' => ['全盲（スクリーンリーダー利用）'],
                 'message' => 'これは有効なフィードバックです。アプリがとても使いやすいです。',
             ];
 
@@ -129,7 +129,7 @@ describe('FeedbackController', function () {
                 'type' => 'bug',
                 'name' => 'テストユーザー',
                 'email' => 'test@example.com',
-                'disability' => 'テスト',
+                'disability' => ['テスト'],
                 'message' => '不具合テストです。これは有効なメッセージです。',
             ];
 
@@ -143,14 +143,14 @@ describe('FeedbackController', function () {
             Mail::assertSent(\App\Mail\FeedbackMail::class);
         });
 
-        it('converts empty name and email to 未記入', function () {
+        it('converts empty name, email, and disability to default values', function () {
             Mail::fake();
 
             $data = [
                 'type' => 'general',
                 'name' => '',
                 'email' => '',
-                'disability' => '',
+                'disability' => [],
                 'message' => 'これは有効なフィードバックメッセージです。',
             ];
 

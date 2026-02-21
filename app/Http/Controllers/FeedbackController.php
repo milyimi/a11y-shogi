@@ -36,7 +36,8 @@ class FeedbackController extends Controller
                 'type' => 'required|in:general,bug,feature_request',
                 'name' => 'nullable|string|max:100|regex:/^[ぁ-ん一-龠々〆〤ァ-ヴー\-a-zA-Z0-9_\s]+$/',
                 'email' => 'nullable|email|max:255',
-                'disability' => 'nullable|string|max:500',
+                'disability' => 'nullable|array',
+                'disability.*' => 'string|max:100',
                 'message' => 'required|string|min:10|max:2000',
             ],
             [
@@ -46,12 +47,18 @@ class FeedbackController extends Controller
                 'name.max' => 'お名前は100文字以内でお願いします。',
                 'email.email' => 'メールアドレスの形式が無効です。',
                 'email.max' => 'メールアドレスは255文字以内でお願いします。',
-                'disability.max' => 'ご自身の特性は500文字以内でお願いします。',
+                'disability.array' => 'ご自身の特性の選択が無効です。',
+                'disability.*.max' => 'ご自身の特性の各項目は100文字以内でお願いします。',
                 'message.required' => 'ご意見・ご感想を入力してください。',
                 'message.min' => 'ご意見・ご感想は10文字以上でお願いします。',
                 'message.max' => 'ご意見・ご感想は2000文字以内でお願いします。',
             ]
         );
+
+        // 複数選択されたdisabilityを文字列に変換
+        if (isset($validated['disability']) && is_array($validated['disability'])) {
+            $validated['disability'] = implode('、', $validated['disability']);
+        }
 
         // セッションに値を保存（確認画面表示用）
         $request->session()->put('feedback_data', $validated);
@@ -103,7 +110,7 @@ class FeedbackController extends Controller
                     $validated['type'],
                     $validated['name'] ?? '未記入',
                     $validated['email'] ?? '未記入',
-                    $validated['disability'] ?? '未記入',
+                    $validated['disability'] ?? '未選択',
                     $validated['message'],
                     $request->userAgent(),
                     now()->format('Y-m-d H:i:s')
