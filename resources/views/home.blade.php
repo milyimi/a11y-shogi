@@ -205,11 +205,11 @@
         </div>
 
         <div class="beginner-box" style="background-color: var(--color-surface); border-color: var(--color-border);">
-            <p>💬 ご意見・ご感想のお願い</p>
-            <p>「こうなったら使いやすい」「こんな機能が欲しい」など、率直なご意見をお聞かせください。<br>
-            実際の<ruby>当事者<rt>とうじしゃ</rt></ruby>の<ruby>声<rt>こえ</rt></ruby>がアプリ<ruby>改善<rt>かいぜん</rt></ruby>の<ruby>最<rt>もっと</rt></ruby>も<ruby>大切<rt>たいせつ</rt></ruby>な<ruby>情報<rt>じょうほう</rt></ruby>です。</p>
+            <p>💬 ご<ruby>意見<rt>いけん</rt></ruby>・ご<ruby>感想<rt>かんそう</rt></ruby>のお<ruby>願<rt>ねが</rt></ruby>い</p>
+            <p>「こうなったら<ruby>使<rt>つか</rt></ruby>いやすい」「こんな<ruby>機能<rt>きのう</rt></ruby>が<ruby>欲<rt>ほ</rt></ruby>しい」など、<ruby>率直<rt>そっちょく</rt></ruby>なご<ruby>意見<rt>いけん</rt></ruby>をお<ruby>聞<rt>き</rt></ruby>かせください。<br>
+            <ruby>実際<rt>じっさい</rt></ruby>の<ruby>当事者<rt>とうじしゃ</rt></ruby>の<ruby>声<rt>こえ</rt></ruby>がアプリ<ruby>改善<rt>かいぜん</rt></ruby>の<ruby>最<rt>もっと</rt></ruby>も<ruby>大切<rt>たいせつ</rt></ruby>な<ruby>情報<rt>じょうほう</rt></ruby>です。</p>
             <p class="help-link">
-                <a href="{{ route('feedback.show') }}" class="btn btn-primary">ご意見・ご感想を送る</a>
+                <a href="{{ route('feedback.show') }}" class="btn">ご<ruby>意見<rt>いけん</rt></ruby>・ご<ruby>感想<rt>かんそう</rt></ruby>を<ruby>送<rt>おく</rt></ruby>る</a>
             </p>
         </div>
     </section>
