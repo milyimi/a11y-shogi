@@ -4,6 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ご意見・ご感想 - アクセシビリティ対応将棋</title>
+    
+    <!-- ダークモード設定を即座に適用（フラッシュ防止） -->
+    <script>
+        (function() {
+            const KEY = 'a11y-shogi-high-contrast';
+            const html = document.documentElement;
+            const stored = localStorage.getItem(KEY);
+            
+            if (stored === '1') {
+                html.classList.add('high-contrast');
+                document.documentElement.style.colorScheme = 'dark';
+            } else if (stored === '0') {
+                html.classList.remove('high-contrast');
+                document.documentElement.style.colorScheme = 'light';
+            } else {
+                // OSの設定に従う
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (isDark) {
+                    html.classList.add('high-contrast');
+                    document.documentElement.style.colorScheme = 'dark';
+                } else {
+                    html.classList.remove('high-contrast');
+                    document.documentElement.style.colorScheme = 'light';
+                }
+            }
+        })();
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* アニメーション定義 */
@@ -263,167 +291,132 @@
             margin-bottom: 1rem;
         }
 
-        /* ===== ダークモード対応 ===== */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
-                color: #e0e0e0;
-            }
-
-            body.bg-gradient-to-br {
-                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
-            }
-
-            .text-gray-900 {
-                color: #f0f0f0 !important;
-            }
-
-            .text-gray-600 {
-                color: #a0a0a0 !important;
-            }
-
-            .card, .fieldset-card {
-                background: #2a2a3e !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-                border-color: #444 !important;
-            }
-
-            .form-input, .form-textarea {
-                background: #1a1a2e !important;
-                color: #e0e0e0 !important;
-                border-color: #444 !important;
-            }
-
-            .form-input:focus, .form-textarea:focus {
-                border-color: #667eea !important;
-                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
-            }
-
-            .radio-item {
-                background: #2a2a3e !important;
-                border-color: #444 !important;
-                color: #e0e0e0 !important;
-            }
-
-            .radio-item:hover {
-                border-color: #667eea !important;
-                background: #333355 !important;
-            }
-
-            .radio-item label {
-                color: #e0e0e0 !important;
-            }
-
-            .checkbox-item {
-                background: #2a2a3e !important;
-                border-color: #444 !important;
-                color: #e0e0e0 !important;
-            }
-
-            .checkbox-item:hover {
-                border-color: #667eea !important;
-                background: #333355 !important;
-            }
-
-            .checkbox-item label {
-                color: #e0e0e0 !important;
-            }
-
-            .btn-secondary {
-                background: #2a2a3e !important;
-                color: #a0a0a0 !important;
-                border-color: #444 !important;
-            }
-
-            .btn-secondary:hover {
-                border-color: #667eea !important;
-                color: #667eea !important;
-                background: #333355 !important;
-            }
-
-            .help-text {
-                color: #a0a0a0 !important;
-            }
-
-            .form-error {
-                color: #ff6666 !important;
-            }
-
-            .form-success {
-                color: #66dd66 !important;
-                background: rgba(102, 221, 102, 0.1) !important;
-                border-color: #66dd66 !important;
-            }
-
-            .skip-link {
-                background: #667eea !important;
-                color: white !important;
-            }
-
-            .bg-green-50 {
-                background: rgba(102, 221, 102, 0.1) !important;
-                border-color: #66dd66 !important;
-            }
-
-            /* SVGアイコンの色調整 */
-            svg.text-indigo-600 {
-                color: #667eea !important;
-                stroke: #667eea !important;
-            }
-
-            svg.text-gray-900 {
-                color: #e0e0e0 !important;
-                stroke: #e0e0e0 !important;
-            }
-
-            svg.text-white {
-                color: white !important;
-                stroke: white !important;
-            }
-
-            .text-indigo-600 {
-                color: #667eea !important;
-            }
-
-            .text-gray-500 {
-                color: #a0a0a0 !important;
-            }
-        }
-
-        /* localStorage で明示的にダークモード設定された場合 */
-        html.high-contrast {
-            --color-bg: #1a1a1a;
-            --color-text: #f0f0f0;
-        }
-
+        /* ===== ダークモード対応（html.high-contrast クラスで制御） ===== */
         html.high-contrast body {
-            background: #1a1a1a !important;
+            background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+            color: #e0e0e0;
+        }
+
+        html.high-contrast body.bg-gradient-to-br {
+            background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+        }
+
+        html.high-contrast .text-gray-900 {
             color: #f0f0f0 !important;
+        }
+
+        html.high-contrast .text-gray-600 {
+            color: #a0a0a0 !important;
         }
 
         html.high-contrast .card,
         html.high-contrast .fieldset-card {
-            background: #2a2a2a !important;
+            background: #2a2a3e !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+            border-color: #444 !important;
         }
 
         html.high-contrast .form-input,
         html.high-contrast .form-textarea {
-            background: #1a1a1a !important;
-            color: #f0f0f0 !important;
-            border-color: #555 !important;
+            background: #1a1a2e !important;
+            color: #e0e0e0 !important;
+            border-color: #444 !important;
         }
 
-        html.high-contrast .radio-item,
+        html.high-contrast .form-input:focus,
+        html.high-contrast .form-textarea:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+        }
+
+        html.high-contrast .radio-item {
+            background: #2a2a3e !important;
+            border-color: #444 !important;
+            color: #e0e0e0 !important;
+        }
+
+        html.high-contrast .radio-item:hover {
+            border-color: #667eea !important;
+            background: #333355 !important;
+        }
+
+        html.high-contrast .radio-item label {
+            color: #e0e0e0 !important;
+        }
+
         html.high-contrast .checkbox-item {
-            background: #2a2a2a !important;
-            border-color: #555 !important;
-            color: #f0f0f0 !important;
+            background: #2a2a3e !important;
+            border-color: #444 !important;
+            color: #e0e0e0 !important;
+        }
+
+        html.high-contrast .checkbox-item:hover {
+            border-color: #667eea !important;
+            background: #333355 !important;
+        }
+
+        html.high-contrast .checkbox-item label {
+            color: #e0e0e0 !important;
         }
 
         html.high-contrast .btn-secondary {
-            background: #2a2a2a !important;
+            background: #2a2a3e !important;
             color: #a0a0a0 !important;
-            border-color: #555 !important;
+            border-color: #444 !important;
+        }
+
+        html.high-contrast .btn-secondary:hover {
+            border-color: #667eea !important;
+            color: #667eea !important;
+            background: #333355 !important;
+        }
+
+        html.high-contrast .help-text {
+            color: #a0a0a0 !important;
+        }
+
+        html.high-contrast .form-error {
+            color: #ff6666 !important;
+        }
+
+        html.high-contrast .form-success {
+            color: #66dd66 !important;
+            background: rgba(102, 221, 102, 0.1) !important;
+            border-color: #66dd66 !important;
+        }
+
+        html.high-contrast .skip-link {
+            background: #667eea !important;
+            color: white !important;
+        }
+
+        html.high-contrast .bg-green-50 {
+            background: rgba(102, 221, 102, 0.1) !important;
+            border-color: #66dd66 !important;
+        }
+
+        /* SVGアイコンの色調整 */
+        html.high-contrast svg.text-indigo-600 {
+            color: #667eea !important;
+            stroke: #667eea !important;
+        }
+
+        html.high-contrast svg.text-gray-900 {
+            color: #e0e0e0 !important;
+            stroke: #e0e0e0 !important;
+        }
+
+        html.high-contrast svg.text-white {
+            color: white !important;
+            stroke: white !important;
+        }
+
+        html.high-contrast .text-indigo-600 {
+            color: #667eea !important;
+        }
+
+        html.high-contrast .text-gray-500 {
+            color: #a0a0a0 !important;
         }
     </style>
 </head>
@@ -723,7 +716,7 @@
             charCount.textContent = textarea.value.length;
         }
 
-        // ダークモード設定を同期（localStorage/OSテーマに基づく）
+        // ダークモード設定のリアルタイム同期（初期化は<head>で実行済み）
         (() => {
             const KEY = 'a11y-shogi-high-contrast';
             const html = document.documentElement;
@@ -737,22 +730,6 @@
                     document.body.style.colorScheme = 'light';
                 }
             }
-
-            function init() {
-                const stored = localStorage.getItem(KEY);
-                if (stored === '1') {
-                    applyTheme(true);
-                } else if (stored === '0') {
-                    applyTheme(false);
-                } else {
-                    // OSの設定に従う
-                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    applyTheme(isDark);
-                }
-            }
-
-            // 初期化
-            init();
 
             // OSのテーマ変更を検知
             const darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -771,7 +748,9 @@
                     } else if (e.newValue === '0') {
                         applyTheme(false);
                     } else {
-                        init();
+                        // 削除された場合はOS設定に従う
+                        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        applyTheme(isDark);
                     }
                 }
             });

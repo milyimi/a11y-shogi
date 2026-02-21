@@ -4,6 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>フィードバック確認画面 - アクセシビリティ対応将棋</title>
+    
+    <!-- ダークモード設定を即座に適用（フラッシュ防止） -->
+    <script>
+        (function() {
+            const KEY = 'a11y-shogi-high-contrast';
+            const html = document.documentElement;
+            const stored = localStorage.getItem(KEY);
+            
+            if (stored === '1') {
+                html.classList.add('high-contrast');
+                document.documentElement.style.colorScheme = 'dark';
+            } else if (stored === '0') {
+                html.classList.remove('high-contrast');
+                document.documentElement.style.colorScheme = 'light';
+            } else {
+                // OSの設定に従う
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (isDark) {
+                    html.classList.add('high-contrast');
+                    document.documentElement.style.colorScheme = 'dark';
+                } else {
+                    html.classList.remove('high-contrast');
+                    document.documentElement.style.colorScheme = 'light';
+                }
+            }
+        })();
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* アニメーション定義 */
@@ -160,98 +188,76 @@
             background: #F5F3FF;
         }
 
-        /* ===== ダークモード対応 ===== */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
-                color: #e0e0e0;
-            }
-
-            body.bg-gradient-to-br {
-                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
-            }
-
-            .text-gray-900 {
-                color: #f0f0f0 !important;
-            }
-
-            .text-gray-600 {
-                color: #a0a0a0 !important;
-            }
-
-            .feedback-display {
-                background: #2a2a3e !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-            }
-
-            .feedback-value {
-                background: #1a1a2e !important;
-                color: #e0e0e0 !important;
-                border-left-color: #667eea !important;
-            }
-
-            .feedback-label {
-                color: #a0a0a0 !important;
-            }
-
-            .btn-secondary {
-                background: #2a2a3e !important;
-                color: #a0a0a0 !important;
-                border-color: #444 !important;
-            }
-
-            .btn-secondary:hover {
-                border-color: #667eea !important;
-                color: #667eea !important;
-                background: #333355 !important;
-            }
-
-            .bg-gradient-to-br.from-blue-50.to-indigo-50 {
-                background: linear-gradient(to bottom right, #2a2a3e, #1a1a2e) !important;
-                border-color: #555 !important;
-            }
-
-            .bg-gradient-to-br.from-blue-50.to-indigo-50 p {
-                color: #a0a0a0 !important;
-            }
-
-            .bg-gray-100 {
-                background: #1a1a2e !important;
-                color: #a0a0a0 !important;
-            }
-
-            svg.text-indigo-600 {
-                color: #667eea !important;
-                stroke: #667eea !important;
-            }
-
-            a.text-indigo-600 {
-                color: #667eea !important;
-            }
-
-            a.text-indigo-600:hover {
-                color: #7e8fef !important;
-            }
+        /* ===== ダークモード対応（html.high-contrast クラスで制御） ===== */
+        html.high-contrast body {
+            background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+            color: #e0e0e0;
         }
 
-        /* localStorage で明示的にダークモード設定された場合 */
-        html.high-contrast body {
-            background: #1a1a1a !important;
+        html.high-contrast body.bg-gradient-to-br {
+            background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+        }
+
+        html.high-contrast .text-gray-900 {
             color: #f0f0f0 !important;
+        }
+
+        html.high-contrast .text-gray-600 {
+            color: #a0a0a0 !important;
         }
 
         html.high-contrast .feedback-display {
-            background: #2a2a2a !important;
+            background: #2a2a3e !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
         }
 
         html.high-contrast .feedback-value {
-            background: #1a1a1a !important;
-            color: #f0f0f0 !important;
+            background: #1a1a2e !important;
+            color: #e0e0e0 !important;
+            border-left-color: #667eea !important;
+        }
+
+        html.high-contrast .feedback-label {
+            color: #a0a0a0 !important;
         }
 
         html.high-contrast .btn-secondary {
-            background: #2a2a2a !important;
+            background: #2a2a3e !important;
+            color: #a0a0a0 !important;
+            border-color: #444 !important;
+        }
+
+        html.high-contrast .btn-secondary:hover {
+            border-color: #667eea !important;
+            color: #667eea !important;
+            background: #333355 !important;
+        }
+
+        html.high-contrast .bg-gradient-to-br.from-blue-50.to-indigo-50 {
+            background: linear-gradient(to bottom right, #2a2a3e, #1a1a2e) !important;
             border-color: #555 !important;
+        }
+
+        html.high-contrast .bg-gradient-to-br.from-blue-50.to-indigo-50 p {
+            color: #a0a0a0 !important;
+        }
+
+        html.high-contrast .bg-gray-100 {
+            background: #1a1a2e !important;
+            color: #a0a0a0 !important;
+        }
+
+        html.high-contrast svg.text-indigo-600 {
+            color: #667eea !important;
+            stroke: #667eea !important;
+        }
+
+        html.high-contrast a.text-indigo-600 {
+            color: #667eea !important;
+        }
+
+        html.high-contrast a.text-indigo-600:hover {
+            color: #7e8fef !important;
         }
     </style>
 </head>
@@ -422,7 +428,7 @@
             document.body.classList.remove('keyboard-mode');
         });
 
-        // ダークモード設定を同期（localStorage/OSテーマに基づく）
+        // ダークモード設定のリアルタイム同期（初期化は<head>で実行済み）
         (() => {
             const KEY = 'a11y-shogi-high-contrast';
             const html = document.documentElement;
@@ -437,20 +443,7 @@
                 }
             }
 
-            function init() {
-                const stored = localStorage.getItem(KEY);
-                if (stored === '1') {
-                    applyTheme(true);
-                } else if (stored === '0') {
-                    applyTheme(false);
-                } else {
-                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    applyTheme(isDark);
-                }
-            }
-
-            init();
-
+            // OSのテーマ変更を検知
             const darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
             darkMediaQuery.addEventListener('change', (e) => {
                 const stored = localStorage.getItem(KEY);
@@ -459,6 +452,7 @@
                 }
             });
 
+            // localStorage の変更を検知（別タブからの変更など）
             window.addEventListener('storage', (e) => {
                 if (e.key === KEY) {
                     if (e.newValue === '1') {
@@ -466,7 +460,9 @@
                     } else if (e.newValue === '0') {
                         applyTheme(false);
                     } else {
-                        init();
+                        // 削除された場合はOS設定に従う
+                        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        applyTheme(isDark);
                     }
                 }
             });

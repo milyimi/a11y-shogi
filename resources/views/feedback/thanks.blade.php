@@ -4,6 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>送信完了 - アクセシビリティ対応将棋</title>
+    
+    <!-- ダークモード設定を即座に適用（フラッシュ防止） -->
+    <script>
+        (function() {
+            const KEY = 'a11y-shogi-high-contrast';
+            const html = document.documentElement;
+            const stored = localStorage.getItem(KEY);
+            
+            if (stored === '1') {
+                html.classList.add('high-contrast');
+                document.documentElement.style.colorScheme = 'dark';
+            } else if (stored === '0') {
+                html.classList.remove('high-contrast');
+                document.documentElement.style.colorScheme = 'light';
+            } else {
+                // OSの設定に従う
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (isDark) {
+                    html.classList.add('high-contrast');
+                    document.documentElement.style.colorScheme = 'dark';
+                } else {
+                    html.classList.remove('high-contrast');
+                    document.documentElement.style.colorScheme = 'light';
+                }
+            }
+        })();
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* アニメーション */
@@ -106,85 +134,68 @@
             }
         }
 
-        /* ===== ダークモード対応 ===== */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
-                color: #e0e0e0;
-            }
-
-            body.bg-gradient-to-br {
-                background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
-            }
-
-            .bg-white {
-                background: #2a2a3e !important;
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
-            }
-
-            .text-gray-900 {
-                color: #f0f0f0 !important;
-            }
-
-            .text-gray-600 {
-                color: #a0a0a0 !important;
-            }
-
-            .text-gray-700 {
-                color: #c0c0c0 !important;
-            }
-
-            .info-card {
-                background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%) !important;
-                border-color: #444 !important;
-            }
-
-            .success-icon {
-                background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-            }
-
-            .btn-primary {
-                background: linear-gradient(135deg, #667eea 0%, #5568d3 100%) !important;
-            }
-
-            .btn-primary:hover {
-                background: linear-gradient(135deg, #5568d3 0%, #4456b8 100%) !important;
-            }
-
-            .btn-secondary {
-                background: transparent !important;
-                border-color: #666 !important;
-                color: #a0a0a0 !important;
-            }
-
-            .btn-secondary:hover {
-                background-color: #2a2a3e !important;
-            }
-
-            svg.text-green-600 {
-                color: #10b981 !important;
-                stroke: #10b981 !important;
-            }
-
-            svg.text-blue-600 {
-                color: #667eea !important;
-                stroke: #667eea !important;
-            }
+        /* ===== ダークモード対応（html.high-contrast クラスで制御） ===== */
+        html.high-contrast body {
+            background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+            color: #e0e0e0;
         }
 
-        /* localStorage で明示的にダークモード設定された場合 */
-        html.high-contrast body {
-            background: #1a1a1a !important;
-            color: #f0f0f0 !important;
+        html.high-contrast body.bg-gradient-to-br {
+            background: linear-gradient(to bottom right, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
         }
 
         html.high-contrast .bg-white {
-            background: #2a2a2a !important;
+            background: #2a2a3e !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        html.high-contrast .text-gray-900 {
+            color: #f0f0f0 !important;
+        }
+
+        html.high-contrast .text-gray-600 {
+            color: #a0a0a0 !important;
+        }
+
+        html.high-contrast .text-gray-700 {
+            color: #c0c0c0 !important;
         }
 
         html.high-contrast .info-card {
-            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%) !important;
-            border-color: #555 !important;
+            background: linear-gradient(135deg, #2a2a3e 0%, #1a1a2e 100%) !important;
+            border-color: #444 !important;
+        }
+
+        html.high-contrast .success-icon {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+        }
+
+        html.high-contrast .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #5568d3 100%) !important;
+        }
+
+        html.high-contrast .btn-primary:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #4456b8 100%) !important;
+        }
+
+        html.high-contrast .btn-secondary {
+            background: transparent !important;
+            border-color: #666 !important;
+            color: #a0a0a0 !important;
+        }
+
+        html.high-contrast .btn-secondary:hover {
+            background-color: #2a2a3e !important;
+        }
+
+        html.high-contrast svg.text-green-600 {
+            color: #10b981 !important;
+            stroke: #10b981 !important;
+        }
+
+        html.high-contrast svg.text-blue-600 {
+            color: #667eea !important;
+            stroke: #667eea !important;
         }
     </style>
 </head>
@@ -267,7 +278,7 @@
     </div>
 
     <script>
-        // ダークモード設定を同期（localStorage/OSテーマに基づく）
+        // ダークモード設定のリアルタイム同期（初期化は<head>で実行済み）
         (() => {
             const KEY = 'a11y-shogi-high-contrast';
             const html = document.documentElement;
@@ -282,20 +293,7 @@
                 }
             }
 
-            function init() {
-                const stored = localStorage.getItem(KEY);
-                if (stored === '1') {
-                    applyTheme(true);
-                } else if (stored === '0') {
-                    applyTheme(false);
-                } else {
-                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    applyTheme(isDark);
-                }
-            }
-
-            init();
-
+            // OSのテーマ変更を検知
             const darkMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
             darkMediaQuery.addEventListener('change', (e) => {
                 const stored = localStorage.getItem(KEY);
@@ -304,6 +302,7 @@
                 }
             });
 
+            // localStorage の変更を検知（別タブからの変更など）
             window.addEventListener('storage', (e) => {
                 if (e.key === KEY) {
                     if (e.newValue === '1') {
@@ -311,7 +310,9 @@
                     } else if (e.newValue === '0') {
                         applyTheme(false);
                     } else {
-                        init();
+                        // 削除された場合はOS設定に従う
+                        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        applyTheme(isDark);
                     }
                 }
             });
