@@ -186,7 +186,7 @@ python analyze_matches.py storage/app/private/ai_matches/*.json
 | ├ 棋士AIペルソナ | `node tests/expert-ai/test-kishi.mjs` | 30 | 初期配置/駒移動/将棋用語/ゲームフロー |
 | ├ WebデザイナーAI | `node tests/expert-ai/test-designer.mjs` | 37 | レイアウト/レスポンシブ/配色/一貫性 |
 | **E2E 統合テスト** | `npm run test:e2e` | 59 | 15カテゴリの全機能動作検証 |
-| **全テスト** | `npm run test:all` | **775** | PHP + a11y + AI + E2E |
+| **全テスト** | `npm run test:all` | **790** | PHP + a11y + AI + E2E |
 
 ## テストと検証
 
