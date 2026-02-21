@@ -153,10 +153,12 @@ OSのダークテーマ設定を自動検出し、ダークモードに切り替
 ユーザーはトグルボタンで手動切り替えも可能。
 
 **自動検出の仕組み**
-1. `window.matchMedia('(prefers-color-scheme: dark)')` でOSのテーマ設定を検出
-2. `localStorage` にユーザーの明示的な設定がない場合 → OSテーマに自動追従
-3. ユーザーがトグルボタンで手動設定した場合 → `localStorage` に保存し、OSテーマより優先
-4. OS側のテーマ変更をリアルタイムで検知し、手動設定がなければ自動切替
+1. ゲーム画面: `window.matchMedia('(prefers-color-scheme: dark)')` でOSテーマ検出 + トグルボタンで手動切替
+2. フィードバック画面: `<head>` 即時実行スクリプトが localStorage / OS設定に基づき `html.high-contrast` クラスを制御
+3. `localStorage` にユーザーの明示的な設定がない場合 → OSテーマに自動追従
+4. ユーザーがトグルボタンで手動設定した場合 → `localStorage` に保存し、OSテーマより優先
+
+**重要**: フィードバック画面では `@media (prefers-color-scheme: dark)` を使わず、すべて `html.high-contrast` クラスセレクタで制御。これによりゲーム画面のトグル状態と完全同期が可能。
 
 **優先順位**
 ```
@@ -896,7 +898,7 @@ npx htmlhint "resources/views/**/*.blade.php"
 - [x] スクリーンリーダーテスト（NVDA）完了
 - [x] キーボードのみでの操作テスト完了
 - [x] ハイコントラストモードでの表示確認
-- [x] ダークモード自動検出（prefers-color-scheme）の動作確認 ✨ **2/20 フィードバック画面対応完了**
+- [x] ダークモード自動検出・ゲーム画面同期の動作確認 ✨ **2/21 html.high-contrast統一方式で完全同期完了**
 - [x] モバイルのアクセシビリティテスト完了
 
 ### 最新テスト実行結果（2026年2月20日）
@@ -1187,7 +1189,7 @@ node tests/accessibility/blind-user-playtest.mjs
 ### 10.4 テスト実行コマンド一覧
 
 ```bash
-# PHP ユニットテスト（125テスト）
+# PHP ユニットテスト（140テスト）
 vendor/bin/pest
 
 # E2E アクセシビリティ（59テスト）
@@ -1217,6 +1219,15 @@ node tests/customer-ai/test-child.mjs
 node tests/customer-ai/test-ux.mjs
 node tests/customer-ai/test-teacher.mjs
 node tests/customer-ai/test-mobile.mjs
+
+# ダークモード同期テスト（全5パターン検証）
+node tests/manual/test_dark_mode_all_patterns.mjs
+
+# フィードバック画面ダークモード対応テスト
+node tests/manual/test_feedback_dark_mode.mjs
+
+# ランキング手数表示テスト
+node tests/manual/test_ranking_movecount.mjs
 ```
 
 ---
@@ -1239,5 +1250,5 @@ node tests/customer-ai/test-mobile.mjs
 
 ---
 
-最終更新: 2026-02-14
-バージョン: 2.0（多様な障害者ペルソナテスト・ふりがな対応・forced-colors完全対応・棋士/デザイナー専門家テスト追加）
+最終更新: 2026-02-21
+バージョン: 2.1（ダークモードhtml.high-contrast統一・フィードバック同期・ホーム画面ルビ・ボタン統一）
