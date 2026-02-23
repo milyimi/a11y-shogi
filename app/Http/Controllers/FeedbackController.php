@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\FeedbackMail;
 
@@ -75,11 +74,10 @@ class FeedbackController extends Controller
     public function store(Request $request)
     {
         // Rate Limiting: 同一IPから1時間に5件までに制限
-        $ipKey = 'feedback:' . Hash::make($request->ip());
+        $ipKey = 'feedback:' . hash('sha256', $request->ip());
         if (RateLimiter::tooManyAttempts($ipKey, 5)) {
-            return back()
-                ->withErrors(['submitted' => 'フィードバックは1時間以内に5件までに制限しています。後でお試しください。'])
-                ->withInput();
+            return redirect()->route('feedback.show')
+                ->withErrors(['submitted' => 'フィードバックは1時間以内に5件までに制限しています。後でお試しください。']);
         }
 
         RateLimiter::hit($ipKey, 3600); // 1時間の有効期限
